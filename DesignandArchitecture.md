@@ -5,15 +5,14 @@
 # Project Milestones and Dates
 | Milestone | Deadline |
 | --------- | -------- |
-| Project planning | 12/08 |
-| Database Finalised | 19/08 |
-| Website Interface | 2/09 |
-| Game Instances | 9/09 |
-| Join front and back end | 23/09 |
-| Creation of challenges | 14/10 |
-| Debugging | 21/10 |
-| Final Touches | 28/10 |
-| Showcase | 4/11 |
+| Project planning | 5/08 - 12/08 |
+| Database Finalised | 5/08 - 19/08 |
+| Website Interface | 19/08 - 2/09 |
+| Game Instances | 19/08 - 16/09 |
+| Join front and back end | 9/09 - 14/10 |
+| Creation of challenges | 14/10 - 21/10 |
+| Debugging | 14/10 - 21/10 |
+| Showcase | 21/10 - 28/10 |
 
 # Frontend Frameworks and Page Sketches
 
