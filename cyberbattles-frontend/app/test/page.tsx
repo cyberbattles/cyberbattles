@@ -1,9 +1,7 @@
-import logo from "../public/images/logo.png"
-import cyberbattles from "../public/images/cyberbattles.png"
-import Image from 'next/image'
+import Navbar from "../../components/Navbar"
 import React from "react";
-import Navbar from "@/components/Navbar";
-export default function LoginPage() {
+export default function TestPage() {
+
   let navItems=["Home", "lab", "learn"]
   let navLinks=["/", "/test", "/test"]
 
@@ -11,12 +9,8 @@ export default function LoginPage() {
     <>
     <Navbar items={navItems} links={navLinks}/>
 
-    <div className="p-10"></div>
     <div className="p-10">
       
-      {/* <div className="absolute top-4 left-4 w-25 h-25">
-        <Image src={logo} alt="logo of the website"/>     
-      </div> */}
       
 <section className="min-h-screen flex items-center justify-start pl-150">
   <div className="flex relative gap-8">
@@ -38,15 +32,6 @@ export default function LoginPage() {
           placeholder="Password"
         />
 
-        {/* Image positioned at the vertical midpoint */}
-        <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-100 h-100">
-          <Image
-            src={cyberbattles}
-            alt="text based logo of the website"
-            layout="fill"
-            objectFit="contain"
-          />
-        </div>
       </div>
 
       {/* Buttons */}
@@ -63,12 +48,12 @@ export default function LoginPage() {
 
 
 
-
           
 
         
     </div>
-</>
+    </>
+
     
   );
 }
