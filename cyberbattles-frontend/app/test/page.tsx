@@ -3,7 +3,7 @@ import React from "react";
 export default function TestPage() {
 
   let navItems=["Home", "lab", "learn"]
-  let navLinks=["/", "/test", "/test"]
+  let navLinks=["/", "/test", "/learn"]
 
   return (
     <>

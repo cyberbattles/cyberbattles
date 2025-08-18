@@ -5,7 +5,7 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 export default function LoginPage() {
   let navItems=["Home", "lab", "learn"]
-  let navLinks=["/", "/test", "/test"]
+  let navLinks=["/", "/test", "/learn"]
 
   return (
     <>
