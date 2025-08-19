@@ -3,9 +3,6 @@ import Navbar from "../../components/Navbar"
 import React, { useState } from "react";
 export default function LearnPage() {
 
-  let navItems=["Home", "lab", "learn"]
-  let navLinks=["/", "/test", "/learn"]
-
   let learnItems = ["Getting Started", "Red Teaming", "Blue Teaming", "Importance of Uptime", "Basics of SSH", "Network Probing"]
   let learnContents = [
     "This is the information about getting started",
@@ -21,7 +18,7 @@ export default function LearnPage() {
 
   return (
     <>
-    <Navbar items={navItems} links={navLinks}/>
+    <Navbar loggedIn={true}/>
 
     <div className="p-10">
       

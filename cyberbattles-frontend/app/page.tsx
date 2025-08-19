@@ -6,12 +6,10 @@ import Navbar from "@/components/Navbar";
 import Link from 'next/link'
 
 export default function LoginPage() {
-  let navItems=["Home", "lab", "learn"]
-  let navLinks=["/", "/test", "/learn"]
 
   return (
     <>
-    <Navbar items={navItems} links={navLinks}/>
+    <Navbar loggedIn={false}/>
 
     <div className="p-10"></div>
     <div className="p-10">

@@ -7,7 +7,7 @@ export default function TestPage() {
 
   return (
     <>
-    <Navbar items={navItems} links={navLinks}/>
+    <Navbar loggedIn={false}/>
 
     <div className="p-10">
       

@@ -3,11 +3,20 @@ import Link from "next/link";
 import logo from "../public/images/logo.png"
 
 interface Props {
-    items: string[];
-    links: string[];
+    loggedIn: boolean;
+    // items: string[];
+    // links: string[];
 }
 
-function Navbar({items, links}: Props) {
+function Navbar({loggedIn}: Props) {
+    console.log(loggedIn)
+    let items = ["Home", "lab", "learn"]
+    let links = ["/", "/test", "/learn"]
+    if (loggedIn){
+        console.log("hit")
+        items = ["Home", "leaderboard", "traffic", "shell"]
+        links = ["/", "/test", "/test", "/test", "/test"]
+    }
     return(
         <nav className="fixed w-full h-40 shadow-xl">
         <div className="flex justify-between items-center h-full w-full px-4">

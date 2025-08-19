@@ -10,7 +10,7 @@ export default function CreateAccountPage() {
 
   return (
     <>
-    <Navbar items={navItems} links={navLinks}/>
+    <Navbar loggedIn={false}/>
 
     <div className="p-10"></div>
     <div className="p-10">
