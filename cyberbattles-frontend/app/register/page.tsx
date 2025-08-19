@@ -1,11 +1,10 @@
 import logo from "../public/images/logo.png"
-import cyberbattles from "../public/images/cyberbattles.png"
+import cyberbattles from "../../public/images/cyberbattles.png"
 import Image from 'next/image'
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Link from 'next/link'
-
-export default function LoginPage() {
+export default function CreateAccountPage() {
   let navItems=["Home", "lab", "learn"]
   let navLinks=["/", "/test", "/learn"]
 
@@ -29,6 +28,18 @@ export default function LoginPage() {
       <div className="relative flex flex-col gap-4">
         <input
           className="p-7 rounded-xl border w-100"
+          type="text"
+          name="firstName"
+          placeholder="First Name"
+        />
+        <input
+          className="p-7 rounded-xl border w-100"
+          type="text"
+          name="lastName"
+          placeholder="Last Name"
+        />
+        <input
+          className="p-7 rounded-xl border w-100"
           type="email"
           name="email"
           placeholder="Email"
@@ -38,6 +49,12 @@ export default function LoginPage() {
           type="password"
           name="password"
           placeholder="Password"
+        />
+        <input
+          className="p-7 rounded-xl border w-100"
+          type="password"
+          name="confirmPassword"
+          placeholder="Confirm Password"
         />
 
         {/* Image positioned at the vertical midpoint */}
@@ -53,11 +70,11 @@ export default function LoginPage() {
 
       {/* Buttons */}
       <div className="flex justify-between mt-4">
-        <Link href="/register" className="self-center cursor-pointer hover:underline">
-          Create Account
+        <Link href="/" className="self-center cursor-pointer hover:underline">
+          Already have an account?
         </Link>
         <button className="outline-solid rounded-xl text-white py-2 px-6 hover:scale-105 duration-300">
-          Login
+          Create Account
         </button>
       </div>
     </form>
@@ -76,4 +93,3 @@ export default function LoginPage() {
     
   );
 }
-
