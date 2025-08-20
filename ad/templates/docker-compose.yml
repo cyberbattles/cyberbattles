@@ -1,0 +1,30 @@
+# ===
+# Docker compose template
+#
+#
+# Variables inside the curly brackets are to be replaced
+#
+# TODO: cgroups (limited cpu resources)
+#
+#
+# ===
+services:
+  {teamName}:
+    container_name: {teamName}_box
+    build:
+      context: {teamName}
+    ports:
+      - "{challengePort}:{challengePort}"
+    environment:
+      {env}
+    networks:
+        - cyberbattlesnet
+
+  # More services
+  # {teamName}:
+  # ... 
+      
+networks:
+  cyberbattlesnet:
+    driver: bridge
+    internal: true

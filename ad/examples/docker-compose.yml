@@ -1,0 +1,15 @@
+services:
+  team1:
+    container_name: team1_box
+    build:
+      context: team1
+    ports:
+      - "8080:8080"
+    networks:
+        - cyberbattlesnet
+
+networks:
+  cyberbattlesnet:
+    driver: bridge
+    internal: true
+
