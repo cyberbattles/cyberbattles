@@ -1,0 +1,41 @@
+{
+  "name": "cyberbattles",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "prepare": "npm run compile",
+    "pretest": "npm run compile",
+    "posttest": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cyberbattles/cyberbattles.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cyberbattles/cyberbattles/issues"
+  },
+  "homepage": "https://github.com/cyberbattles/cyberbattles#readme",
+  "dependencies": {
+    "dockerode": "^4.0.7",
+    "express": "^5.1.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.43",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.7.5",
+    "@types/ws": "^8.18.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.6.3",
+    "gts": "^6.0.2"
+  }
+}
