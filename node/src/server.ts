@@ -252,7 +252,11 @@ async function startSession(
   }
 
   // Check if Docker Image is already downloaded if not, pull it
-  if (docker.getImage(SCENARIOS.at(selectedScenario) || '') === undefined) {
+  const image = docker.getImage(SCENARIOS.at(selectedScenario) || '');
+  try {
+    await image.inspect();
+    console.log('Image already exists, skipping pull.');
+  } catch (error) {
     console.log(`Pulling image: ${SCENARIOS.at(selectedScenario)}...`);
     await new Promise(resolve =>
       docker.pull(SCENARIOS.at(selectedScenario) || '', {}, (err, stream) => {
@@ -262,8 +266,6 @@ async function startSession(
       }),
     );
     console.log('Image pulled successfully.');
-  } else {
-    console.log('Docker image already exists, skipping pull.');
   }
 
   const teams: Team[] = [];
