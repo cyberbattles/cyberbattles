@@ -1,0 +1,109 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Docker Terminal</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        background-color: #1e1e1e;
+        color: #f0f0f0;
+      }
+      #terminal-container {
+        padding: 10px;
+      }
+      #terminal {
+        border: 1px solid #555;
+      }
+      .controls {
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Docker Web Terminal</h1>
+    <h2>This is an example page provided by Gemini for testing Dockerode</h2>
+    <div class="controls">
+      <label for="team-select">Team:</label>
+      <select id="team-select">
+        <option value="team1">Team 1</option>
+        <option value="team2">Team 2</option>
+      </select>
+      <label for="user-select">User:</label>
+      <select id="user-select">
+        <option value="user1">User 1</option>
+        <option value="user2">User 2</option>
+      </select>
+      <button id="connect-btn">Connect</button>
+    </div>
+
+    <div id="terminal-container">
+      <div id="terminal"></div>
+    </div>
+
+    <script>
+      const term = new Terminal({
+        cursorBlink: true,
+        rows: 30,
+        cols: 120,
+        theme: {
+          background: '#1e1e1e',
+          foreground: '#f0f0f0',
+        },
+      });
+      const termElement = document.getElementById('terminal');
+      term.open(termElement);
+      term.write('Welcome! Click Connect to start a session.\r\n');
+
+      let ws; // To hold the WebSocket instance
+
+      document.getElementById('connect-btn').addEventListener('click', () => {
+        // Close any existing connection
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+          ws.close();
+        }
+        term.reset();
+
+        // The server is hardcoded to connect to the first user of the first team,
+        // so we don't need to specify a dynamic path here for now.
+        const socketUrl = `ws://${window.location.host}`;
+        term.write(`Connecting to server... \r\n`);
+
+        ws = new WebSocket(socketUrl);
+
+        ws.onopen = () => {
+          term.write('Connection established! You have a shell.\r\n');
+          term.focus(); // Focus the terminal so the user can start typing
+        };
+
+        // When data comes FROM the server, write it to the terminal
+        ws.onmessage = async event => {
+          // The backend sends raw buffer data, which the browser receives as a Blob.
+          // We read it as an ArrayBuffer and convert to Uint8Array for xterm.js.
+          const data = new Uint8Array(await event.data.arrayBuffer());
+          term.write(data);
+        };
+
+        ws.onclose = event => {
+          term.write(`\r\nConnection closed. Code: ${event.code}\r\n`);
+        };
+
+        ws.onerror = error => {
+          term.write('\r\nAn error occurred with the WebSocket.\r\n');
+          console.error('WebSocket Error:', error);
+        };
+
+        // When you type IN the terminal, send the data TO the server
+        term.onData(data => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(data);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
