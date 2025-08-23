@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Docker Terminal</title>
+    <title>Docker Terminal Control</title>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"
@@ -12,6 +12,50 @@
         font-family: sans-serif;
         background-color: #1e1e1e;
         color: #f0f0f0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px;
+        width: 100%;
+      }
+      fieldset {
+        border: 1px solid #555;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        padding: 15px;
+      }
+      legend {
+        color: #00aaff;
+        font-weight: bold;
+        padding: 0 10px;
+      }
+      .controls {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+      input[type='text'],
+      input[type='number'] {
+        background-color: #333;
+        color: #f0f0f0;
+        border: 1px solid #555;
+        padding: 8px;
+        border-radius: 3px;
+      }
+      button {
+        background-color: #0077cc;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #005fa3;
       }
       #terminal-container {
         padding: 10px;
@@ -19,20 +63,77 @@
       #terminal {
         border: 1px solid #555;
       }
-      .controls {
-        padding: 10px;
-      }
     </style>
   </head>
   <body>
-    <h1>Docker Web Terminal</h1>
-    <h2>This is an example page provided by Gemini for testing Dockerode</h2>
-    <div class="controls">
-      <button id="connect-btn">Connect</button>
-    </div>
+    <div class="container">
+      <h1>Docker Web Terminal Control Panel</h1>
 
-    <div id="terminal-container">
-      <div id="terminal"></div>
+      <fieldset>
+        <legend>Session Management</legend>
+        <div class="controls">
+          <label for="scenario-index">Scenario:</label>
+          <input
+            type="number"
+            id="scenario-index"
+            name="scenario-index"
+            value="0"
+            min="0"
+          />
+          <label for="num-teams">Num Teams:</label>
+          <input
+            type="number"
+            id="num-teams"
+            name="num-teams"
+            value="2"
+            min="1"
+          />
+          <label for="num-members">Members/Team:</label>
+          <input
+            type="number"
+            id="num-members"
+            name="num-members"
+            value="1"
+            min="1"
+          />
+          <button id="create-session-btn">Create Session</button>
+        </div>
+        <div class="controls">
+          <label for="session-id">Session ID:</label>
+          <input
+            type="text"
+            id="session-id"
+            name="session-id"
+            placeholder="Enter Session ID to Start"
+          />
+          <button id="start-session-btn">Start Session</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Terminal Connection</legend>
+        <div class="controls">
+          <label for="teamId">Team ID:</label>
+          <input
+            type="text"
+            id="teamId"
+            name="teamId"
+            placeholder="Enter Team ID"
+          />
+          <label for="userId">User ID:</label>
+          <input
+            type="text"
+            id="userId"
+            name="userId"
+            placeholder="Enter User ID"
+          />
+          <button id="connect-btn">Connect to Terminal</button>
+        </div>
+      </fieldset>
+
+      <div id="terminal-container">
+        <div id="terminal"></div>
+      </div>
     </div>
 
     <script>
@@ -45,35 +146,119 @@
           foreground: '#f0f0f0',
         },
       });
-      const termElement = document.getElementById('terminal');
-      term.open(termElement);
-      term.write('Welcome! Click Connect to start a session.\r\n');
+      term.open(document.getElementById('terminal'));
+      term.write('Welcome! Use the controls above to manage sessions.\r\n');
 
       let ws; // To hold the WebSocket instance
 
+      /**
+       * A helper function to send POST requests to the server API.
+       * @param {string} url The API endpoint.
+       * @param {object} data The JSON data to send.
+       */
+      async function postData(url = '', data = {}) {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+        return {
+          ok: response.ok,
+          status: response.status,
+          data: response.ok ? await response.json().catch(() => ({})) : null,
+        };
+      }
+
+      // --- Event Listener for Creating a Session ---
+      document
+        .getElementById('create-session-btn')
+        .addEventListener('click', async () => {
+          term.write('\r\nAttempting to create a new session...\r\n');
+          const selectedScenario = parseInt(
+            document.getElementById('scenario-index').value,
+          );
+          const numTeams = parseInt(document.getElementById('num-teams').value);
+          const numMembersPerTeam = parseInt(
+            document.getElementById('num-members').value,
+          );
+
+          const response = await postData('/api/session', {
+            selectedScenario,
+            numTeams,
+            numMembersPerTeam,
+            token: 'fake-token',
+          });
+
+          if (response.ok) {
+            term.write(
+              `SUCCESS: Session creation process started (Status: ${response.status}).\r\n`,
+            );
+            term.write(
+              'Check your server logs for the new session ID and team IDs.\r\n',
+            );
+          } else {
+            term.write(
+              `ERROR: Failed to create session (Status: ${response.status}).\r\n`,
+            );
+          }
+        });
+
+      // --- Event Listener for Starting a Session ---
+      document
+        .getElementById('start-session-btn')
+        .addEventListener('click', async () => {
+          const sessionId = document.getElementById('session-id').value;
+          if (!sessionId) {
+            term.write('\r\nERROR: Please enter a Session ID.\r\n');
+            return;
+          }
+
+          term.write(`\r\nAttempting to start session: ${sessionId}...\r\n`);
+          const response = await postData('/api/start-session', {
+            sessionId,
+            token: 'fake-token',
+          });
+
+          if (response.ok) {
+            term.write(
+              `SUCCESS: Session start process initiated (Status: ${response.status}).\r\n`,
+            );
+          } else {
+            term.write(
+              `ERROR: Failed to start session (Status: ${response.status}).\r\n`,
+            );
+          }
+        });
+
+      // --- Event Listener for WebSocket Terminal Connection ---
       document.getElementById('connect-btn').addEventListener('click', () => {
-        // Close any existing connection
         if (ws && ws.readyState !== WebSocket.CLOSED) {
           ws.close();
         }
         term.reset();
 
-        // The server is hardcoded to connect to the first user of the first team,
-        // so we don't need to specify a dynamic path here for now.
-        const socketUrl = `ws://${window.location.host}`;
-        term.write(`Connecting to server... \r\n`);
+        const teamId = document.getElementById('teamId').value;
+        const userId = document.getElementById('userId').value;
+        const token = 'fake-token';
+
+        if (!teamId || !userId) {
+          term.write('Please enter both a Team ID and a User ID.\r\n');
+          return;
+        }
+
+        const socketUrl = `ws://${window.location.host}/terminals/${teamId}/${userId}/${token}`;
+        term.write(`Connecting to ${socketUrl}...\r\n`);
 
         ws = new WebSocket(socketUrl);
 
         ws.onopen = () => {
           term.write('Connection established! You have a shell.\r\n');
-          term.focus(); // Focus the terminal so the user can start typing
+          term.focus();
         };
 
-        // When data comes FROM the server, write it to the terminal
         ws.onmessage = async event => {
-          // The backend sends raw buffer data, which the browser receives as a Blob.
-          // We read it as an ArrayBuffer and convert to Uint8Array for xterm.js.
           const data = new Uint8Array(await event.data.arrayBuffer());
           term.write(data);
         };
@@ -87,7 +272,6 @@
           console.error('WebSocket Error:', error);
         };
 
-        // When you type IN the terminal, send the data TO the server
         term.onData(data => {
           if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(data);
