@@ -10,8 +10,8 @@ interface Props {
 
 function Navbar({loggedIn}: Props) {
     console.log(loggedIn)
-    let items = ["Home", "lab", "learn"]
-    let links = ["/", "/test", "/learn"]
+    let items = ["Home", "Lab", "Learn"]
+    let links = ["/", "/lab", "/learn"]
     if (loggedIn){
         console.log("hit")
         items = ["Home", "leaderboard", "traffic", "shell"]
@@ -35,9 +35,9 @@ function Navbar({loggedIn}: Props) {
             </div>
             <div className="flex justify-between items-center">
                 <ul className="hidden sm:flex">
-                    <Link href="/test">
+                    <Link href="/login">
                     <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300">
-                        login
+                        Login
                     </li>
                     </Link>
                 </ul>

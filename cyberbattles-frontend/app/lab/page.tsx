@@ -2,18 +2,12 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import { auth } from "../lib/firebase";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
 import { useRouter } from "next/navigation";
 
-import cyberbattles from "../public/images/cyberbattles.png";
 
-export default function HomePage() {
-  let navItems = ["Home", "lab", "learn"];
-  let navLinks = ["/", "/test", "/learn"];
+export default function LabPage() {
+    const router = useRouter();
+
 
   return (
     <>
