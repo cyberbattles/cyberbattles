@@ -5,6 +5,7 @@ import * as Docker from 'dockerode';
 import {Duplex, PassThrough} from 'stream';
 import * as crypto from 'crypto';
 import {generate} from 'random-words';
+import * as admin from 'firebase-admin';
 
 const PORT = '1337';
 const CREATE_USER_CMD: string[] = ['useradd', '-m', '-s', '/bin/bash'];
@@ -13,25 +14,25 @@ const SCENARIOS: string[] = ['ubuntu:latest'];
 
 const docker = new Docker();
 
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+});
+export const db = admin.firestore();
+
 /**
- * A class representing a user in the session.
+ * An interface representing a user in the session.
  */
-class User {
+interface User {
   /** The username of the user. */
   username: string;
   /** A unique identifier for the user. */
   id: string;
-
-  public constructor(username: string, id: string) {
-    this.username = username;
-    this.id = id;
-  }
 }
 
 /**
- * A class representing a team in the session.
+ * An interface representing a team in the session.
  */
-class Team {
+interface Team {
   /** The name of the team. */
   name: string;
   /** The number of members in the team. */
@@ -46,30 +47,12 @@ class Team {
   networkName: string;
   /** A unique identifier for the team. */
   id: string;
-
-  public constructor(
-    name: string,
-    numMembers: number,
-    members: User[],
-    containerId: string,
-    networkId: string,
-    networkName: string,
-    id: string,
-  ) {
-    this.name = name;
-    this.numMembers = numMembers;
-    this.members = members;
-    this.containerId = containerId;
-    this.networkId = networkId;
-    this.networkName = networkName;
-    this.id = id;
-  }
 }
 
 /**
- * A class representing a session containing multiple teams.
+ * An interface representing a session containing multiple teams.
  */
-class Session {
+interface Session {
   /** The teams in the session. */
   teams: Team[];
   /** The number of teams in the session. */
@@ -80,19 +63,6 @@ class Session {
   selectedScenario: number;
   /** A unique identifier for the session. */
   id: string;
-
-  public constructor(
-    teams: Team[],
-    numTeams: number,
-    numUsers: number,
-    selectedScenario: number,
-  ) {
-    this.teams = teams;
-    this.numTeams = numTeams;
-    this.numUsers = numUsers;
-    this.selectedScenario = selectedScenario;
-    this.id = crypto.randomBytes(16).toString('hex');
-  }
 }
 
 /**
@@ -134,7 +104,8 @@ async function createUser(containerId: string): Promise<User> {
     });
     await exec.start({});
 
-    return new User(username, id);
+    // Return a User object literal
+    return {username, id};
   } catch (error) {
     throw new Error('Create User Error: Container not found.');
   }
@@ -223,15 +194,16 @@ async function createTeam(
       members.push(user);
     }
 
-    return new Team(
+    // Return a Team object literal
+    return {
       name,
       numMembers,
       members,
       containerId,
       networkId,
       networkName,
-      teamId,
-    );
+      id: teamId,
+    };
   } catch (error) {
     throw new Error('Create Team Error: Container not found.');
   }
@@ -275,6 +247,7 @@ async function startSession(
     console.log('Image pulled successfully.');
   }
 
+  // Create and store teams
   const teams: Team[] = [];
   for (let i = 0; i < numTeams; i++) {
     const teamName = `Team-${i + 1}`;
@@ -285,12 +258,25 @@ async function startSession(
     );
     teams.push(team);
   }
-  return new Session(
+
+  // Generate a unique ID for the session
+  const sessionId: string = generateId();
+
+  // Create the Session object literal
+  const session: Session = {
     teams,
     numTeams,
-    numTeams * numMembersPerTeam,
+    numUsers: numTeams * numMembersPerTeam,
     selectedScenario,
-  );
+    id: sessionId,
+  };
+
+  // Upload session data to Firestore
+  const taskRef = db.collection('sessions').doc(session.id);
+  await taskRef.set({session: session});
+  console.log('Uploaded session data to Firestore:', session.id);
+
+  return session;
 }
 
 /**
