@@ -38,8 +38,8 @@ class Team {
   numMembers: number;
   /** The members of the team. */
   members: User[];
-  /** The Docker container associated with the team. */
-  container: Docker.Container;
+  /** The Docker containerId associated with the team. */
+  containerId: string;
   /** The ID of the Docker network associated with the team. */
   networkId: string;
   /** The name of the Docker network associated with the team. */
@@ -51,7 +51,7 @@ class Team {
     name: string,
     numMembers: number,
     members: User[],
-    container: Docker.Container,
+    containerId: string,
     networkId: string,
     networkName: string,
     id: string,
@@ -59,7 +59,7 @@ class Team {
     this.name = name;
     this.numMembers = numMembers;
     this.members = members;
-    this.container = container;
+    this.containerId = containerId;
     this.networkId = networkId;
     this.networkName = networkName;
     this.id = id;
@@ -107,10 +107,10 @@ function generateId(): string {
 /**
  * Creates a new user in the specified Docker container.
  * Usernames are generated randomly using the `random-words` package.
- * @param container The Docker container in which to create the user.
+ * @param containerId The ID of the Docker Container in which to create the user.
  * @returns A Promise that resolves to a User object containing the username and ID.
  */
-async function createUser(container: Docker.Container): Promise<User> {
+async function createUser(containerId: string): Promise<User> {
   // Generate a random username
   const username = generate({
     min: 1,
@@ -123,15 +123,21 @@ async function createUser(container: Docker.Container): Promise<User> {
   // Generate a unique ID for the user
   const id: string = generateId();
 
-  // Create the user in the container
-  const exec = await container.exec({
-    Cmd: [...CREATE_USER_CMD, username],
-    AttachStdout: true,
-    AttachStderr: true,
-  });
-  await exec.start({});
+  try {
+    const container = docker.getContainer(containerId);
 
-  return new User(username, id);
+    // Create the user in the container
+    const exec = await container.exec({
+      Cmd: [...CREATE_USER_CMD, username],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    await exec.start({});
+
+    return new User(username, id);
+  } catch (error) {
+    throw new Error('Create User Error: Container not found.');
+  }
 }
 
 /**
@@ -157,13 +163,12 @@ async function createNetwork(
  * @param image The Docker image to use for the container.
  * @param teamName The name of the team.
  * @param teamId The unique ID of the team.
- * @returns A Promise that resolves to the created Docker container.
- */
+ * @returns A Promise that resolves to the created Docker ccontacontainerId*/
 async function createContainer(
   image: string,
   teamName: string,
   teamId: string,
-): Promise<Docker.Container> {
+): Promise<string> {
   const container = await docker.createContainer({
     Image: image,
     Cmd: ['/bin/bash'],
@@ -173,7 +178,7 @@ async function createContainer(
       NetworkMode: `teamnet-${teamId}`,
     },
   });
-  return container;
+  return container.id;
 }
 
 /**
@@ -203,31 +208,33 @@ async function createTeam(
   const {networkId, networkName} = await createNetwork(teamId);
 
   // Create a container for the team
-  const container: Docker.Container = await createContainer(
-    dockerImage,
-    name,
-    teamId,
-  );
+  const containerId = await createContainer(dockerImage, name, teamId);
 
-  // Start the container
-  await container.start();
+  try {
+    const container = docker.getContainer(containerId);
 
-  // Create a user in the container for each member
-  const members: User[] = [];
-  for (let i = 0; i < numMembers; i++) {
-    const user: User = await createUser(container);
-    members.push(user);
+    // Start the container
+    await container.start();
+
+    // Create a user in the container for each member
+    const members: User[] = [];
+    for (let i = 0; i < numMembers; i++) {
+      const user: User = await createUser(containerId);
+      members.push(user);
+    }
+
+    return new Team(
+      name,
+      numMembers,
+      members,
+      containerId,
+      networkId,
+      networkName,
+      teamId,
+    );
+  } catch (error) {
+    throw new Error('Create Team Error: Container not found.');
   }
-
-  return new Team(
-    name,
-    numMembers,
-    members,
-    container,
-    networkId,
-    networkName,
-    teamId,
-  );
 }
 
 /**
@@ -295,15 +302,22 @@ async function startSession(
 async function cleanupSession(session: Session): Promise<void> {
   for (const team of session.teams) {
     // Stop and remove the container for each team
-    await team.container.stop();
-    await team.container.remove();
+    try {
+      const container = docker.getContainer(team.containerId);
+      await container.stop();
+      await container.remove();
+    } catch (error) {
+      console.error('Cleanup Error: Container not found.');
+    }
+
     // Remove the network for each team
-    await docker.getNetwork(team.networkId).remove();
+    try {
+      await docker.getNetwork(team.networkId).remove();
+    } catch (error) {
+      console.error('Cleanup Error: Network not found.');
+    }
   }
   SESSIONS.splice(SESSIONS.indexOf(session), 1);
-  return new Promise(resolve => {
-    resolve();
-  });
 }
 
 /**
@@ -317,39 +331,45 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     const team = SESSIONS[0]?.teams[0];
     const user = team?.members[0];
 
-    if (team?.container && user) {
+    if (team?.containerId && user) {
       console.log(`WebSocket connection established for ${user.username}.`);
 
-      // Start a bash shell in the container as the given user
-      const exec = await team.container.exec({
-        Cmd: ['/bin/bash'],
-        User: user.username,
-        AttachStdin: true,
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty: true,
-      });
+      try {
+        const container = docker.getContainer(team.containerId);
 
-      // Hijack the exec command to create a terminal stream
-      const stream: Duplex = await exec.start({hijack: true, stdin: true});
+        // Start a bash shell in the container as the given user
+        const exec = await container.exec({
+          Cmd: ['/bin/bash'],
+          User: user.username,
+          AttachStdin: true,
+          AttachStdout: true,
+          AttachStderr: true,
+          Tty: true,
+        });
 
-      // Handle stdout and stderr streams as well
-      const stdout = new PassThrough();
-      const stderr = new PassThrough();
-      stdout.on('data', (chunk: Buffer) => ws.send(chunk));
-      stderr.on('data', (chunk: Buffer) => ws.send(chunk));
+        // Hijack the exec command to create a terminal stream
+        const stream: Duplex = await exec.start({hijack: true, stdin: true});
 
-      // Let dockerode handle the combining of streams
-      docker.modem.demuxStream(stream, stdout, stderr);
+        // Handle stdout and stderr streams as well
+        const stdout = new PassThrough();
+        const stderr = new PassThrough();
+        stdout.on('data', (chunk: Buffer) => ws.send(chunk));
+        stderr.on('data', (chunk: Buffer) => ws.send(chunk));
 
-      // Handle input from the user
-      ws.on('message', (data: WebSocket) => {
-        stream.write(data);
-      });
+        // Let dockerode handle the combining of streams
+        docker.modem.demuxStream(stream, stdout, stderr);
 
-      ws.on('close', () => {
-        console.log(`Connection closed for ${user.username}`);
-      });
+        // Handle input from the user
+        ws.on('message', (data: WebSocket) => {
+          stream.write(data);
+        });
+
+        ws.on('close', () => {
+          console.log(`Connection closed for ${user.username}`);
+        });
+      } catch (error) {
+        throw new Error('WebSocket Error: Container not found.');
+      }
     } else {
       console.error('Container or user not found for WebSocket connection.');
       ws.close(1011, 'Target container not available.');
