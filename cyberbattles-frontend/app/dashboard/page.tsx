@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
+import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
@@ -10,6 +11,10 @@ const Dashboard = () => {
   const router = useRouter();
   const [jwt, setJwt] = useState("");
   const [showJwt, setShowJwt] = useState(false);
+
+  // New state for the team join feature
+  const [teamId, setTeamId] = useState("");
+  const [joinMessage, setJoinMessage] = useState({ type: "", text: "" });
 
   const handleLogout = async () => {
     try {
@@ -20,13 +25,9 @@ const Dashboard = () => {
     }
   };
 
-  /**
-   * Fetches the current user's JWT and displays it.
-   */
   const handleGetJwt = async () => {
     if (auth.currentUser) {
       try {
-        // Force refresh to get a new token
         const token = await auth.currentUser.getIdToken(true);
         setJwt(token);
         setShowJwt(true);
@@ -37,6 +38,58 @@ const Dashboard = () => {
       }
     } else {
       console.error("No user is signed in.");
+    }
+  };
+
+  /**
+   * Handles the logic for a user to join a team.
+   */
+  const handleJoinTeam = async () => {
+    // Basic validation
+    if (!teamId) {
+      setJoinMessage({ type: "error", text: "Please enter a Team ID." });
+      return;
+    }
+    if (!auth.currentUser) {
+      setJoinMessage({
+        type: "error",
+        text: "You must be logged in to join a team.",
+      });
+      return;
+    }
+
+    // Clear previous messages and get user UID
+    setJoinMessage({ type: "", text: "" });
+    const uid = auth.currentUser.uid;
+    const teamRef = doc(db, "teams", teamId);
+
+    // Try to find and update the team document
+    try {
+      const docSnap = await getDoc(teamRef);
+
+      if (docSnap.exists()) {
+        // Team was found, add the user's UID to the memberIds array
+        await updateDoc(teamRef, {
+          memberIds: arrayUnion(uid),
+        });
+        setJoinMessage({
+          type: "success",
+          text: `Successfully joined team: ${docSnap.data().name}!`,
+        });
+        setTeamId("");
+      } else {
+        // Team with the given ID was not found
+        setJoinMessage({
+          type: "error",
+          text: "Team not found. Please check the ID and try again.",
+        });
+      }
+    } catch (error) {
+      console.error("Error joining team:", error);
+      setJoinMessage({
+        type: "error",
+        text: "Could not join team. Please try again later.",
+      });
     }
   };
 
@@ -107,6 +160,37 @@ const Dashboard = () => {
               <h2 className="text-lg font-semibold mb-2">Active Players</h2>
               <p className="text-2xl font-bold text-yellow-400">76</p>
             </div>
+
+            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
+              <h3 className="text-lg font-semibold mb-2">Join a Team</h3>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={teamId}
+                  onChange={(e) => setTeamId(e.target.value)}
+                  placeholder="Enter Team ID"
+                  className="flex-grow p-2 bg-[#2f2f2f] border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={handleJoinTeam}
+                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                >
+                  Join Team
+                </button>
+              </div>
+              {joinMessage.text && (
+                <p
+                  className={`mt-3 text-sm ${
+                    joinMessage.type === "success"
+                      ? "text-green-400"
+                      : "text-red-400"
+                  }`}
+                >
+                  {joinMessage.text}
+                </p>
+              )}
+            </div>
+
             {/* JWT Display Widget */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
               <h3 className="text-lg font-semibold mb-2">
@@ -134,4 +218,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
