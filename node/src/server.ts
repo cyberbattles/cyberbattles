@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 
 import {initializeApp, ServiceAccount, cert} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
+import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
@@ -70,6 +71,8 @@ interface Session {
   numUsers: number;
   /** The index of the selected scenario. */
   selectedScenario: number;
+  /** The UID of the admin who created the session. */
+  adminUid: string;
   /** Indicates whether the session has started. */
   started: boolean;
   /** A unique identifier for the session. */
@@ -83,6 +86,22 @@ interface Session {
  */
 function generateId(): string {
   return crypto.randomBytes(8).toString('hex');
+}
+
+/**
+ * Verifies a Firebase ID token and returns the user's UID.
+ * @param token The Firebase ID token to verify.
+ * @returns A Promise that resolves with the user's UID string.
+ */
+async function verifyToken(token: string): Promise<string> {
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    return decodedToken.uid;
+  } catch (error) {
+    const errorMessage = `Token verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    console.error(errorMessage);
+    return '';
+  }
 }
 
 /**
@@ -188,11 +207,11 @@ async function createTeam(
     // Start the container
     await container.start();
 
-    // Return a Team object literal
+    // Return a Team object
     return {
       name,
       numMembers,
-      memberIds: ['xBk4mdHShxF9V0yzuWHK'], // For testing only, should be empty initially
+      memberIds: ['S1ovYnkGrzV6fM5yoo7iXlZLHDD3'], // For testing only, should be empty initially
       containerId,
       networkId,
       networkName,
@@ -216,6 +235,7 @@ async function createSession(
   selectedScenario: number,
   numTeams: number,
   numMembersPerTeam: number,
+  senderUid: string,
 ): Promise<void> {
   console.log(`--- Starting Scenario ${selectedScenario} Setup ---`);
 
@@ -268,6 +288,7 @@ async function createSession(
     numTeams,
     numUsers: numTeams * numMembersPerTeam,
     selectedScenario,
+    adminUid: senderUid,
     started: false,
     id: sessionId,
   };
@@ -284,7 +305,10 @@ async function createSession(
  * @param sessionId The ID of the session to start.
  * @returns A Promise that resolves when the session is started.
  **/
-async function startSession(sessionId: string): Promise<void> {
+async function startSession(
+  sessionId: string,
+  senderUid: string,
+): Promise<void> {
   const sessionRef = db.collection('sessions').doc(sessionId);
   const sessionDoc = await sessionRef.get();
   const sessionData = sessionDoc.data() as Session;
@@ -293,6 +317,10 @@ async function startSession(sessionId: string): Promise<void> {
 
   if (sessionData.started) {
     return console.log('Session already started.');
+  }
+
+  if (senderUid !== sessionData.adminUid) {
+    return;
   }
 
   const teams = sessionData?.teamIds || [];
@@ -419,6 +447,16 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     }
 
     // Verify the token
+    try {
+      const senderUid = await verifyToken(urlParts[4]);
+      if (!senderUid || senderUid.length === 0) {
+        throw new Error('Invalid token');
+      }
+    } catch (error) {
+      console.error('WebSocket token verification failed:', error);
+      ws.close(4001, 'Unauthorized');
+      return;
+    }
 
     // Look up the team and user based on the URL parameters
     const userNameRef = db.collection('login').doc(urlParts[3]);
@@ -496,6 +534,16 @@ async function main() {
       const {selectedScenario, numTeams, numMembersPerTeam, token} = req.body;
 
       // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
 
       // Validate incoming data
       if (
@@ -504,11 +552,16 @@ async function main() {
         typeof numMembersPerTeam !== 'number'
       ) {
         // If data is missing or invalid, send a 'Bad Request' response
-        return res.status(400).json({error: 'Invalid request body'}).send();
+        return res.status(400).json({result: 'Invalid request body'}).send();
       }
 
       // Create the new session
-      await createSession(selectedScenario, numTeams, numMembersPerTeam);
+      await createSession(
+        selectedScenario,
+        numTeams,
+        numMembersPerTeam,
+        senderUid,
+      );
 
       // Send a success response back to the sender
       console.log('Received data:', {
@@ -534,6 +587,16 @@ async function main() {
       const {sessionId, token} = req.body;
 
       // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
 
       // Check if sessionId is provided and is a string
       if (typeof sessionId !== 'string') {
@@ -541,7 +604,7 @@ async function main() {
       }
 
       // Start the session
-      await startSession(sessionId.trim());
+      await startSession(sessionId.trim(), senderUid);
       return res
         .status(200)
         .json({result: 'Session started successfully'})
