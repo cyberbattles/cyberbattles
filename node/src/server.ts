@@ -211,7 +211,7 @@ async function createTeam(
     return {
       name,
       numMembers,
-      memberIds: ['S1ovYnkGrzV6fM5yoo7iXlZLHDD3'], // For testing only, should be empty initially
+      memberIds: [], // For testing only, should be empty initially
       containerId,
       networkId,
       networkName,
