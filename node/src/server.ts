@@ -494,6 +494,14 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
         // Let dockerode handle the combining of streams
         docker.modem.demuxStream(stream, stdout, stderr);
 
+        // Handle the different ways the docker stream can end
+        stream.once('error', (err: Error) => {
+          ws.close(1011, 'Stream error: ' + err.message);
+        });
+        stream.once('close', () => {
+          ws.close();
+        });
+
         // Handle input from the user
         ws.on('message', (data: WebSocket) => {
           stream.write(data);
