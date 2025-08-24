@@ -222,9 +222,7 @@
             term.write(
               `SUCCESS: Session creation process started (Status: ${response.status}).\r\n`,
             );
-            term.write(
-              'Check your server logs for the new session ID and team IDs.\r\n',
-            );
+            term.write('Check your server logs for the new session ID.\r\n');
           } else {
             term.write(
               `ERROR: Failed to create session (Status: ${response.status}).\r\n`,
