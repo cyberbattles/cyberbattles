@@ -72,6 +72,17 @@
       <fieldset>
         <legend>Session Management</legend>
         <div class="controls">
+          <label for="admin-jwt">Admin JWT:</label>
+          <input
+            type="text"
+            id="admin-jwt"
+            name="admin-jwt"
+            placeholder="Paste Admin JWT for session actions"
+            size="60"
+          />
+        </div>
+        <hr style="border-color: #444; margin: 15px 0" />
+        <div class="controls">
           <label for="scenario-index">Scenario:</label>
           <input
             type="number"
@@ -127,6 +138,14 @@
             name="userId"
             placeholder="Enter User ID"
           />
+          <label for="jwt-token">JWT:</label>
+          <input
+            type="text"
+            id="jwt-token"
+            name="jwt-token"
+            placeholder="Paste your user JWT here"
+            size="60"
+          />
           <button id="connect-btn">Connect to Terminal</button>
         </div>
       </fieldset>
@@ -176,6 +195,14 @@
         .getElementById('create-session-btn')
         .addEventListener('click', async () => {
           term.write('\r\nAttempting to create a new session...\r\n');
+          const token = document.getElementById('admin-jwt').value;
+          if (!token) {
+            term.write(
+              '\r\nERROR: Admin JWT is required to create a session.\r\n',
+            );
+            return;
+          }
+
           const selectedScenario = parseInt(
             document.getElementById('scenario-index').value,
           );
@@ -188,7 +215,7 @@
             selectedScenario,
             numTeams,
             numMembersPerTeam,
-            token: 'fake-token',
+            token,
           });
 
           if (response.ok) {
@@ -210,15 +237,22 @@
         .getElementById('start-session-btn')
         .addEventListener('click', async () => {
           const sessionId = document.getElementById('session-id').value;
+          const token = document.getElementById('admin-jwt').value;
           if (!sessionId) {
             term.write('\r\nERROR: Please enter a Session ID.\r\n');
+            return;
+          }
+          if (!token) {
+            term.write(
+              '\r\nERROR: Admin JWT is required to start a session.\r\n',
+            );
             return;
           }
 
           term.write(`\r\nAttempting to start session: ${sessionId}...\r\n`);
           const response = await postData('/api/start-session', {
             sessionId,
-            token: 'fake-token',
+            token,
           });
 
           if (response.ok) {
@@ -241,10 +275,10 @@
 
         const teamId = document.getElementById('teamId').value;
         const userId = document.getElementById('userId').value;
-        const token = 'fake-token';
+        const token = document.getElementById('jwt-token').value;
 
-        if (!teamId || !userId) {
-          term.write('Please enter both a Team ID and a User ID.\r\n');
+        if (!teamId || !userId || !token) {
+          term.write('Please enter a Team ID, a User ID, and a JWT token.\r\n');
           return;
         }
 
