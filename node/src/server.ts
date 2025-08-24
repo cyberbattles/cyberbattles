@@ -284,6 +284,7 @@ async function createSession(
     const teamRef = db.collection('teams').doc(team.id);
     await teamRef.set(team);
     teamIds.push(team.id);
+    console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
   // Create a session object
