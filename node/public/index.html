@@ -293,7 +293,11 @@
         };
 
         ws.onmessage = async event => {
-          const data = new Uint8Array(await event.data.arrayBuffer());
+          // The data from a WebSocket is often a Blob, which needs to be read
+          const data =
+            event.data instanceof Blob
+              ? new Uint8Array(await event.data.arrayBuffer())
+              : event.data;
           term.write(data);
         };
 
@@ -305,12 +309,13 @@
           term.write('\r\nAn error occurred with the WebSocket.\r\n');
           console.error('WebSocket Error:', error);
         };
+      });
 
-        term.onData(data => {
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(data);
-          }
-        });
+      // --- Set up the single data listener for the terminal ---
+      term.onData(data => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(data);
+        }
       });
     </script>
   </body>
