@@ -344,14 +344,12 @@ async function startSession(
     const teamDoc = await teamRef.get();
     const team = teamDoc.data() as Team;
 
-    console.log(`Starting team ${team.name} with ID: ${teamId}`);
-
     for (const userId of team.memberIds) {
       const userRef = db.collection('login').doc(userId);
       const userDoc = await userRef.get();
       const userData = userDoc.data() as User;
 
-      console.log(`Creating user ${userData.userName}`);
+      console.log(`Creating user ${userData.userName} with ID ${userData.UID}`);
 
       await createUser(team.containerId, userData.userName);
     }
