@@ -7,7 +7,7 @@ import cyberbattles from "../../public/images/cyberbattles.png";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut,
+  updateProfile,
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [isRegister, setIsRegister] = useState(false);
 
@@ -29,7 +30,17 @@ export default function LoginPage() {
           setError("Passwords do not match");
           return;
         }
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        if (auth.currentUser) {
+          await updateProfile(auth.currentUser, {
+            displayName: username,
+          });
+        }
         console.log("Account created:", auth.currentUser);
       } else {
         await signInWithEmailAndPassword(auth, email, password);
@@ -55,14 +66,24 @@ export default function LoginPage() {
               height={100}
               className="object-contain"
             />
-            <h2 className="text-3xl font-semiboldtext-black font-bold">
+            <h2 className="text-3xl font-semibold text-white font-bold">
               {isRegister ? "Create Account" : "Login"}
             </h2>
           </div>
 
           <form onSubmit={handleAuth} className="flex flex-col gap-4">
+            {isRegister && (
+              <input
+                className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                required
+              />
+            )}
             <input
-              className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400  placeholder:text-white font-bold"
+              className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -70,7 +91,7 @@ export default function LoginPage() {
               required
             />
             <input
-              className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white font-bold"
+              className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -79,7 +100,7 @@ export default function LoginPage() {
             />
             {isRegister && (
               <input
-                className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white font-bold "
+                className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
