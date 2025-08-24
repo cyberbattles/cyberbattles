@@ -5,6 +5,7 @@ import {WebSocket, WebSocketServer} from 'ws';
 import * as Docker from 'dockerode';
 import {Duplex, PassThrough} from 'stream';
 import * as crypto from 'crypto';
+import {machineIdSync} from 'node-machine-id';
 
 import {initializeApp, ServiceAccount, cert} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
@@ -22,6 +23,7 @@ initializeApp({
 });
 
 const db = getFirestore();
+const serverId = machineIdSync();
 
 /**
  * An interface representing a user in the session.
@@ -75,6 +77,8 @@ interface Session {
   adminUid: string;
   /** Indicates whether the session has started. */
   started: boolean;
+  /** The ID of the server that created the session. */
+  serverId: string;
   /** A unique identifier for the session. */
   id: string;
 }
@@ -290,6 +294,7 @@ async function createSession(
     selectedScenario,
     adminUid: senderUid,
     started: false,
+    serverId,
     id: sessionId,
   };
 
@@ -314,13 +319,16 @@ async function startSession(
   const sessionData = sessionDoc.data() as Session;
 
   console.log(`Starting session with ID: ${sessionId}`);
+  if (sessionData === undefined) {
+    return console.log('Session not found.');
+  }
 
   if (sessionData.started) {
     return console.log('Session already started.');
   }
 
   if (senderUid !== sessionData.adminUid) {
-    return;
+    return console.log('Only the session admin can start the session.');
   }
 
   const teams = sessionData?.teamIds || [];
@@ -347,15 +355,25 @@ async function startSession(
       await createUser(team.containerId, userData.userName);
     }
   }
+
+  // Update the session to mark it as started
+  sessionData.started = true;
+  await sessionRef.set(sessionData);
+
+  console.log(`Session ${sessionId} started successfully.`);
 }
 
 /**
  * Fetches all sessions from Firestore and removes them from the local machine.
+ * Only tries to clean up sessions that were created by this server instance.
  * @returns A Promise that resolves when all sessions have been cleaned up.
  */
 async function cleanupAllSessions(): Promise<void> {
   console.log('--- Starting Cleanup of All Sessions ---');
-  const sessionsSnapshot = await db.collection('sessions').get();
+  const sessionsSnapshot = await db
+    .collection('sessions')
+    .where('serverId', '==', serverId)
+    .get();
 
   if (sessionsSnapshot.empty) {
     console.log('No active sessions found to clean up.');
@@ -466,6 +484,29 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     const teamDoc = await teamRef.get();
     const team = teamDoc.data() as Team | undefined;
 
+    // Double check that the session has started
+    if (team?.sessionId) {
+      const sessionRef = db.collection('sessions').doc(team.sessionId);
+      const sessionDoc = await sessionRef.get();
+      const session = sessionDoc.data() as Session | undefined;
+      if (session && !session.started) {
+        console.error(
+          `Received attempt to connect to an inactive session: ${team.sessionId}`,
+        );
+        ws.close(4002, `${team.sessionId} has not yet started.`);
+        return;
+      }
+    }
+
+    // Check that the user is part of the team
+    if (team && !team.memberIds.includes(urlParts[3])) {
+      console.error(
+        `User with ID ${urlParts[3]} is not part of team ${team.id}.`,
+      );
+      ws.close(4003, 'User is not part of the team.');
+      return;
+    }
+
     if (team?.containerId && userName) {
       console.log(`WebSocket connection established for ${userName}.`);
 
@@ -497,9 +538,11 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
         // Handle the different ways the docker stream can end
         stream.once('error', (err: Error) => {
           ws.close(1011, 'Stream error: ' + err.message);
+          return;
         });
         stream.once('close', () => {
           ws.close();
+          return;
         });
 
         // Handle input from the user
@@ -509,6 +552,7 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
 
         ws.on('close', () => {
           console.log(`Connection closed for ${userName}`);
+          return;
         });
       } catch (error) {
         throw error;
@@ -516,6 +560,7 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     } else {
       console.error('Container or user not found for WebSocket connection.');
       ws.close(1011, 'Target container not available.');
+      return;
     }
   });
 }
