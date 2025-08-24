@@ -5,9 +5,11 @@ import {WebSocket, WebSocketServer} from 'ws';
 import * as Docker from 'dockerode';
 import {Duplex, PassThrough} from 'stream';
 import * as crypto from 'crypto';
+import {machineIdSync} from 'node-machine-id';
 
 import {initializeApp, ServiceAccount, cert} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
+import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
@@ -21,6 +23,7 @@ initializeApp({
 });
 
 const db = getFirestore();
+const serverId = machineIdSync();
 
 /**
  * An interface representing a user in the session.
@@ -70,8 +73,12 @@ interface Session {
   numUsers: number;
   /** The index of the selected scenario. */
   selectedScenario: number;
+  /** The UID of the admin who created the session. */
+  adminUid: string;
   /** Indicates whether the session has started. */
   started: boolean;
+  /** The ID of the server that created the session. */
+  serverId: string;
   /** A unique identifier for the session. */
   id: string;
 }
@@ -83,6 +90,22 @@ interface Session {
  */
 function generateId(): string {
   return crypto.randomBytes(8).toString('hex');
+}
+
+/**
+ * Verifies a Firebase ID token and returns the user's UID.
+ * @param token The Firebase ID token to verify.
+ * @returns A Promise that resolves with the user's UID string.
+ */
+async function verifyToken(token: string): Promise<string> {
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    return decodedToken.uid;
+  } catch (error) {
+    const errorMessage = `Token verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    console.error(errorMessage);
+    return '';
+  }
 }
 
 /**
@@ -188,11 +211,11 @@ async function createTeam(
     // Start the container
     await container.start();
 
-    // Return a Team object literal
+    // Return a Team object
     return {
       name,
       numMembers,
-      memberIds: ['xBk4mdHShxF9V0yzuWHK'], // For testing only, should be empty initially
+      memberIds: [], // For testing only, should be empty initially
       containerId,
       networkId,
       networkName,
@@ -216,6 +239,7 @@ async function createSession(
   selectedScenario: number,
   numTeams: number,
   numMembersPerTeam: number,
+  senderUid: string,
 ): Promise<void> {
   console.log(`--- Starting Scenario ${selectedScenario} Setup ---`);
 
@@ -260,6 +284,7 @@ async function createSession(
     const teamRef = db.collection('teams').doc(team.id);
     await teamRef.set(team);
     teamIds.push(team.id);
+    console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
   // Create a session object
@@ -268,7 +293,9 @@ async function createSession(
     numTeams,
     numUsers: numTeams * numMembersPerTeam,
     selectedScenario,
+    adminUid: senderUid,
     started: false,
+    serverId,
     id: sessionId,
   };
 
@@ -284,15 +311,25 @@ async function createSession(
  * @param sessionId The ID of the session to start.
  * @returns A Promise that resolves when the session is started.
  **/
-async function startSession(sessionId: string): Promise<void> {
+async function startSession(
+  sessionId: string,
+  senderUid: string,
+): Promise<void> {
   const sessionRef = db.collection('sessions').doc(sessionId);
   const sessionDoc = await sessionRef.get();
   const sessionData = sessionDoc.data() as Session;
 
   console.log(`Starting session with ID: ${sessionId}`);
+  if (sessionData === undefined) {
+    return console.log('Session not found.');
+  }
 
   if (sessionData.started) {
     return console.log('Session already started.');
+  }
+
+  if (senderUid !== sessionData.adminUid) {
+    return console.log('Only the session admin can start the session.');
   }
 
   const teams = sessionData?.teamIds || [];
@@ -307,27 +344,35 @@ async function startSession(sessionId: string): Promise<void> {
     const teamDoc = await teamRef.get();
     const team = teamDoc.data() as Team;
 
-    console.log(`Starting team ${team.name} with ID: ${teamId}`);
-
     for (const userId of team.memberIds) {
       const userRef = db.collection('login').doc(userId);
       const userDoc = await userRef.get();
       const userData = userDoc.data() as User;
 
-      console.log(`Creating user ${userData.userName}`);
+      console.log(`Creating user ${userData.userName} with ID ${userData.UID}`);
 
       await createUser(team.containerId, userData.userName);
     }
   }
+
+  // Update the session to mark it as started
+  sessionData.started = true;
+  await sessionRef.set(sessionData);
+
+  console.log(`Session ${sessionId} started successfully.`);
 }
 
 /**
  * Fetches all sessions from Firestore and removes them from the local machine.
+ * Only tries to clean up sessions that were created by this server instance.
  * @returns A Promise that resolves when all sessions have been cleaned up.
  */
 async function cleanupAllSessions(): Promise<void> {
   console.log('--- Starting Cleanup of All Sessions ---');
-  const sessionsSnapshot = await db.collection('sessions').get();
+  const sessionsSnapshot = await db
+    .collection('sessions')
+    .where('serverId', '==', serverId)
+    .get();
 
   if (sessionsSnapshot.empty) {
     console.log('No active sessions found to clean up.');
@@ -419,6 +464,16 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     }
 
     // Verify the token
+    try {
+      const senderUid = await verifyToken(urlParts[4]);
+      if (!senderUid || senderUid.length === 0) {
+        throw new Error('Invalid token');
+      }
+    } catch (error) {
+      console.error('WebSocket token verification failed:', error);
+      ws.close(4001, 'Unauthorized');
+      return;
+    }
 
     // Look up the team and user based on the URL parameters
     const userNameRef = db.collection('login').doc(urlParts[3]);
@@ -427,6 +482,29 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     const teamRef = db.collection('teams').doc(urlParts[2]);
     const teamDoc = await teamRef.get();
     const team = teamDoc.data() as Team | undefined;
+
+    // Double check that the session has started
+    if (team?.sessionId) {
+      const sessionRef = db.collection('sessions').doc(team.sessionId);
+      const sessionDoc = await sessionRef.get();
+      const session = sessionDoc.data() as Session | undefined;
+      if (session && !session.started) {
+        console.error(
+          `Received attempt to connect to an inactive session: ${team.sessionId}`,
+        );
+        ws.close(4002, `${team.sessionId} has not yet started.`);
+        return;
+      }
+    }
+
+    // Check that the user is part of the team
+    if (team && !team.memberIds.includes(urlParts[3])) {
+      console.error(
+        `User with ID ${urlParts[3]} is not part of team ${team.id}.`,
+      );
+      ws.close(4003, 'User is not part of the team.');
+      return;
+    }
 
     if (team?.containerId && userName) {
       console.log(`WebSocket connection established for ${userName}.`);
@@ -456,6 +534,16 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
         // Let dockerode handle the combining of streams
         docker.modem.demuxStream(stream, stdout, stderr);
 
+        // Handle the different ways the docker stream can end
+        stream.once('error', (err: Error) => {
+          ws.close(1011, 'Stream error: ' + err.message);
+          return;
+        });
+        stream.once('close', () => {
+          ws.close();
+          return;
+        });
+
         // Handle input from the user
         ws.on('message', (data: WebSocket) => {
           stream.write(data);
@@ -463,6 +551,7 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
 
         ws.on('close', () => {
           console.log(`Connection closed for ${userName}`);
+          return;
         });
       } catch (error) {
         throw error;
@@ -470,6 +559,7 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     } else {
       console.error('Container or user not found for WebSocket connection.');
       ws.close(1011, 'Target container not available.');
+      return;
     }
   });
 }
@@ -496,6 +586,16 @@ async function main() {
       const {selectedScenario, numTeams, numMembersPerTeam, token} = req.body;
 
       // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
 
       // Validate incoming data
       if (
@@ -504,11 +604,16 @@ async function main() {
         typeof numMembersPerTeam !== 'number'
       ) {
         // If data is missing or invalid, send a 'Bad Request' response
-        return res.status(400).json({error: 'Invalid request body'}).send();
+        return res.status(400).json({result: 'Invalid request body'}).send();
       }
 
       // Create the new session
-      await createSession(selectedScenario, numTeams, numMembersPerTeam);
+      await createSession(
+        selectedScenario,
+        numTeams,
+        numMembersPerTeam,
+        senderUid,
+      );
 
       // Send a success response back to the sender
       console.log('Received data:', {
@@ -534,6 +639,16 @@ async function main() {
       const {sessionId, token} = req.body;
 
       // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
 
       // Check if sessionId is provided and is a string
       if (typeof sessionId !== 'string') {
@@ -541,7 +656,7 @@ async function main() {
       }
 
       // Start the session
-      await startSession(sessionId.trim());
+      await startSession(sessionId.trim(), senderUid);
       return res
         .status(200)
         .json({result: 'Session started successfully'})
