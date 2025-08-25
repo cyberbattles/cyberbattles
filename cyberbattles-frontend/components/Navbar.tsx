@@ -6,22 +6,26 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 function Navbar() {
-    let items = ["Home", "Lab", "Learn"]
-    let links = ["/", "/lab", "/learn"]
-    let loggedIn = false
-    let dname = null
+    const genericItems = ["Home", "Lab", "Learn"]
+    const genericLinks = ["/", "/lab", "/learn"]
+    const userItems = ["Home", "leaderboard", "traffic", "shell"]
+    const userLinks = ["/", "/", "/", "/", "/"]
 
+    const [[loggedIn, dname, items, links], setLoggedIn] = useState([false, "", genericItems, genericLinks]);
+
+    {/* Check if the user auth state has changed. If so update the navbar */}
     try{
-        const user = auth.currentUser;
-        if (user) {
-            // User is signed in, see docs for a list of available properties
-            // https://firebase.google.com/docs/reference/js/auth.user
-            loggedIn = true
-            dname = user.displayName;
-            items = ["Home", "leaderboard", "traffic", "shell"]
-            links = ["/", "/test", "/test", "/test", "/test"]
-        }
+        onAuthStateChanged(auth, (user) => {
+            if (user && !loggedIn){
+                let dispName = ""
+                if (user.displayName){
+                    dispName = user.displayName
+                }
+                setLoggedIn([true, dispName, userItems, userLinks])
+            }
+        })
     }  catch (error) {
+        setLoggedIn([false, "", genericItems, genericLinks])
         console.error("Navbar failed:", error);
     }
     
@@ -58,7 +62,10 @@ function Navbar() {
                     </Link>
                     }
                 </ul>
+                { loggedIn &&
                 <div className="w-20 h-20 bg-gray-300 rounded-full ml-5 mr-10"></div>
+                }
+                
             </div>
                 
         </div>
@@ -66,4 +73,4 @@ function Navbar() {
     )
 }
 
-export default Navbar
+export default Navbar;
