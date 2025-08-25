@@ -14,7 +14,7 @@ function Navbar({loggedIn}: Props) {
     let links = ["/", "/lab", "/learn"]
     if (loggedIn){
         console.log("hit")
-        items = ["Home", "leaderboard", "traffic", "shell"]
+        items = ["Home", "Leaderboard", "Traffic", "Shell"]
         links = ["/", "/test", "/test", "/test", "/test"]
     }
     return(
@@ -26,7 +26,7 @@ function Navbar({loggedIn}: Props) {
                     {/* Create each navbar item with its relevant link */}
                     {items.map((item, index) => (
                         <Link key={item} href={links[index]}>
-                        <li key={item} className="ml-20 lowercase text-2xl hover:scale-105 duration-300">
+                        <li key={item} className="ml-20 text-2xl hover:scale-110 duration-300">
                             {item}
                         </li>
                         </Link>
@@ -36,7 +36,7 @@ function Navbar({loggedIn}: Props) {
             <div className="flex justify-between items-center">
                 <ul className="hidden sm:flex">
                     <Link href="/login">
-                    <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300">
+                    <li className="mr-20 text-2xl hover:scale-110 duration-300">
                         Login
                     </li>
                     </Link>
