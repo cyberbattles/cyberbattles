@@ -53,6 +53,11 @@ const Dashboard = () => {
                     Settings
                   </a>
                 </li>
+                <li>
+                  <a href="/team" className="hover:text-blue-400">
+                    Join a challenge
+                  </a>
+                </li>
               </ul>
             </nav>
           </aside>
@@ -61,7 +66,7 @@ const Dashboard = () => {
           <main className="flex-1 p-8 overflow-auto">
             {/* Header */}
             <header className="flex justify-between items-center mb-8">
-              <h1 className="text-2xl font-bold">Welcome, User!</h1>
+              <h1 className="text-2xl font-bold">Welcome to cyberbattles.</h1>
               <div className="flex gap-4">
                 <button
                   className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
