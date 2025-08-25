@@ -84,6 +84,28 @@ interface Session {
 }
 
 /**
+ * An interface representing a result of creating a session.
+ */
+interface CreateSessionResult {
+  /** The ID of the newly created session */
+  sessionId: string;
+  /** The IDs of the newly created teams */
+  teamIds: string[];
+}
+
+/**
+ * An interface representing a result of starting a session.
+ */
+interface StartSessionResult {
+  /** True if the session was started successfully, false otherwise. */
+  success: boolean;
+  /** A message containing additional information about the start. */
+  message: string;
+  /** A dictionary of teams and their members if the start was successful. */
+  teamsAndMembers?: {[key: string]: string[]};
+}
+
+/**
  * Generates a unique ID using crypto.randomBytes.
  *
  * @returns A string representing a unique ID.
@@ -233,14 +255,14 @@ async function createTeam(
  * @param selectedScenario The index of the scenario to use.
  * @param numTeams The number of teams to create.
  * @param numMembersPerTeam The number of members in each team.
- * @returns A Promise that resolves when the session is created.
+ * @returns A Promise that resolves to an object containing the session and team IDs.
  */
 async function createSession(
   selectedScenario: number,
   numTeams: number,
   numMembersPerTeam: number,
   senderUid: string,
-): Promise<void> {
+): Promise<CreateSessionResult> {
   console.log(`--- Starting Scenario ${selectedScenario} Setup ---`);
 
   // Exit if selected scenario is invalid
@@ -303,46 +325,65 @@ async function createSession(
   const taskRef = db.collection('sessions').doc(session.id);
   await taskRef.set(session);
   console.log('Uploaded session data to Firestore:', session.id);
+
+  return {sessionId, teamIds};
 }
 
 /**
  * Starts a session by retrieving the session data from Firestore,
  * obtaining the teams, and creating users in the Docker containers.
  * @param sessionId The ID of the session to start.
- * @returns A Promise that resolves when the session is started.
+ * @param senderUid The UID of the user starting the session.
+ * @returns A Promise that resolves to a string with a result message when finished.
  **/
 async function startSession(
   sessionId: string,
   senderUid: string,
-): Promise<void> {
+): Promise<StartSessionResult> {
   const sessionRef = db.collection('sessions').doc(sessionId);
   const sessionDoc = await sessionRef.get();
   const sessionData = sessionDoc.data() as Session;
 
   console.log(`Starting session with ID: ${sessionId}`);
   if (sessionData === undefined) {
-    return console.log('Session not found.');
+    const errorMessage = 'Session not found.';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
   }
 
   if (sessionData.started) {
-    return console.log('Session already started.');
+    const errorMessage = 'Session is already started.';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
   }
 
   if (senderUid !== sessionData.adminUid) {
-    return console.log('Only the session admin can start the session.');
+    const errorMessage = 'Only the session admin can start the session.';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
   }
 
-  const teams = sessionData?.teamIds || [];
+  const teamIds = sessionData?.teamIds || [];
+  const teams: Team[] = [];
 
-  if (teams.length === 0) {
-    throw new Error('No teams found in session.');
+  if (teamIds.length === 0) {
+    const errorMessage = 'No teams found in this session';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
   }
 
-  for (const teamId of teams) {
+  for (const teamId of teamIds) {
     // Get the team members from Firestore and create users in the container for each
     const teamRef = db.collection('teams').doc(teamId);
     const teamDoc = await teamRef.get();
     const team = teamDoc.data() as Team;
+    teams.push(team);
+
+    if (!team) {
+      const errorMessage = `Team with ID ${teamId} not found.`;
+      console.error(errorMessage);
+      return {success: false, message: errorMessage};
+    }
 
     for (const userId of team.memberIds) {
       const userRef = db.collection('login').doc(userId);
@@ -359,7 +400,14 @@ async function startSession(
   sessionData.started = true;
   await sessionRef.set(sessionData);
 
-  console.log(`Session ${sessionId} started successfully.`);
+  const teamsAndMembers: {[key: string]: string[]} = {};
+  teams.forEach(team => {
+    teamsAndMembers[team.name] = team.memberIds;
+  });
+
+  const result = `Session ${sessionId} started successfully.`;
+  console.log(result);
+  return {success: true, message: result, teamsAndMembers};
 }
 
 /**
@@ -608,23 +656,14 @@ async function main() {
       }
 
       // Create the new session
-      await createSession(
+      const result: CreateSessionResult = await createSession(
         selectedScenario,
         numTeams,
         numMembersPerTeam,
         senderUid,
       );
 
-      // Send a success response back to the sender
-      console.log('Received data:', {
-        selectedScenario,
-        numTeams,
-        numMembersPerTeam,
-      });
-      return res
-        .status(201)
-        .json({result: 'Sucessfully created session'})
-        .send();
+      return res.status(201).json({result: result}).send();
     } catch (error) {
       const errorMessage = `Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error(errorMessage);
@@ -656,11 +695,22 @@ async function main() {
       }
 
       // Start the session
-      await startSession(sessionId.trim(), senderUid);
-      return res
-        .status(200)
-        .json({result: 'Session started successfully'})
-        .send();
+      const result: StartSessionResult = await startSession(
+        sessionId.trim(),
+        senderUid,
+      );
+
+      if (!result.success) {
+        return res.status(400).json({result: result.message}).send();
+      } else {
+        return res
+          .status(200)
+          .json({
+            result: result.message,
+            teamsAndMembers: result.teamsAndMembers,
+          })
+          .send();
+      }
     } catch (error) {
       const errorMessage = `Error starting session: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error(errorMessage);
