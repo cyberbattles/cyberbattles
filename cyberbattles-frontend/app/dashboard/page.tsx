@@ -22,7 +22,7 @@ const Dashboard = () => {
     return (
       <>
         {/* Fixed Navbar */}
-        <Navbar loggedIn={true} />
+        <Navbar />
   
         {/* Dashboard Layout */}
         <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
