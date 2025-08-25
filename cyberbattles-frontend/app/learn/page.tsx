@@ -18,7 +18,7 @@ export default function LearnPage() {
 
   return (
     <>
-    <Navbar loggedIn={true}/>
+    <Navbar/>
 
     <div className="p-10">
       
