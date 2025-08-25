@@ -39,7 +39,8 @@
         margin-bottom: 10px;
       }
       input[type='text'],
-      input[type='number'] {
+      input[type='number'],
+      select {
         background-color: #333;
         color: #f0f0f0;
         border: 1px solid #555;
@@ -63,6 +64,29 @@
       #terminal {
         border: 1px solid #555;
       }
+      #session-info {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #2a2a2a;
+        border-radius: 4px;
+        border: 1px solid #444;
+      }
+      #session-info h3 {
+        margin-top: 0;
+        color: #00aaff;
+      }
+      #session-info ul {
+        list-style-type: none;
+        padding-left: 0;
+        margin: 0;
+      }
+      #session-info li {
+        background-color: #333;
+        padding: 5px 8px;
+        border-radius: 3px;
+        margin-bottom: 5px;
+        font-family: monospace;
+      }
     </style>
   </head>
   <body>
@@ -84,13 +108,9 @@
         <hr style="border-color: #444; margin: 15px 0" />
         <div class="controls">
           <label for="scenario-index">Scenario:</label>
-          <input
-            type="number"
-            id="scenario-index"
-            name="scenario-index"
-            value="0"
-            min="0"
-          />
+          <select id="scenario-index" name="scenario-index">
+            <option value="0">0: ubuntu:latest</option>
+          </select>
           <label for="num-teams">Num Teams:</label>
           <input
             type="number"
@@ -115,9 +135,14 @@
             type="text"
             id="session-id"
             name="session-id"
-            placeholder="Enter Session ID to Start"
+            placeholder="Autofilled after creation"
+            readonly
           />
           <button id="start-session-btn">Start Session</button>
+        </div>
+        <div id="session-info" style="display: none">
+          <h3>Created Team IDs</h3>
+          <ul id="team-id-list"></ul>
         </div>
       </fieldset>
 
@@ -125,25 +150,19 @@
         <legend>Terminal Connection</legend>
         <div class="controls">
           <label for="teamId">Team ID:</label>
-          <input
-            type="text"
-            id="teamId"
-            name="teamId"
-            placeholder="Enter Team ID"
-          />
+          <select id="teamId" name="teamId">
+            <option>-- Start a session first --</option>
+          </select>
           <label for="userId">User ID:</label>
-          <input
-            type="text"
-            id="userId"
-            name="userId"
-            placeholder="Enter User ID"
-          />
+          <select id="userId" name="userId">
+            <option>-- Select a team first --</option>
+          </select>
           <label for="jwt-token">JWT:</label>
           <input
             type="text"
             id="jwt-token"
             name="jwt-token"
-            placeholder="Paste your user JWT here"
+            placeholder="Autofills from Admin JWT"
             size="60"
           />
           <button id="connect-btn">Connect to Terminal</button>
@@ -169,6 +188,8 @@
       term.write('Welcome! Use the controls above to manage sessions.\r\n');
 
       let ws; // To hold the WebSocket instance
+      let sessionTeams = []; // To hold details for populating dropdowns
+      let createdTeamIds = []; // To hold IDs from session creation
 
       /**
        * A helper function to send POST requests to the server API.
@@ -183,12 +204,18 @@
           },
           body: JSON.stringify(data),
         });
+        const responseData = await response.json().catch(() => ({}));
         return {
           ok: response.ok,
           status: response.status,
-          data: response.ok ? await response.json().catch(() => ({})) : null,
+          data: responseData,
         };
       }
+
+      // --- Event Listener for JWT Autofill ---
+      document.getElementById('admin-jwt').addEventListener('input', event => {
+        document.getElementById('jwt-token').value = event.target.value;
+      });
 
       // --- Event Listener for Creating a Session ---
       document
@@ -218,14 +245,31 @@
             token,
           });
 
-          if (response.ok) {
+          if (response.ok && response.data.result) {
+            const {sessionId, teamIds} = response.data.result;
             term.write(
-              `SUCCESS: Session creation process started (Status: ${response.status}).\r\n`,
+              `SUCCESS: Session ${sessionId} created with ${teamIds.length} teams.\r\n`,
             );
-            term.write('Check your server logs for the new session ID.\r\n');
+
+            // Autofill session ID and store team IDs
+            document.getElementById('session-id').value = sessionId;
+            createdTeamIds = teamIds;
+
+            // Display team IDs elegantly
+            const teamList = document.getElementById('team-id-list');
+            const sessionInfoDiv = document.getElementById('session-info');
+            teamList.innerHTML = ''; // Clear previous list
+            teamIds.forEach(id => {
+              const listItem = document.createElement('li');
+              listItem.textContent = id;
+              teamList.appendChild(listItem);
+            });
+            sessionInfoDiv.style.display = 'block';
           } else {
+            const errorMsg =
+              response.data.result || `Status: ${response.status}`;
             term.write(
-              `ERROR: Failed to create session (Status: ${response.status}).\r\n`,
+              `\r\nERROR: Failed to create session. Server says: ${errorMsg}\r\n`,
             );
           }
         });
@@ -237,7 +281,7 @@
           const sessionId = document.getElementById('session-id').value;
           const token = document.getElementById('admin-jwt').value;
           if (!sessionId) {
-            term.write('\r\nERROR: Please enter a Session ID.\r\n');
+            term.write('\r\nERROR: No Session ID found to start.\r\n');
             return;
           }
           if (!token) {
@@ -255,14 +299,88 @@
 
           if (response.ok) {
             term.write(
-              `SUCCESS: Session start process initiated (Status: ${response.status}).\r\n`,
+              `SUCCESS: ${response.data.result} (Status: ${response.status}).\r\n`,
             );
+            // Process the teams and members to populate dropdowns
+            populateConnectionDropdowns(response.data.teamsAndMembers);
           } else {
+            const errorMsg =
+              response.data.result || `Status: ${response.status}`;
             term.write(
-              `ERROR: Failed to start session (Status: ${response.status}).\r\n`,
+              `\r\nERROR: Failed to start session. Server says: ${errorMsg}\r\n`,
             );
           }
         });
+
+      /**
+       * Populates the Team and User dropdowns based on the server response.
+       * @param {object} teamsAndMembers - The object mapping team names to user IDs.
+       */
+      function populateConnectionDropdowns(teamsAndMembers) {
+        if (!teamsAndMembers || createdTeamIds.length === 0) {
+          term.write(
+            '\r\nWARN: No team data received or session not created properly.\r\n',
+          );
+          return;
+        }
+
+        const teamSelect = document.getElementById('teamId');
+        teamSelect.innerHTML = '';
+        sessionTeams = [];
+
+        // Sort team names naturally (e.g., Team-1, Team-2, Team-10)
+        const sortedTeamNames = Object.keys(teamsAndMembers).sort((a, b) =>
+          a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}),
+        );
+
+        // Assuming the order of createdTeamIds matches the sorted team names
+        sortedTeamNames.forEach((teamName, index) => {
+          const teamId = createdTeamIds[index];
+          if (teamId) {
+            sessionTeams.push({
+              name: teamName,
+              id: teamId,
+              users: teamsAndMembers[teamName],
+            });
+
+            const option = document.createElement('option');
+            option.value = teamId;
+            option.textContent = `${teamName} (${teamId})`;
+            teamSelect.appendChild(option);
+          }
+        });
+
+        // Add change listener to team dropdown
+        teamSelect.addEventListener('change', updateUserDropdown);
+
+        // Trigger the change event to populate the user dropdown for the first team
+        teamSelect.dispatchEvent(new Event('change'));
+      }
+
+      /**
+       * Updates the User ID dropdown when a team is selected.
+       */
+      function updateUserDropdown() {
+        const teamSelect = document.getElementById('teamId');
+        const userSelect = document.getElementById('userId');
+        const selectedTeamId = teamSelect.value;
+        userSelect.innerHTML = '';
+
+        const selectedTeam = sessionTeams.find(t => t.id === selectedTeamId);
+
+        if (selectedTeam && selectedTeam.users.length > 0) {
+          selectedTeam.users.forEach(userId => {
+            const option = document.createElement('option');
+            option.value = userId;
+            option.textContent = userId;
+            userSelect.appendChild(option);
+          });
+        } else {
+          const option = document.createElement('option');
+          option.textContent = '-- No users in team --';
+          userSelect.appendChild(option);
+        }
+      }
 
       // --- Event Listener for WebSocket Terminal Connection ---
       document.getElementById('connect-btn').addEventListener('click', () => {
@@ -276,7 +394,7 @@
         const token = document.getElementById('jwt-token').value;
 
         if (!teamId || !userId || !token) {
-          term.write('Please enter a Team ID, a User ID, and a JWT token.\r\n');
+          term.write('Please select a Team, a User, and provide a JWT.\r\n');
           return;
         }
 
