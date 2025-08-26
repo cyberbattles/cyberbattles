@@ -13,7 +13,7 @@ import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
-const SCENARIOS: string[] = ['ubuntu:latest'];
+const SCENARIOS: string[] = ['ubuntu:latest', 'sudobuntu'];
 
 const docker = new Docker();
 
@@ -130,23 +130,35 @@ async function verifyToken(token: string): Promise<string> {
 }
 
 /**
- * A helper function to run a command in a container and wait for it to complete.
- * This is the key to making the process reliable.
+ * A helper function to run a command in a container and reliably wait for it to complete.
+ * @param container The Docker Container in which the command will be run
+ * @param command The command to run
+ * @returns A Promise that resolves when the command finishes.
  */
 async function runCommandInContainer(
   container: Docker.Container,
   command: string[],
 ): Promise<void> {
+  // Run command
   const exec = await container.exec({
     Cmd: command,
     AttachStdout: true,
     AttachStderr: true,
   });
 
+  // Hijack stream
   const stream = await exec.start({});
 
-  // Wait for the command to finish by listening for the stream to end.
+  // Hook into the docker terminal stream
+  container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+  // Await a promise that resolves when the stream ends (command completes).
   await new Promise<void>((resolve, reject) => {
+    // Handle stream errors
+    stream.on('error', err => {
+      reject(err);
+    });
+
     stream.on('end', () => {
       // After the stream ends, inspect the exec to get the exit code
       exec.inspect((err, data) => {
@@ -157,7 +169,9 @@ async function runCommandInContainer(
           // The command failed. Reject the promise.
           return reject(
             new Error(
-              `Command "${command.join(' ')}" failed with exit code ${data.ExitCode}`,
+              `Command "${command.join(' ')}" failed with exit code ${
+                data.ExitCode
+              }`,
             ),
           );
         }
@@ -179,13 +193,6 @@ async function createUser(
 ): Promise<void> {
   try {
     const container = docker.getContainer(containerId);
-
-    // Install sudo and wait for it to complete
-    await runCommandInContainer(container, [
-      '/bin/sh',
-      '-c',
-      'apt-get update && apt-get install -y sudo',
-    ]);
 
     // Create the user and grant sudo access, and wait for it to complete.
     await runCommandInContainer(container, [
@@ -239,7 +246,7 @@ async function createContainer(
       NetworkMode: `teamnet-${teamId}`,
       CpuQuota: 20_000, // This
       CpuPeriod: 100_000, // And this make a 20% CPU Usage Limit
-      Memory: 4096000000000, // 4GB RAM Limit
+      Memory: 4294967296, // 4GB RAM Limit
     },
   });
   return container.id;
@@ -285,7 +292,7 @@ async function createTeam(
     return {
       name,
       numMembers,
-      memberIds: [], // For testing only, should be empty initially
+      memberIds: [],
       containerId,
       networkId,
       networkName,
@@ -311,7 +318,7 @@ async function createSession(
   numMembersPerTeam: number,
   senderUid: string,
 ): Promise<CreateSessionResult> {
-  console.log(`--- Starting Scenario ${selectedScenario} Setup ---`);
+  console.log(`Starting Scenario ${selectedScenario} Setup`);
 
   // Exit if selected scenario is invalid
   if (selectedScenario < 0 || selectedScenario >= SCENARIOS.length) {
@@ -464,7 +471,7 @@ async function startSession(
  * @returns A Promise that resolves when all sessions have been cleaned up.
  */
 async function cleanupAllSessions(): Promise<void> {
-  console.log('--- Starting Cleanup of All Sessions ---');
+  console.log('\nStarting Cleanup of All Sessions');
   const sessionsSnapshot = await db
     .collection('sessions')
     .where('serverId', '==', serverId)
@@ -483,7 +490,7 @@ async function cleanupAllSessions(): Promise<void> {
     await sessionDoc.ref.delete();
   }
 
-  console.log('--- All Sessions Cleaned Up ---');
+  console.log('All Local Sessions Cleaned Up\n');
 }
 
 /**
