@@ -1,32 +1,33 @@
 # Docker Orchestration Server Testing Guide
 
+
 This code is only designed and tested on Linux, please use a Linux VM or WSL when testing.
 
 ### Prerequisites
 
--   **Docker:** Ensure Docker is installed and the daemon is running. You can verify your installation by opening a terminal and running the command below:
-    
-    ```
-    docker -v
-    ```
-    
+- **Docker:** Ensure Docker is installed and the daemon is running. You can verify your installation by opening a terminal and running the command below:
 
+  ```
+  docker -v
+  ```
 ### 1. Backend Setup
 
 First, get the Node.js server running.
 
-2. ```
+1. ```
    cd node
    npm i
    npx tsc
    node build/src/server.js
    ```
-5.  The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
-    
+
+
+2. The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
 
 ### 2. Frontend Setup
 
 Next, start the Next.js frontend application in a new terminal.
+
 
 1.  Open a **new terminal window or tab**.
     
@@ -37,7 +38,7 @@ Next, start the Next.js frontend application in a new terminal.
     npm run dev
     ```
     
-4.  The development server will start. Navigate to the URL provided in your terminal (this is usually `http://localhost:3000`).
+3.  The development server will start. Navigate to the URL provided in your terminal (this is usually `http://localhost:3000`).
     
 
 ### 3. Testing Workflow
@@ -73,3 +74,4 @@ Follow these steps to test the full user flow.
     -   Your JWT will be autofilled from the first time it was entered, if you want to test the token of another user you can change it still. Otherwise leave it as is.
         
     -   Click to connect.
+
