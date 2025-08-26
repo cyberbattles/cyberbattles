@@ -1,98 +1,108 @@
 import * as express from 'express';
+import {Request, Response} from 'express';
 import * as http from 'http';
 import {WebSocket, WebSocketServer} from 'ws';
 import * as Docker from 'dockerode';
 import {Duplex, PassThrough} from 'stream';
 import * as crypto from 'crypto';
-import {generate} from 'random-words';
+import {machineIdSync} from 'node-machine-id';
+
+import {initializeApp, ServiceAccount, cert} from 'firebase-admin/app';
+import {getFirestore} from 'firebase-admin/firestore';
+import {getAuth} from 'firebase-admin/auth';
+import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
 const CREATE_USER_CMD: string[] = ['useradd', '-m', '-s', '/bin/bash'];
-const SESSIONS: Session[] = [];
 const SCENARIOS: string[] = ['ubuntu:latest'];
 
 const docker = new Docker();
 
-/**
- * A class representing a user in the session.
- */
-class User {
-  /** The username of the user. */
-  username: string;
-  /** A unique identifier for the user. */
-  id: string;
+initializeApp({
+  credential: cert(serviceAccount as ServiceAccount),
+});
 
-  public constructor(username: string, id: string) {
-    this.username = username;
-    this.id = id;
-  }
+const db = getFirestore();
+const serverId = machineIdSync();
+
+/**
+ * An interface representing a user in the session.
+ */
+interface User {
+  /** A unique identifier for the user. */
+  UID: string;
+  /** The email address of the user. */
+  email: string;
+  /** The team id of the team this user belongs to. */
+  teamId: string;
+  /** The userName of the user. */
+  userName: string;
 }
 
 /**
- * A class representing a team in the session.
+ * An interface representing a team in the session.
  */
-class Team {
+interface Team {
   /** The name of the team. */
   name: string;
   /** The number of members in the team. */
   numMembers: number;
-  /** The members of the team. */
-  members: User[];
-  /** The Docker container associated with the team. */
-  container: Docker.Container;
+  /** The user ids of each member of the team. */
+  memberIds: string[];
+  /** The Docker containerId associated with the team. */
+  containerId: string;
   /** The ID of the Docker network associated with the team. */
   networkId: string;
   /** The name of the Docker network associated with the team. */
   networkName: string;
   /** A unique identifier for the team. */
   id: string;
-
-  public constructor(
-    name: string,
-    numMembers: number,
-    members: User[],
-    container: Docker.Container,
-    networkId: string,
-    networkName: string,
-    id: string,
-  ) {
-    this.name = name;
-    this.numMembers = numMembers;
-    this.members = members;
-    this.container = container;
-    this.networkId = networkId;
-    this.networkName = networkName;
-    this.id = id;
-  }
+  /** The session ID of the session this team belongs to. */
+  sessionId: string;
 }
 
 /**
- * A class representing a session containing multiple teams.
+ * An interface representing a session containing multiple teams.
  */
-class Session {
+interface Session {
   /** The teams in the session. */
-  teams: Team[];
+  teamIds: string[];
   /** The number of teams in the session. */
   numTeams: number;
   /** The number of users in the session. */
   numUsers: number;
   /** The index of the selected scenario. */
   selectedScenario: number;
+  /** The UID of the admin who created the session. */
+  adminUid: string;
+  /** Indicates whether the session has started. */
+  started: boolean;
+  /** The ID of the server that created the session. */
+  serverId: string;
   /** A unique identifier for the session. */
   id: string;
+}
 
-  public constructor(
-    teams: Team[],
-    numTeams: number,
-    numUsers: number,
-    selectedScenario: number,
-  ) {
-    this.teams = teams;
-    this.numTeams = numTeams;
-    this.numUsers = numUsers;
-    this.selectedScenario = selectedScenario;
-    this.id = crypto.randomBytes(16).toString('hex');
-  }
+/**
+ * An interface representing a result of creating a session.
+ */
+interface CreateSessionResult {
+  /** The ID of the newly created session */
+  sessionId: string;
+  /** The IDs of the newly created teams */
+  teamIds: string[];
+}
+
+/**
+ * An interface representing a result of starting a session.
+ */
+interface StartSessionResult {
+  /** True if the session was started successfully, false otherwise. */
+  success: boolean;
+  /** A message containing additional information about the start. */
+  message: string;
+  /** A dictionary of teams and their members if the start was successful. */
+  teamsAndMembers?: {[key: string]: string[]};
 }
 
 /**
@@ -105,33 +115,44 @@ function generateId(): string {
 }
 
 /**
- * Creates a new user in the specified Docker container.
- * Usernames are generated randomly using the `random-words` package.
- * @param container The Docker container in which to create the user.
- * @returns A Promise that resolves to a User object containing the username and ID.
+ * Verifies a Firebase ID token and returns the user's UID.
+ * @param token The Firebase ID token to verify.
+ * @returns A Promise that resolves with the user's UID string.
  */
-async function createUser(container: Docker.Container): Promise<User> {
-  // Generate a random username
-  const username = generate({
-    min: 1,
-    max: 2,
-    minLength: 4,
-    maxLength: 8,
-    join: '-',
-  });
+async function verifyToken(token: string): Promise<string> {
+  try {
+    const decodedToken = await getAuth().verifyIdToken(token);
+    return decodedToken.uid;
+  } catch (error) {
+    const errorMessage = `Token verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    console.error(errorMessage);
+    return '';
+  }
+}
 
-  // Generate a unique ID for the user
-  const id: string = generateId();
+/**
+ * Creates a new user in the specified Docker container, with the given userName.
+ * @param containerId The ID of the Docker Container in which to create the user.
+ * @param userName The userName to assign to the new user.
+ * @returns A Promise that resolves to a User object containing the userName and ID.
+ */
+async function createUser(
+  containerId: string,
+  userName: string,
+): Promise<void> {
+  try {
+    const container = docker.getContainer(containerId);
 
-  // Create the user in the container
-  const exec = await container.exec({
-    Cmd: [...CREATE_USER_CMD, username],
-    AttachStdout: true,
-    AttachStderr: true,
-  });
-  await exec.start({});
-
-  return new User(username, id);
+    // Create the user in the container
+    const exec = await container.exec({
+      Cmd: [...CREATE_USER_CMD, userName],
+      AttachStdout: true,
+      AttachStderr: true,
+    });
+    await exec.start({});
+  } catch (error) {
+    throw new Error('Create User Error: Container not found.');
+  }
 }
 
 /**
@@ -157,13 +178,13 @@ async function createNetwork(
  * @param image The Docker image to use for the container.
  * @param teamName The name of the team.
  * @param teamId The unique ID of the team.
- * @returns A Promise that resolves to the created Docker container.
- */
+ * @returns A Promise that resolves to the created Docker ccontacontainerId
+ **/
 async function createContainer(
   image: string,
   teamName: string,
   teamId: string,
-): Promise<Docker.Container> {
+): Promise<string> {
   const container = await docker.createContainer({
     Image: image,
     Cmd: ['/bin/bash'],
@@ -173,7 +194,7 @@ async function createContainer(
       NetworkMode: `teamnet-${teamId}`,
     },
   });
-  return container;
+  return container.id;
 }
 
 /**
@@ -187,6 +208,7 @@ async function createTeam(
   name: string,
   numMembers: number,
   selectedScenario: number,
+  sessionId: string,
 ): Promise<Team> {
   // Check if the scenario is valid
   const dockerImage = SCENARIOS.at(selectedScenario);
@@ -203,45 +225,44 @@ async function createTeam(
   const {networkId, networkName} = await createNetwork(teamId);
 
   // Create a container for the team
-  const container: Docker.Container = await createContainer(
-    dockerImage,
-    name,
-    teamId,
-  );
+  const containerId = await createContainer(dockerImage, name, teamId);
 
-  // Start the container
-  await container.start();
+  try {
+    const container = docker.getContainer(containerId);
 
-  // Create a user in the container for each member
-  const members: User[] = [];
-  for (let i = 0; i < numMembers; i++) {
-    const user: User = await createUser(container);
-    members.push(user);
+    // Start the container
+    await container.start();
+
+    // Return a Team object
+    return {
+      name,
+      numMembers,
+      memberIds: [], // For testing only, should be empty initially
+      containerId,
+      networkId,
+      networkName,
+      id: teamId,
+      sessionId,
+    };
+  } catch (error) {
+    throw error;
   }
-
-  return new Team(
-    name,
-    numMembers,
-    members,
-    container,
-    networkId,
-    networkName,
-    teamId,
-  );
 }
 
 /**
  * Starts a new session with the specified scenario, number of teams, and number of members per team.
+ * Once finished, it uploads the session data to Firestore.
  * @param selectedScenario The index of the scenario to use.
  * @param numTeams The number of teams to create.
  * @param numMembersPerTeam The number of members in each team.
- * @returns A Promise that resolves to a Session object containing the created teams and their members.
+ * @returns A Promise that resolves to an object containing the session and team IDs.
  */
-async function startSession(
+async function createSession(
   selectedScenario: number,
   numTeams: number,
   numMembersPerTeam: number,
-): Promise<Session> {
+  senderUid: string,
+): Promise<CreateSessionResult> {
   console.log(`--- Starting Scenario ${selectedScenario} Setup ---`);
 
   // Exit if selected scenario is invalid
@@ -252,7 +273,11 @@ async function startSession(
   }
 
   // Check if Docker Image is already downloaded if not, pull it
-  if (docker.getImage(SCENARIOS.at(selectedScenario) || '') === undefined) {
+  const image = docker.getImage(SCENARIOS.at(selectedScenario) || '');
+  try {
+    await image.inspect();
+    console.log('Image already exists, skipping pull.');
+  } catch (error) {
     console.log(`Pulling image: ${SCENARIOS.at(selectedScenario)}...`);
     await new Promise(resolve =>
       docker.pull(SCENARIOS.at(selectedScenario) || '', {}, (err, stream) => {
@@ -262,111 +287,436 @@ async function startSession(
       }),
     );
     console.log('Image pulled successfully.');
-  } else {
-    console.log('Docker image already exists, skipping pull.');
   }
 
-  const teams: Team[] = [];
+  // Generate a unique ID for the session
+  const sessionId: string = generateId();
+
+  // Create and store teams
+  const teamIds: string[] = [];
   for (let i = 0; i < numTeams; i++) {
     const teamName = `Team-${i + 1}`;
     const team: Team = await createTeam(
       teamName,
       numMembersPerTeam,
       selectedScenario,
+      sessionId,
     );
-    teams.push(team);
+
+    const teamRef = db.collection('teams').doc(team.id);
+    await teamRef.set(team);
+    teamIds.push(team.id);
+    console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
-  return new Session(
-    teams,
+
+  // Create a session object
+  const session: Session = {
+    teamIds,
     numTeams,
-    numTeams * numMembersPerTeam,
+    numUsers: numTeams * numMembersPerTeam,
     selectedScenario,
-  );
+    adminUid: senderUid,
+    started: false,
+    serverId,
+    id: sessionId,
+  };
+
+  // Upload session data to Firestore
+  const taskRef = db.collection('sessions').doc(session.id);
+  await taskRef.set(session);
+  console.log('Uploaded session data to Firestore:', session.id);
+
+  return {sessionId, teamIds};
 }
 
 /**
- * Cleans up the session by stopping and removing all containers and networks in a given session.
- * Removes the session from the global SESSIONS array when complete.
- * @param session The session to clean up.
+ * Starts a session by retrieving the session data from Firestore,
+ * obtaining the teams, and creating users in the Docker containers.
+ * @param sessionId The ID of the session to start.
+ * @param senderUid The UID of the user starting the session.
+ * @returns A Promise that resolves to a string with a result message when finished.
+ **/
+async function startSession(
+  sessionId: string,
+  senderUid: string,
+): Promise<StartSessionResult> {
+  const sessionRef = db.collection('sessions').doc(sessionId);
+  const sessionDoc = await sessionRef.get();
+  const sessionData = sessionDoc.data() as Session;
+
+  console.log(`Starting session with ID: ${sessionId}`);
+  if (sessionData === undefined) {
+    const errorMessage = 'Session not found.';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
+  }
+
+  if (sessionData.started) {
+    const errorMessage = 'Session is already started.';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
+  }
+
+  if (senderUid !== sessionData.adminUid) {
+    const errorMessage = 'Only the session admin can start the session.';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
+  }
+
+  const teamIds = sessionData?.teamIds || [];
+  const teams: Team[] = [];
+
+  if (teamIds.length === 0) {
+    const errorMessage = 'No teams found in this session';
+    console.error(errorMessage);
+    return {success: false, message: errorMessage};
+  }
+
+  for (const teamId of teamIds) {
+    // Get the team members from Firestore and create users in the container for each
+    const teamRef = db.collection('teams').doc(teamId);
+    const teamDoc = await teamRef.get();
+    const team = teamDoc.data() as Team;
+    teams.push(team);
+
+    if (!team) {
+      const errorMessage = `Team with ID ${teamId} not found.`;
+      console.error(errorMessage);
+      return {success: false, message: errorMessage};
+    }
+
+    for (const userId of team.memberIds) {
+      const userRef = db.collection('login').doc(userId);
+      const userDoc = await userRef.get();
+      const userData = userDoc.data() as User;
+
+      console.log(`Creating user ${userData.userName} with ID ${userData.UID}`);
+
+      await createUser(team.containerId, userData.userName);
+    }
+  }
+
+  // Update the session to mark it as started
+  sessionData.started = true;
+  await sessionRef.set(sessionData);
+
+  const teamsAndMembers: {[key: string]: string[]} = {};
+  teams.forEach(team => {
+    teamsAndMembers[team.name] = team.memberIds;
+  });
+
+  const result = `Session ${sessionId} started successfully.`;
+  console.log(result);
+  return {success: true, message: result, teamsAndMembers};
+}
+
+/**
+ * Fetches all sessions from Firestore and removes them from the local machine.
+ * Only tries to clean up sessions that were created by this server instance.
+ * @returns A Promise that resolves when all sessions have been cleaned up.
+ */
+async function cleanupAllSessions(): Promise<void> {
+  console.log('--- Starting Cleanup of All Sessions ---');
+  const sessionsSnapshot = await db
+    .collection('sessions')
+    .where('serverId', '==', serverId)
+    .get();
+
+  if (sessionsSnapshot.empty) {
+    console.log('No active sessions found to clean up.');
+    return;
+  }
+
+  for (const sessionDoc of sessionsSnapshot.docs) {
+    const data = sessionDoc.data() as Session | undefined;
+    if (data) {
+      await cleanupSession(sessionDoc.data() as Session);
+    }
+    await sessionDoc.ref.delete();
+  }
+
+  console.log('--- All Sessions Cleaned Up ---');
+}
+
+/**
+ * Cleans up a single session by stopping and removing its containers and networks.
+ * Re
+ * Deletes the session document from Firestore upon completion.
+ * @param sessionId The ID of the session to clean up.
  * @returns A Promise that resolves when the cleanup is complete.
  */
 async function cleanupSession(session: Session): Promise<void> {
-  for (const team of session.teams) {
-    // Stop and remove the container for each team
-    await team.container.stop();
-    await team.container.remove();
-    // Remove the network for each team
-    await docker.getNetwork(team.networkId).remove();
+  // Exit if the session document is invalid
+  if (!session || !session.teamIds || session.teamIds.length === 0) {
+    console.warn(`No valid team data for session ${session.id}.`);
+    return;
   }
-  SESSIONS.splice(SESSIONS.indexOf(session), 1);
-  return new Promise(resolve => {
-    resolve();
-  });
+
+  for (const teamId of session.teamIds) {
+    const teamRef = db.collection('teams').doc(teamId);
+    const teamDoc = await teamRef.get();
+    const team = teamDoc.data() as Team;
+
+    if (!team) continue;
+
+    // Stop and remove the container
+    try {
+      const container = docker.getContainer(team.containerId);
+      await container.stop();
+      await container.remove();
+      console.log(`Removed container ${team.containerId} for team ${teamId}.`);
+    } catch (error) {
+      console.error(
+        `Cleanup Error: Container not found or already removed for team ${teamId}.`,
+      );
+    }
+
+    // Remove the network
+    try {
+      const network = docker.getNetwork(team.networkName);
+      await network.remove();
+      console.log(`Removed network ${team.networkName} for team ${teamId}.`);
+    } catch (error) {
+      console.error(
+        `Cleanup Error: Network not found or already removed for team ${teamId}.`,
+      );
+    }
+
+    // Delete the team document
+    await teamRef.delete();
+  }
+
+  // Delete the session document itself
+  console.log(`Session document ${session.id} deleted.`);
 }
 
 /**
  * Handles incoming WebSocket connections, creating and managing
  * an interactive terminal session in a Docker container.
+ * Extracts team name, user name, and token from the URL then
+ * retrieves the corresponding team and user info from Firestore.
  * @param wss The WebSocketServer instance.
  * @returns A Promise that resolves when the WebSocket server is closed.
  */
 async function handleWSConnection(wss: WebSocketServer): Promise<void> {
-  wss.on('connection', async (ws: WebSocket) => {
-    const team = SESSIONS[0]?.teams[0];
-    const user = team?.members[0];
+  wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
+    // Get the team name, user name, and token from the URL
+    const urlParts = req.url?.split('/');
+    if (!urlParts || urlParts.length !== 5 || urlParts[1] !== 'terminals') {
+      console.error('Invalid connection URL:', req.url);
+      ws.close(
+        1011,
+        'Invalid URL format. Use /terminals/{teamId}/{userId}/{token}',
+      );
+      return;
+    }
 
-    if (team?.container && user) {
-      console.log(`WebSocket connection established for ${user.username}.`);
+    // Verify the token
+    try {
+      const senderUid = await verifyToken(urlParts[4]);
+      if (!senderUid || senderUid.length === 0) {
+        throw new Error('Invalid token');
+      }
+    } catch (error) {
+      console.error('WebSocket token verification failed:', error);
+      ws.close(4001, 'Unauthorized');
+      return;
+    }
 
-      // Start a bash shell in the container as the given user
-      const exec = await team.container.exec({
-        Cmd: ['/bin/bash'],
-        User: user.username,
-        AttachStdin: true,
-        AttachStdout: true,
-        AttachStderr: true,
-        Tty: true,
-      });
+    // Look up the team and user based on the URL parameters
+    const userNameRef = db.collection('login').doc(urlParts[3]);
+    const userDoc = await userNameRef.get();
+    const userName = userDoc.data()?.userName;
+    const teamRef = db.collection('teams').doc(urlParts[2]);
+    const teamDoc = await teamRef.get();
+    const team = teamDoc.data() as Team | undefined;
 
-      // Hijack the exec command to create a terminal stream
-      const stream: Duplex = await exec.start({hijack: true, stdin: true});
+    // Double check that the session has started
+    if (team?.sessionId) {
+      const sessionRef = db.collection('sessions').doc(team.sessionId);
+      const sessionDoc = await sessionRef.get();
+      const session = sessionDoc.data() as Session | undefined;
+      if (session && !session.started) {
+        console.error(
+          `Received attempt to connect to an inactive session: ${team.sessionId}`,
+        );
+        ws.close(4002, `${team.sessionId} has not yet started.`);
+        return;
+      }
+    }
 
-      // Handle stdout and stderr streams as well
-      const stdout = new PassThrough();
-      const stderr = new PassThrough();
-      stdout.on('data', (chunk: Buffer) => ws.send(chunk));
-      stderr.on('data', (chunk: Buffer) => ws.send(chunk));
+    // Check that the user is part of the team
+    if (team && !team.memberIds.includes(urlParts[3])) {
+      console.error(
+        `User with ID ${urlParts[3]} is not part of team ${team.id}.`,
+      );
+      ws.close(4003, 'User is not part of the team.');
+      return;
+    }
 
-      // Let dockerode handle the combining of streams
-      docker.modem.demuxStream(stream, stdout, stderr);
+    if (team?.containerId && userName) {
+      console.log(`WebSocket connection established for ${userName}.`);
 
-      // Handle input from the user
-      ws.on('message', (data: WebSocket) => {
-        stream.write(data);
-      });
+      try {
+        const container = docker.getContainer(team.containerId);
 
-      ws.on('close', () => {
-        console.log(`Connection closed for ${user.username}`);
-      });
+        // Start a bash shell in the container as the given user
+        const exec = await container.exec({
+          Cmd: ['/bin/bash'],
+          User: userName,
+          AttachStdin: true,
+          AttachStdout: true,
+          AttachStderr: true,
+          Tty: true,
+        });
+
+        // Hijack the exec command to create a terminal stream
+        const stream: Duplex = await exec.start({hijack: true, stdin: true});
+
+        // Handle stdout and stderr streams as well
+        const stdout = new PassThrough();
+        const stderr = new PassThrough();
+        stdout.on('data', (chunk: Buffer) => ws.send(chunk));
+        stderr.on('data', (chunk: Buffer) => ws.send(chunk));
+
+        // Let dockerode handle the combining of streams
+        docker.modem.demuxStream(stream, stdout, stderr);
+
+        // Handle the different ways the docker stream can end
+        stream.once('error', (err: Error) => {
+          ws.close(1011, 'Stream error: ' + err.message);
+          return;
+        });
+        stream.once('close', () => {
+          ws.close();
+          return;
+        });
+
+        // Handle input from the user
+        ws.on('message', (data: WebSocket) => {
+          stream.write(data);
+        });
+
+        ws.on('close', () => {
+          console.log(`Connection closed for ${userName}`);
+          return;
+        });
+      } catch (error) {
+        throw error;
+      }
     } else {
       console.error('Container or user not found for WebSocket connection.');
       ws.close(1011, 'Target container not available.');
+      return;
     }
   });
 }
 
 async function main() {
-  // Example: Start session with scenario 0, 2 teams, 2 members each
-  const session = await startSession(0, 2, 2);
-  SESSIONS.push(session);
-
   const app = express();
+  app.use(require('sanitize').middleware);
   const server: http.Server = http.createServer(app);
   const wss = new WebSocket.Server({server});
 
+  // Serve the example xterm.js client
+  app.use(express.static('public'));
+
+  // Parse JSON request bodies
+  app.use(express.json());
+
+  // Handle WebSocket connections
   await handleWSConnection(wss);
 
-  app.use(express.static('public'));
+  // Listen for requetss to create a new session
+  app.post('/api/session', async (req: Request, res: Response) => {
+    try {
+      // Extract the data from the request body
+      const {selectedScenario, numTeams, numMembersPerTeam, token} = req.body;
+
+      // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
+
+      // Validate incoming data
+      if (
+        typeof selectedScenario !== 'number' ||
+        typeof numTeams !== 'number' ||
+        typeof numMembersPerTeam !== 'number'
+      ) {
+        // If data is missing or invalid, send a 'Bad Request' response
+        return res.status(400).json({result: 'Invalid request body'}).send();
+      }
+
+      // Create the new session
+      const result: CreateSessionResult = await createSession(
+        selectedScenario,
+        numTeams,
+        numMembersPerTeam,
+        senderUid,
+      );
+
+      return res.status(201).json({result: result}).send();
+    } catch (error) {
+      const errorMessage = `Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(errorMessage);
+      return res.status(500).json({result: errorMessage}).send();
+    }
+  });
+
+  // Listen for requests to start a session
+  app.post('/api/start-session', async (req: Request, res: Response) => {
+    try {
+      // Extract the session ID and token from the request body
+      const {sessionId, token} = req.body;
+
+      // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
+
+      // Check if sessionId is provided and is a string
+      if (typeof sessionId !== 'string') {
+        return res.status(400).json({result: 'Invalid session ID'}).send();
+      }
+
+      // Start the session
+      const result: StartSessionResult = await startSession(
+        sessionId.trim(),
+        senderUid,
+      );
+
+      if (!result.success) {
+        return res.status(400).json({result: result.message}).send();
+      } else {
+        return res
+          .status(200)
+          .json({
+            result: result.message,
+            teamsAndMembers: result.teamsAndMembers,
+          })
+          .send();
+      }
+    } catch (error) {
+      const errorMessage = `Error starting session: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(errorMessage);
+      return res.status(500).json({result: errorMessage}).send();
+    }
+  });
 
   server.listen(PORT, () => {
     console.log(`Server is running on port http://localhost:${PORT}`);
@@ -374,11 +724,8 @@ async function main() {
 }
 
 process.on('SIGINT', async function () {
-  console.log('Caught interrupt signal and beginning cleanup...');
-  for (const session of SESSIONS) {
-    console.log(`Cleaning up session ${session.id}...`);
-    await cleanupSession(session);
-  }
+  console.log('\nCaught interrupt signal and beginning cleanup...');
+  await cleanupAllSessions();
   process.exit(0);
 });
 
