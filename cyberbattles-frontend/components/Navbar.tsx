@@ -8,7 +8,7 @@ import { auth } from "@/lib/firebase";
 function Navbar() {
     const genericItems = ["Home", "Lab", "Learn"]
     const genericLinks = ["/", "/lab", "/learn"]
-    const userItems = ["Home", "leaderboard", "traffic", "shell"]
+    const userItems = ["Home", "Leaderboard", "Traffic", "Shell"]
     const userLinks = ["/", "/", "/", "/", "/"]
 
     const [[loggedIn, dname, items, links], setLoggedIn] = useState([false, "", genericItems, genericLinks]);
@@ -41,7 +41,7 @@ function Navbar() {
                     {/* Create each navbar item with its relevant link */}
                     {items.map((item, index) => (
                         <Link key={item} href={links[index]}>
-                        <li key={item} className="ml-10 lowercase text-2xl hover:scale-105 duration-300">
+                        <li key={item} className="ml-20 text-2xl hover:scale-110 duration-300">
                             {item}
                         </li>
                         </Link>
@@ -52,14 +52,14 @@ function Navbar() {
                 <ul className="hidden md:flex">
                     { loggedIn &&
                     <Link href="/dashboard">
-                    <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300">
+                    <li className="mr-20 text-2xl hover:scale-110 duration-300">
                         {dname}
                     </li>
                     </Link>
                     }
                     { !loggedIn &&
                     <Link href="/login">
-                    <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300">
+                    <li className="mr-20 text-2xl hover:scale-110 duration-300">
                         Login
                     </li>
                     </Link>
