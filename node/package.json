@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "npx tsc && node build/src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "gts lint",
     "clean": "gts clean",
