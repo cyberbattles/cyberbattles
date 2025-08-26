@@ -4,4 +4,5 @@
 
 # Steps for others to test this PR
 
-- [] Has this PR been linted?
+- [ ] Has this PR been linted?
+
