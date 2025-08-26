@@ -34,6 +34,9 @@ function Navbar() {
         <div className="flex justify-between items-center h-full w-full px-4">
             <div className="flex justify-between items-center">
                 <Image src={logo} alt="logo of the website" width="150" className="ml-5 mr-5"/>
+                <div className="ml-10 lowercase text-2xl hover:scale-105 duration-300 lg:hidden">
+                    More
+                </div>
                 <ul className="hidden lg:flex">
                     {/* Create each navbar item with its relevant link */}
                     {items.map((item, index) => (
