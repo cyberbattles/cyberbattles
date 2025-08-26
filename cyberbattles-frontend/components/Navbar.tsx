@@ -34,11 +34,11 @@ function Navbar() {
         <div className="flex justify-between items-center h-full w-full px-4">
             <div className="flex justify-between items-center">
                 <Image src={logo} alt="logo of the website" width="150" className="ml-5 mr-5"/>
-                <ul className="hidden sm:flex">
+                <ul className="hidden lg:flex">
                     {/* Create each navbar item with its relevant link */}
                     {items.map((item, index) => (
                         <Link key={item} href={links[index]}>
-                        <li key={item} className="ml-20 lowercase text-2xl hover:scale-105 duration-300">
+                        <li key={item} className="ml-10 lowercase text-2xl hover:scale-105 duration-300">
                             {item}
                         </li>
                         </Link>
@@ -46,7 +46,7 @@ function Navbar() {
                 </ul>
             </div>
             <div className="flex justify-between items-center">
-                <ul className="hidden sm:flex">
+                <ul className="hidden md:flex">
                     { loggedIn &&
                     <Link href="/dashboard">
                     <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300">
