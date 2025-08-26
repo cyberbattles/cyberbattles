@@ -13,7 +13,7 @@ import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
-const SCENARIOS: string[] = ['ubuntu:latest', 'sudobuntu'];
+const SCENARIOS: string[] = ['ubuntu:latest'];
 
 const docker = new Docker();
 
