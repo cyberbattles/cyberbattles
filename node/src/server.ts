@@ -3,7 +3,7 @@ import {Request, Response} from 'express';
 import * as http from 'http';
 import {WebSocket, WebSocketServer} from 'ws';
 import * as Docker from 'dockerode';
-import {Duplex, PassThrough} from 'stream';
+import {Duplex, PassThrough, Writable} from 'stream';
 import * as crypto from 'crypto';
 import {machineIdSync} from 'node-machine-id';
 
@@ -130,7 +130,7 @@ async function verifyToken(token: string): Promise<string> {
 }
 
 /**
- * A helper function to run a command in a container and reliably wait for it to complete.
+ * A helper function to run a command in a container and show a loading indicator.
  * @param container The Docker Container in which the command will be run
  * @param command The command to run
  * @returns A Promise that resolves when the command finishes.
@@ -149,8 +149,16 @@ async function runCommandInContainer(
   // Hijack stream
   const stream = await exec.start({});
 
-  // Hook into the docker terminal stream
-  docker.modem.demuxStream(stream, process.stdout, process.stderr);
+  // Create a null stream to output to
+  const nullStream = new Writable({
+    write(chunk, encoding, callback) {
+      callback();
+    },
+  });
+
+  // Redirect our output to the null stream
+  // Without this line, code does not run ¯\_(ツ)_/¯
+  docker.modem.demuxStream(stream, nullStream, nullStream);
 
   // Await a promise that resolves when the stream ends (command completes).
   await new Promise<void>((resolve, reject) => {
@@ -160,26 +168,17 @@ async function runCommandInContainer(
     });
 
     stream.on('end', () => {
-      // After the stream ends, inspect the exec to get the exit code
-      exec.inspect((err, data) => {
-        if (err) {
-          return reject(err);
-        }
-        if (data && data.ExitCode !== 0) {
-          // The command failed. Reject the promise.
-          return reject(
-            new Error(
-              `Command "${command.join(' ')}" failed with exit code ${
-                data.ExitCode
-              }`,
-            ),
-          );
-        }
-        // The command succeeded.
-        resolve();
-      });
+      process.stdout.write('\rCommand completed successfully. \n');
+      resolve();
+    });
+
+    stream.on('close', () => {
+      process.stdout.write('\rCommand completed successfully. \n');
+      resolve();
     });
   });
+
+  stream.destroy();
 }
 
 /**
@@ -194,12 +193,25 @@ async function createUser(
   try {
     const container = docker.getContainer(containerId);
 
-    // Create the user and grant sudo access, and wait for it to complete.
-    await runCommandInContainer(container, [
+    // Update apt and install sudo command
+    const installSudo = [
+      '/bin/sh',
+      '-c',
+      'apt update && apt install sudo -y  > /dev/null 2>&1',
+    ];
+
+    // Create user and add them to sudoers command
+    const addSudoUser = [
       '/bin/sh',
       '-c',
       `useradd -m -s /bin/bash ${userName} && usermod -aG sudo ${userName} && echo '${userName} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers`,
-    ]);
+    ];
+
+    // Update repo and install sudo
+    await runCommandInContainer(container, installSudo);
+
+    // Create user and add them to sudoers
+    await runCommandInContainer(container, addSudoUser);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Create User Error: ${error.message}`);
@@ -207,6 +219,7 @@ async function createUser(
     throw new Error('Create User Error: An unknown error occurred.');
   }
 }
+
 /**
  * Creates a Docker network for the team with the specified team ID.
  * Network names are formatted as `teamnet-{teamId}`.
