@@ -150,7 +150,7 @@ async function runCommandInContainer(
   const stream = await exec.start({});
 
   // Hook into the docker terminal stream
-  container.modem.demuxStream(stream, process.stdout, process.stderr);
+  docker.modem.demuxStream(stream, process.stdout, process.stderr);
 
   // Await a promise that resolves when the stream ends (command completes).
   await new Promise<void>((resolve, reject) => {
@@ -247,6 +247,7 @@ async function createContainer(
       CpuQuota: 20_000, // This
       CpuPeriod: 100_000, // And this make a 20% CPU Usage Limit
       Memory: 4294967296, // 4GB RAM Limit
+      MemorySwap: 4294967296 * 2, // 4GB RAM + 4GB Swap Limit
     },
   });
   return container.id;
@@ -471,7 +472,7 @@ async function startSession(
  * @returns A Promise that resolves when all sessions have been cleaned up.
  */
 async function cleanupAllSessions(): Promise<void> {
-  console.log('\nStarting Cleanup of All Sessions');
+  console.log('Starting Cleanup of All Sessions');
   const sessionsSnapshot = await db
     .collection('sessions')
     .where('serverId', '==', serverId)
