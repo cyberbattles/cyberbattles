@@ -42,6 +42,9 @@ build
 node/docs/assets/
 docs/assets/
 
+cyberbattles-*.json
+ cyberbattles-dd31f-18566f4ef322.json
+
 # Dependency directories
 node_modules/
 jspm_packages/

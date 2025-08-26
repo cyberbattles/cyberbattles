@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -13,10 +14,12 @@ const firebaseConfig = {
   storageBucket: "cyberbattles-dd31f.firebasestorage.app",
   messagingSenderId: "240664849654",
   appId: "1:240664849654:web:2b08b4ea54b1361fee90d7",
-  measurementId: "G-HBZ8Y846ZQ"
+  measurementId: "G-HBZ8Y846ZQ",
 };
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+
