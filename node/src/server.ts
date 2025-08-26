@@ -13,7 +13,6 @@ import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
-const CREATE_USER_CMD: string[] = ['useradd', '-m', '-s', '/bin/bash'];
 const SCENARIOS: string[] = ['ubuntu:latest'];
 
 const docker = new Docker();
@@ -131,10 +130,48 @@ async function verifyToken(token: string): Promise<string> {
 }
 
 /**
+ * A helper function to run a command in a container and wait for it to complete.
+ * This is the key to making the process reliable.
+ */
+async function runCommandInContainer(
+  container: Docker.Container,
+  command: string[],
+): Promise<void> {
+  const exec = await container.exec({
+    Cmd: command,
+    AttachStdout: true,
+    AttachStderr: true,
+  });
+
+  const stream = await exec.start({});
+
+  // Wait for the command to finish by listening for the stream to end.
+  await new Promise<void>((resolve, reject) => {
+    stream.on('end', () => {
+      // After the stream ends, inspect the exec to get the exit code
+      exec.inspect((err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        if (data && data.ExitCode !== 0) {
+          // The command failed. Reject the promise.
+          return reject(
+            new Error(
+              `Command "${command.join(' ')}" failed with exit code ${data.ExitCode}`,
+            ),
+          );
+        }
+        // The command succeeded.
+        resolve();
+      });
+    });
+  });
+}
+
+/**
  * Creates a new user in the specified Docker container, with the given userName.
  * @param containerId The ID of the Docker Container in which to create the user.
  * @param userName The userName to assign to the new user.
- * @returns A Promise that resolves to a User object containing the userName and ID.
  */
 async function createUser(
   containerId: string,
@@ -143,18 +180,26 @@ async function createUser(
   try {
     const container = docker.getContainer(containerId);
 
-    // Create the user in the container
-    const exec = await container.exec({
-      Cmd: [...CREATE_USER_CMD, userName],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-    await exec.start({});
+    // Install sudo and wait for it to complete
+    await runCommandInContainer(container, [
+      '/bin/sh',
+      '-c',
+      'apt-get update && apt-get install -y sudo',
+    ]);
+
+    // Create the user and grant sudo access, and wait for it to complete.
+    await runCommandInContainer(container, [
+      '/bin/sh',
+      '-c',
+      `useradd -m -s /bin/bash ${userName} && usermod -aG sudo ${userName} && echo '${userName} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers`,
+    ]);
   } catch (error) {
-    throw new Error('Create User Error: Container not found.');
+    if (error instanceof Error) {
+      throw new Error(`Create User Error: ${error.message}`);
+    }
+    throw new Error('Create User Error: An unknown error occurred.');
   }
 }
-
 /**
  * Creates a Docker network for the team with the specified team ID.
  * Network names are formatted as `teamnet-{teamId}`.
@@ -192,6 +237,9 @@ async function createContainer(
     Tty: true,
     HostConfig: {
       NetworkMode: `teamnet-${teamId}`,
+      CpuQuota: 20_000, // This
+      CpuPeriod: 100_000, // And this make a 20% CPU Usage Limit
+      Memory: 4096000000000, // 4GB RAM Limit
     },
   });
   return container.id;
