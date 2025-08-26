@@ -1,15 +1,56 @@
 services:
+  wg-router:
+    container_name: wg-router
+    image: lscr.io/linuxserver/wireguard:latest
+    cap_add: 
+      - NET_ADMIN
+    environment: 
+      - PUID=1000
+      - GUID=1000
+      - SERVERPORT=53300
+      - PEERS=2
+    volumes:
+      - "./shared/:/config"
+    ports:
+      - 53300:53300/udp
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
   team1:
     container_name: team1_box
+    network_mode: service:wireguard
+    environment:
+      - PUID=1000
+      - PGID=1000
+    depends_on: 
+      - wg-router
     build:
       context: team1
     ports:
       - "8080:8080"
-    networks:
-        - cyberbattlesnet
+    # networks:
+    #     - cyberbattlesnet
+    restart: unless-stopped
 
-networks:
-  cyberbattlesnet:
-    driver: bridge
-    internal: true
+  team2:
+    container_name: team2_box
+    network_mode: service:wireguard
+    environment:
+      - PUID=1000
+      - PGID=1000
+    depends_on: 
+      - wg-router
+    build:
+      context: team2
+    ports:
+      - "8080:8080"
+    # networks:
+    #     - cyberbattlesnet
+    restart: unless-stopped
+
+# networks:
+#   cyberbattlesnet:
+#     driver: bridge
+#     internal: true
 
