@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "cyberbattles-dd31f",
+  "private_key_id": "18566f4ef322091632ab32613689821da38c7759",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC3KzeRrsd/9UeF\nW0J6VMCWynNjb60QoFFqaWiZbhnpFKnFlAqESIyNfeSqwi8L4kPExlxCEKMhUbIT\nNgks87ckLmtjGgb0tBFupRdaOP4CI8sSsdUdjvfrdk27AIBOvKabL9Vrru98I4Cf\niqM3tYxUXlf2bA61Xi8uq9TeEIaQLK8PhZMHvBr2KkcApWNeRx10eqPlF9SjrxF3\nUtw7BRAolSTZ7HRDk0EEt6eVMvl/k3Al8qVtAUcxJgxeCAON0qxKXnUM3R4frVyn\nXtITG9upW/Z+5/P4t6SQI3/9ttrDqqKvuMbP0JpVNvVPlaI4vv+gvokEQvW8OW5o\n1UAO1uHnAgMBAAECggEABnkte84/z+OPHgUYU0/RNEAnIYpfbdNQRgO0S+A2NZMR\nJXkbUvOWs69ujKOlOHUR+FVJZ66s7q8cON7zsfj1YjkZkjPQmB4nwknKW/0O0z23\nacuWrFOeNmnKhNT0ebbMc0hoFC3EZcTH+1WjNA8MKcxtCgs29a1QODNaKAvcd8Sy\nRrCuYgBpIDdYOuqYl79Q4/Htt0DVp2TZR5SKjBxUO511ydDDr5NPXAG6lxLD/Vu2\noAi7ufgtFErXJCseu9qau0NKzm/CLAaV/t4NpHtkuaZp6oMAvp4xRv3PFMnYieBY\nJuM04iUDA8AXIekqkdWunB6IdFaTvCtFVyOzz3PQaQKBgQDhxRCDHd1NU8IDY7AY\nBmeC6zTrTunbRvFMw64fl2HI5WTSpKbjvQT4SwlDVNbe89NcH7uWf/nVCstxMicz\nkHSJRIW3GRYfJK4D2qxv0OC8q1is8O8i1bFsQb0MsnY1YwM/g0hE+RVDk57L0lHB\nvpdemRhFpOqi/8/jpInNrdhRmQKBgQDPseB5HerGyu84hr76d+6Qqk9zLKtN04jQ\n3iWHdUEkFx3bwD2tOb5i7QRkeWdTUaZjGbbFUPz12n/ydo/SFm4xulFPsxNZdQcs\nBoXszDoxnyDm2bfjVzNthACQmTVlbVZhtMCYen85RXQsOOZv19SSm5OcXhIIpj7c\nnknDppf/fwKBgQCxk0lwh53Xw2hXOCJ6Uxc5fvypk/EWWo9SfJrJGE1+MQeDMqRd\nff+Zt5M6lVFIHWmCDSeDsXb0nT/08aipwxYWHYI6yI2Aw13nhCia7iTF4NOnev3s\nXT3m0zH5+ahGR3F3lC/UqEGUXFjLIcrSY7E1Y58WsCcpO6HtAC6vSuxZCQKBgQCt\nkQj2Lno1BwJDStfumKtVWf5rUbkWoOCFLCBQwzxc3LSnIFBqowbnxQsWrB4dEu7p\ngmOrIbNEAgVKqqol93i/NeUdpZlV+Oa1c/4XldRMA5+LTAbQhd8EdnvCW0a0LFsz\n68nHoxcO1WvwSNzKOqP6oOkKk9KeR8/grqcWSfJcIQKBgBoB6RIR8a81YE4x2JNB\nP4Es8ThC8ukvANNOmTM5SBYk3p4W2zhDSZT+921WIsftGxo2FIuis4LlHAHR6dH4\nZPij1gYEUO0llnyYolv4SGGzegcMZdSWNrtqTrBsgKI601fC/jxFazEn08NiGzD0\n5gLzMPvbPX6XUvEl+TB4Yi89\n-----END PRIVATE KEY-----\n",
+  "client_email": "orchestration-server@cyberbattles-dd31f.iam.gserviceaccount.com",
+  "client_id": "116476129850545863477",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/orchestration-server%40cyberbattles-dd31f.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

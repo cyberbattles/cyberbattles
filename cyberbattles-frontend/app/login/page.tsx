@@ -55,7 +55,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <Navbar loggedIn={false} />
+      <Navbar/>
       <section className="min-h-screen flex items-center justify-center px-12">
         <div className="max-w-sm w-full bg-[#2f2f2f] p-8 rounded-2xl shadow-md">
           <div className="flex flex-col items-center gap-4 mb-6">
