@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -36,21 +35,6 @@ const Dashboard = () => {
         setJwt("Could not retrieve token.");
         setShowJwt(true);
       }
-<<<<<<< HEAD
-    };
-  
-    return (
-      <>
-        {/* Fixed Navbar */}
-        <Navbar loggedIn={true} />
-  
-        {/* Dashboard Layout */}
-        <div className="flex h-screen pt-40 text-white" style={{ backgroundColor: "rgba(30,30,30,0.9)" }}>
-          {/* Sidebar */}
-          <aside className="w-64 bg-[#1e1e1e] shadow-md">
-            <div className="p-6 text-xl font-bold border-b border-gray-700">
-              Dashboard
-=======
     } else {
       console.error("No user is signed in.");
     }
@@ -111,7 +95,7 @@ const Dashboard = () => {
   return (
     <>
       {/* Fixed Navbar */}
-      <Navbar loggedIn={true} />
+      <Navbar/>
 
       {/* Dashboard Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
@@ -158,7 +142,6 @@ const Dashboard = () => {
               >
                 Logout
               </button>
->>>>>>> 05509a42b2631d9e87418e57b79696c246c1f183
             </div>
           </header>
 
