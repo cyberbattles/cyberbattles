@@ -45,14 +45,26 @@ function Navbar() {
               </ul>
             </div>
             <div className="flex justify-between items-center">
-              <ul className="hidden sm:flex">
-                <Link href="/login">
-                  <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300 cursor-pointer">
-                    Login
-                  </li>
-                </Link>
-              </ul>
-              <div className="w-20 h-20 bg-gray-300 rounded-full ml-5 mr-10"></div>
+            <ul className="hidden md:flex">
+                    { loggedIn &&
+                    <Link href="/dashboard">
+                    <li className="mr-20 text-2xl hover:scale-110 duration-300">
+                        {dname}
+                    </li>
+                    </Link>
+                    }
+                    { !loggedIn &&
+                    <Link href="/login">
+                    <li className="mr-20 text-2xl hover:scale-110 duration-300">
+                        Login
+                    </li>
+                    </Link>
+                    }
+                </ul>
+                { loggedIn &&
+                <div className="w-20 h-20 bg-gray-300 rounded-full ml-5 mr-10"></div>
+                }
+
             </div>
           </div>
         </nav>
