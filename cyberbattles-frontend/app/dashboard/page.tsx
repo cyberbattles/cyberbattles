@@ -25,7 +25,7 @@ const Dashboard = () => {
         <Navbar loggedIn={true} />
   
         {/* Dashboard Layout */}
-        <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+        <div className="flex h-screen pt-40 text-white" style={{ backgroundColor: "rgba(30,30,30,0.9)" }}>
           {/* Sidebar */}
           <aside className="w-64 bg-[#1e1e1e] shadow-md">
             <div className="p-6 text-xl font-bold border-b border-gray-700">
