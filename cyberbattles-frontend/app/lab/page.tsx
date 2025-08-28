@@ -11,7 +11,7 @@ export default function LabPage() {
 
   return (
     <>
-      <Navbar loggedIn={false} />
+      <Navbar />
       <div className="p-10"></div>
       <div className="p-10">
         <section className="min-h-screen flex items-center justify-start pl-150">

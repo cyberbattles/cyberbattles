@@ -5,12 +5,10 @@ import React from "react";
 import Navbar from "@/components/Navbar";
 import Link from 'next/link'
 export default function CreateAccountPage() {
-  let navItems=["Home", "lab", "learn"]
-  let navLinks=["/", "/test", "/learn"]
 
   return (
     <>
-    <Navbar loggedIn={false}/>
+    <Navbar/>
 
     <div className="p-10"></div>
     <div className="p-10">

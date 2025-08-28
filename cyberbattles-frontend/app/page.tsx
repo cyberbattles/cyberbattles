@@ -83,7 +83,7 @@ export default function HomePage() {
 
   return (
     <div className="relative">
-      <Navbar loggedIn={false} />
+      <Navbar/>
       {/* Matrix Background */}
       <MatrixBackground />
       

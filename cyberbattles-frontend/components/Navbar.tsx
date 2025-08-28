@@ -1,50 +1,62 @@
 import Image from "next/image"
 import Link from "next/link";
 import logo from "../public/images/logo.png"
+import React, { useState } from "react";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
-interface Props {
-    loggedIn: boolean;
-    // items: string[];
-    // links: string[];
-}
+function Navbar() {
+    const genericItems = ["Home", "Lab", "Learn"]
+    const genericLinks = ["/", "/lab", "/learn"]
+    const userItems = ["Home", "Leaderboard", "Traffic", "Shell"]
+    const userLinks = ["/", "/", "/", "/", "/"]
 
-function Navbar({ loggedIn }: Props) {
-    let items = ["Home", "Lab", "Learn"];
-    let links = ["/", "/lab", "/learn"];
-    if (loggedIn) {
-      items = ["Home", "Leaderboard", "Traffic", "Shell"];
-      links = ["/", "/test", "/test", "/test"];
+    const [[loggedIn, dname, items, links], setLoggedIn] = useState([false, "", genericItems, genericLinks]);
+
+    {/* Check if the user auth state has changed. If so update the navbar */}
+    try{
+        onAuthStateChanged(auth, (user) => {
+            if (user && !loggedIn){
+                let dispName = ""
+                if (user.displayName){
+                    dispName = user.displayName
+                }
+                setLoggedIn([true, dispName, userItems, userLinks])
+            }
+        })
+    }  catch (error) {
+        setLoggedIn([false, "", genericItems, genericLinks])
+        console.error("Navbar failed:", error);
     }
-  
+    
     return (
-      <nav className="fixed w-full h-30 shadow-xl bg-black z-50">
-        <div className="flex justify-between items-center h-full w-full px-4">
-          <div className="flex justify-between items-center">
-            <Image src={logo} alt="logo" width={150} className="ml-5 mr-5" />
-            <ul className="hidden sm:flex">
-              {items.map((item, index) => (
-                <Link key={item} href={links[index]}>
-                  <li className="ml-20 lowercase text-2xl hover:scale-105 duration-300 font-bold cursor-pointer">
-                    {item}
+        <nav className="fixed w-full h-24 shadow-xl bg-black z-50">
+          <div className="flex justify-between items-center h-full w-full px-4">
+            <div className="flex justify-between items-center">
+              <Image src={logo} alt="logo" width={150} className="ml-5 mr-5" />
+              <ul className="hidden sm:flex">
+                {items.map((item, index) => (
+                  <Link key={item} href={links[index]}>
+                    <li className="ml-20 lowercase text-2xl hover:scale-105 duration-300 font-bold cursor-pointer">
+                      {item}
+                    </li>
+                  </Link>
+                ))}
+              </ul>
+            </div>
+            <div className="flex justify-between items-center">
+              <ul className="hidden sm:flex">
+                <Link href="/login">
+                  <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300 cursor-pointer">
+                    Login
                   </li>
                 </Link>
-              ))}
-            </ul>
+              </ul>
+              <div className="w-20 h-20 bg-gray-300 rounded-full ml-5 mr-10"></div>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <ul className="hidden sm:flex">
-              <Link href="/login">
-                <li className="mr-20 lowercase text-2xl hover:scale-105 duration-300 cursor-pointer">
-                  Login
-                </li>
-              </Link>
-            </ul>
-            <div className="w-20 h-20 bg-gray-300 rounded-full ml-5 mr-10"></div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
-  
+        </nav>
+      );
+    }
 
 export default Navbar
