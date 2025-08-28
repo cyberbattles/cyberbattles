@@ -13,7 +13,7 @@ function Navbar() {
 
     const [[loggedIn, dname, items, links], setLoggedIn] = useState([false, "", genericItems, genericLinks]);
 
-    {/* Check if the user auth state has changed. If so update the navbar */}
+    {/* Check if the user auth state has changed. If so update the navbar .*/}
     try{
         onAuthStateChanged(auth, (user) => {
             if (user && !loggedIn){
