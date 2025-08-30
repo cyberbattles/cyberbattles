@@ -3,13 +3,23 @@
 
 This code is only designed and tested on Linux, please use a Linux VM or WSL when testing.
 
-### Prerequisites
+## Prerequisites
 
-- **Docker:** Ensure Docker is installed and the daemon is running. You can verify your installation by opening a terminal and running the command below:
+- **Docker:** Ensure Docker is installed and the daemon is running. You can verify your installation by opening a terminal and running the command below. It should output a version number.
 
   ```
   docker -v
   ```
+  If Docker is not installed:
+  - For WSL (it seems to work fine on my end) you'll need [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/).
+  - For any Linux VM you can just install [Docker Engine](https://docs.docker.com/engine/install/).
+- **NodeJS:** Ensure Node (and NPM) is installed by running the commands below. It should output two version numbers.
+  ```
+  npm -v ; node -v
+  ```
+  If Node and NPM aren't installed:
+  - Run `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash` to install *Node Version Manager*, then `nvm install 22` to install NPM and Node v22.
+    
 ### 1. Backend Setup
 
 First, get the Node.js server running.
