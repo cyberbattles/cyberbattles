@@ -1,7 +1,7 @@
 # Docker Orchestration Server Testing Guide
 
 
-This code is only designed and tested on Linux, please use a Linux VM or WSL when testing.
+This code is only designed and tested on Linux, please use either a Linux computer, Linux VM or WSL when testing.
 
 ## Prerequisites
 
@@ -79,7 +79,7 @@ Follow these steps to test the full user flow.
     
     -   Go back to the Docker Terminal admin page (`http://localhost:1337`) and click Start Session.
 
-    -   Once started, the Team IDs and User ID dropdowns will autofill. Select the team that you joined previously, there should only be one User ID. I will add the ability to see your own User ID for convenience later.
+    -   Once started, the Team IDs and User ID dropdowns will autofill. Select the team that you joined previously, unless you've added other users there should only be your **User ID** in the **User ID** field.
         
     -   Your JWT will be autofilled from the first time it was entered, if you want to test the token of another user you can change it still. Otherwise leave it as is.
         
