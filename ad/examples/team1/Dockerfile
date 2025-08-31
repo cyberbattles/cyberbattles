@@ -10,8 +10,6 @@ RUN echo "root:root" | chpasswd
 RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 WORKDIR /
-COPY run.sh run.sh
-RUN chmod +x run.sh
 
 RUN mkdir challenges
 COPY challenges/ challenges/
