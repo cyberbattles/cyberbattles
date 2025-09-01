@@ -84,7 +84,6 @@ export default function HomePage() {
   return (
     <div className="relative">
       <Navbar/>
-      {/* Matrix Background */}
       <MatrixBackground />
       
       {/* Your existing content */}
@@ -97,7 +96,7 @@ export default function HomePage() {
               CyberBattles.
             </h1>
             <p className="text-lg text-white-500 drop-shadow-lg italic font-bold">
-              A red hat vs blue hat interactive training experience.
+              An educational attack and defence CTF platform.
             </p>
           </section>
         </div>
