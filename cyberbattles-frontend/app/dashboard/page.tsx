@@ -40,6 +40,14 @@ const Dashboard = () => {
     }
   };
 
+  const handleGoToTeam = () => {
+      try {
+        router.push("/team");
+      } catch (error) {
+        console.error("Navigation failed:", error);
+      }
+    };
+
   /**
    * Handles the logic for a user to join a team.
    */
@@ -161,20 +169,13 @@ const Dashboard = () => {
             </div>
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
-              <h3 className="text-lg font-semibold mb-2">Join a Team</h3>
+              <h3 className="text-lg font-semibold mb-2">Want to get started and get a team going?</h3>
               <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  value={teamId}
-                  onChange={(e) => setTeamId(e.target.value)}
-                  placeholder="Enter Team ID"
-                  className="flex-grow p-2 bg-[#2f2f2f] border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
                 <button
-                  onClick={handleJoinTeam}
+                  onClick={handleGoToTeam}
                   className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                 >
-                  Join Team
+                  Click Here
                 </button>
               </div>
               {joinMessage.text && (
