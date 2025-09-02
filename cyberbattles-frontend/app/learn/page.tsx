@@ -26,17 +26,27 @@ export default function LearnPage() {
           ]
         },
         {
-          title: "Red Teaming",
-          segments: [
-            { type: "text", content: "Red teaming is a cybersecurity definition for ethical hackers conducting simulated cyberattacks towards organisations to help identify vulnerabilities and make improvements to security operations." },
-            { type: "text", content: "Red team hackers use the same tools as malicious attackers but their goal is the opposite, they get permission by the organisation before hacking them and do not conduct any attacks that would damage the environment of the organisation." },
-            { type: "text", content: "During simulated attacks red teams often face off against blue teams who act as system defenders." },
-            { type: "text", content: "Common targets include AI systems, datasets, firewalls, cryptographic systems, endpoint systems, intrusion detection systems, web applications, web servers." },
-            { type: "text", content: "Common techniques include:" },
-            { type: "text", content: "- Social Engineering\n- Physical Security test\n- Network sniffing\n- Brute forcing credentials" }
-          ],
-          resources: ["https://www.ibm.com/think/topics/red-teaming"]
-        },
+            title: "Red Teaming",
+            segments: [
+              { type: "text", content: "Red teaming is a cybersecurity definition for ethical hackers conducting simulated cyberattacks towards organisations to help identify vulnerabilities and make improvements to security operations." },
+              { type: "text", content: "Red team hackers use the same tools as malicious attackers but their goal is the opposite, they get permission by the organisation before hacking them and do not conduct any attacks that would damage the environment of the organisation." },
+              { type: "text", content: "During simulated attacks red teams often face off against blue teams who act as system defenders." },
+              { type: "text", content: "Common targets include AI systems, datasets, firewalls, cryptographic systems, endpoint systems, intrusion detection systems, web applications, web servers." },
+              { type: "text", content: "Common techniques include:" },
+              { type: "text", content: "- Social Engineering\n- Physical Security test\n- Network sniffing\n- Brute forcing credentials" }
+            ],
+            resources: ["https://www.ibm.com/think/topics/red-teaming"]
+          },
+          {
+            title: "Blue Teaming",
+            segments: [
+              { type: "text", content: "Blue teaming is a cybersecurity definition that is there to defend an organisation internally against cyberattacks, including against red teaming. The objectives of blue teaming is to mitigate vulnerabilities and security incidents through analysis of the organisations infrastructure. They also educate employees and conduct security audits, incident response and recovery." },
+              { type: "text", content: "The blue team is internal so they have access to the entire infrastructure of the organisation which generates an easily identifiable road map of potential risks and endpoints that may be targeted. This gives them a significant edge over red teaming who usually has a ‘black box’ field of view. " },
+              { type: "text", content: "A black box is a system which can be viewed in terms of inputs and outputs without knowing any knowledge of the internal components." },
+              { type: "text", content: "Assessments are usually completed via audits of internal structures and a security report is written and delivered to the organisations shareholders. The format of the report consists of methods, recommendations for updates to the infrastructure and a risk rating. Blue team members must be very knowledgeable in their field, understanding cybersecurity and have a high attention to detail. Many attacks may be silent, or internal and their detection must be thorough." }
+            ],
+            resources: ["https://www.ibm.com/think/topics/blue-team", "https://en.wikipedia.org/wiki/Black_box"]
+          },
         {
           title: "Basics of SSH",
           segments: [
