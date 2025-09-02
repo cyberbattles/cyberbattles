@@ -1,11 +1,14 @@
 #!/bin/bash
 
 LOG_FILE="/var/log/wireguard-init.log"
+SERVER_CONF="/config/wg_confs/wg0.conf"
 
 echo "Starting..." >> "$LOG_FILE"
 
+sed -i "/\[Interface\]/a PostUp = iptables -t nat -A POSTROUTING -o wg+ -j MASQUERADE" $SERVER_CONF
+
 # The first {num_team} peers are for containers and the rest are for the players.
-num_teams=1
+num_teams=2
 num_players=1
 
 # Total peers generated
