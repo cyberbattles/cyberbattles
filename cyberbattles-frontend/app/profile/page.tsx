@@ -4,7 +4,7 @@ import Image from "next/image";
 import logo from "../../public/images/logo.png"
 import Navbar from "@/components/Navbar";
 import { auth } from "../../lib/firebase";
-import { getAuth, onAuthStateChanged, updateEmail } from "firebase/auth";
+import { getAuth, onAuthStateChanged, deleteUser } from "firebase/auth";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -99,6 +99,18 @@ const handleUpload = async (e:any) => {
     
 }
 
+const handleDelete = async (e:any) => {
+    
+    setLoading(true);
+
+    alert("user deleted")
+
+    setLoading(false);
+
+    router.push('/')
+    
+}
+
 const handleCancel = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -146,62 +158,62 @@ return (
             </div>
             {/* Edit profile */}
             { selectedIndex === 0 &&
-                    <form onSubmit={handleUpload} className="p-5 w-full flex flex-col gap-20">
-                        <div className="flex flex-row w-full justify-between items-center">
-                            <div className="p-3 w-1/3 placeholder:text-white text-white ">
-                                Username:
-                            </div>
+                <form onSubmit={handleUpload} className="p-5 w-full flex flex-col gap-20">
+                    <div className="flex flex-row w-full justify-between items-center">
+                        <div className="p-3 w-1/3 placeholder:text-white text-white ">
+                            Username:
+                        </div>
+                        {
+                        currentUser &&
+                        <input
+                            className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder={currentUser.displayName}
+                        />
+                        }
+                    </div>
+                    <div className="flex flex-row w-full items-center">
+                        <div className="p-3 w-1/3 placeholder:text-white text-white ">
+                            Profile Picture:
+                        </div>
+                        <div
+                            className="flex flex-row items-center justify-between w-2/3">
                             {
-                            currentUser &&
-                            <input
-                                className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder={currentUser.displayName}
-                            />
+                                currentUser &&
+                                <img 
+                                    src={photoURL}
+                                    alt="avatar"
+                                    width={150}
+                                    height={150}
+                                    className="rounded-xl" />
                             }
-                        </div>
-                        <div className="flex flex-row w-full items-center">
-                            <div className="p-3 w-1/3 placeholder:text-white text-white ">
-                                Profile Picture:
-                            </div>
-                            <div
-                                className="flex flex-row items-center justify-between w-2/3">
-                                {
-                                    currentUser &&
-                                    <img 
-                                        src={photoURL}
-                                        alt="avatar"
-                                        width={200}
-                                        height={200}
-                                        className="rounded-xl" />
-                                }
-                                <input
-                                    className="w-2/3 ml-20 bg-blue-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
-                                    type="file" onChange={handleChange}/>
-                            </div>
-
+                            <input
+                                className="w-2/3 ml-5 bg-blue-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
+                                type="file" onChange={handleChange}/>
                         </div>
 
-                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                    </div>
 
-                        <div className="flex flex-row w-full justify-between items-center gap-5">
-                            <button
-                            disabled={loading}
-                            onClick={handleUpload}
-                            className="bg-green-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
-                            >
-                                Save changes
-                            </button>
-                            <button
-                            onClick={handleCancel}
-                            className="rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold border-1"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                    <div className="flex flex-row w-full justify-between items-center gap-5">
+                        <button
+                        disabled={loading}
+                        onClick={handleUpload}
+                        className="bg-green-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
+                        >
+                            Save changes
+                        </button>
+                        <button
+                        onClick={handleCancel}
+                        className="rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold border-1"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             }
             {/* Authentication */}
             { selectedIndex === 1 &&
@@ -211,9 +223,21 @@ return (
             }
             {/* Delete account */}
             { selectedIndex === 2 &&
-                <form className="p-5 flex flex-col gap-10 w-full">
-                    <button>Delete</button>
-                </form>
+                <div className="p-5 w-full flex flex-col gap-10">
+                    <p className="mt-5">
+                        Are you sure you want to delete this account? This action is irreversible.
+                    </p>
+
+                    <div className="flex flex-row w-full justify-between items-center gap-5">
+                        <button
+                        disabled={loading}
+                        onClick={handleDelete}
+                        className="bg-red-600 rounded-xl text-white py-2 px-6 w-full hover:opacity-90 transition font-bold"
+                        >
+                            Delete Account
+                        </button>
+                    </div>
+                </div>
             }
             </div>
         </div>
