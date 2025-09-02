@@ -5,6 +5,16 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
+
+// TODO: Change this to be creating a session, rather than team as this is
+// controlled by the backend. Make API call :
+// body = {selectedScenario, numTeams, numMembersPerTeam, token}
+
+// When brought to the lobby page, make Firebase call to get the team and session info etc.
+
+// NOTE: Not implemented modularity for multiple scenarios on the backend yet.
+// For now just only setting up the basic scenario 'ubuntu-latest'
+
 const CreateTeam = () => {
     const router = useRouter();
     const [teamName, setTeamName] = useState("");
