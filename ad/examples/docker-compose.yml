@@ -15,7 +15,7 @@ services:
       - PERSISTENTKEEPALIVE_PEERS=all
     volumes:
       - "./shared/wg-configs/:/config:z"
-      - "./shared/server-init-script:/custom-cont-init.d:ro"
+      - "./shared/server-init-script:/custom-cont-init.d:ro,z"
     ports:
       - 51820:51820/udp
     sysctls:
@@ -38,7 +38,7 @@ services:
       - NET_ADMIN
     volumes:
       - "./shared/wg-configs/peer1/peer1.conf:/etc/wireguard/wg0.conf:ro"
-      - "./shared/challenge-setup-script/supervisord.conf:/etc/supervisord.conf:ro"
+      - "./shared/challenge-setup-script/supervisord.conf:/etc/supervisord.conf:ro,z"
     depends_on: 
       wg-router:
         condition: service_healthy
