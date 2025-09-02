@@ -37,7 +37,7 @@ services:
     cap_add: 
       - NET_ADMIN
     volumes:
-      - "./shared/wg-configs/peer1/peer1.conf:/etc/wireguard/wg0.conf:ro"
+      - "./shared/wg-configs/peer1/peer1.conf:/etc/wireguard/wg0.conf:ro,z"
       - "./shared/challenge-setup-script/supervisord.conf:/etc/supervisord.conf:ro,z"
     depends_on: 
       wg-router:
@@ -52,6 +52,31 @@ services:
     networks:
       cyberbattlesnet:
         ipv4_address: 172.12.0.2
+    restart: unless-stopped
+
+  team2:
+    container_name: team2_box
+    environment:
+      - PUID=1000
+      - PGID=1000
+    cap_add: 
+      - NET_ADMIN
+    volumes:
+      - "./shared/wg-configs/peer2/peer2.conf:/etc/wireguard/wg0.conf:ro,z"
+      - "./shared/challenge-setup-script/supervisord.conf:/etc/supervisord.conf:ro,z"
+    depends_on: 
+      wg-router:
+        condition: service_healthy
+    build:
+      context: team2
+    ports:
+      - "2223:22"
+      - "8081:8080"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      cyberbattlesnet:
+        ipv4_address: 172.12.0.3
     restart: unless-stopped
 networks:
   cyberbattlesnet:
