@@ -12,6 +12,7 @@ import {
     EmailAuthProvider
 } from "firebase/auth";
 import {
+    deleteObject,
     getDownloadURL,
     getStorage,
     ref,
@@ -111,6 +112,12 @@ const handleDelete = async (e:any) => {
 
     await reauthenticateWithCredential(currentUser, credential).then(() => {
         // User was authenticated
+        if (currentUser.photoURL){
+            const photoURLRef = ref(storage, photoURL)
+            deleteObject(photoURLRef).then().catch((error) => {
+                setError(error)
+            })
+        }
         deleteUser(currentUser).then(() => {
             alert("User successfully deleted");
             setLoading(false);    
