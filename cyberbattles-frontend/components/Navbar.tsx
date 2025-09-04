@@ -9,7 +9,7 @@ function Navbar() {
   const genericItems = ["Home", "Lab", "Learn"]
   const genericLinks = ["/", "/lab", "/learn"]
   const userItems = ["Home", "Leaderboard", "Traffic", "Shell"]
-  const userLinks = ["/", "/", "/", "/", "/"]
+  const userLinks = ["/dashboard", "/", "/", "/", "/"]
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
   const [currentUser, setCurrentUser] = useState<any | null>(null)
@@ -33,43 +33,44 @@ function Navbar() {
     
   return (
     <nav className="fixed w-full h-40 shadow-xl bg-black z-50">
-      <div className="flex justify-between items-center h-full w-full px-4">
-        <div className="flex justify-between items-center">
-          <Image src={logo} alt="logo" width={150} className="ml-5 mr-5" />
-          <ul className="hidden md:flex">
+      <div className="flex flex-basis items-center h-full w-full ">
+        <div className="flex w-2/3 items-center pl-5">
+          <Image src={logo} alt="logo" width={150} className="hidden lg:flex" />
+          <ul className="flex justify-between w-full gap-5 mr-80 ml-10 lg:ml-20">
             {items.map((item, index) => (
               <Link key={item} href={links[index]}>
-                <li className="ml-20 lowercase text-2xl hover:scale-105 duration-300 font-bold cursor-pointer">
+                <li className="lowercase text-2xl hover:scale-110 duration-300 font-bold cursor-pointer">
                   {item}
                 </li>
               </Link>
             ))}
           </ul>
         </div>
-        <div className="flex justify-between items-center">
-        <ul className="hidden md:flex">
-                { currentUser &&
-                <Link href="/dashboard">
-                <li className="mr-20 text-2xl hover:scale-110 duration-300">
-                    {currentUser.displayName}
-                </li>
-                </Link>
-                }
-                { !currentUser &&
-                <Link href="/login">
-                <li className="mr-20 text-2xl hover:scale-110 duration-300">
-                    Login
-                </li>
-                </Link>
-                }
-            </ul>
+        <div className="flex justify-end items-center w-1/3 pr-5 gap-5">
+        
+        <div className="">
+            { currentUser &&
+              <Link href="/dashboard">
+              <p className="hidden md:flex lowercase text-2xl hover:scale-110 duration-300">
+                  {currentUser.displayName}
+              </p>
+              </Link>
+              }
+              { !currentUser &&
+              <Link href="/login">
+              <p className="lowercase text-2xl hover:scale-110 duration-300">
+                  Login
+              </p>
+              </Link>
+              }
+          </div>
             { currentUser &&
             <Link href="/profile">
             <img
               src={photoURL}
               alt="avatar"
               width={100}
-              className="rounded-full mr-10" />
+              className="rounded-full" />
             </Link>
             }
 
