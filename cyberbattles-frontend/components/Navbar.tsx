@@ -36,10 +36,10 @@ function Navbar() {
       <div className="flex flex-basis items-center h-full w-full ">
         <div className="flex w-2/3 items-center pl-5">
           <Image src={logo} alt="logo" width={150} className="hidden lg:flex" />
-          <ul className="flex justify-between w-full gap-5 mr-80 ml-10 lg:ml-20">
+          <ul className="flex  w-full gap-20 mr-80 ml-10 lg:ml-20">
             {items.map((item, index) => (
               <Link key={item} href={links[index]}>
-                <li className="lowercase text-2xl hover:scale-110 duration-300 font-bold cursor-pointer">
+                <li className="capitalize text-2xl hover:scale-110 duration-300 font-bold cursor-pointer">
                   {item}
                 </li>
               </Link>
@@ -51,14 +51,14 @@ function Navbar() {
         <div className="">
             { currentUser &&
               <Link href="/dashboard">
-              <p className="hidden md:flex lowercase text-2xl hover:scale-110 duration-300">
+              <p className="capitalize hidden md:flex text-2xl hover:scale-110 duration-300">
                   {currentUser.displayName}
               </p>
               </Link>
               }
               { !currentUser &&
               <Link href="/login">
-              <p className="lowercase text-2xl hover:scale-110 duration-300">
+              <p className="capitalize text-2xl hover:scale-110 duration-300">
                   Login
               </p>
               </Link>
