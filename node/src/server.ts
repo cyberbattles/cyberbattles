@@ -3,7 +3,7 @@ import {Request, Response} from 'express';
 import * as http from 'http';
 import {WebSocket, WebSocketServer} from 'ws';
 import * as Docker from 'dockerode';
-import {Duplex, PassThrough} from 'stream';
+import {Duplex, PassThrough, Writable} from 'stream';
 import * as crypto from 'crypto';
 import {machineIdSync} from 'node-machine-id';
 
@@ -13,7 +13,6 @@ import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
-const CREATE_USER_CMD: string[] = ['useradd', '-m', '-s', '/bin/bash'];
 const SCENARIOS: string[] = ['ubuntu:latest'];
 
 const docker = new Docker();
@@ -131,10 +130,61 @@ async function verifyToken(token: string): Promise<string> {
 }
 
 /**
+ * A helper function to run a command in a container and show a loading indicator.
+ * @param container The Docker Container in which the command will be run
+ * @param command The command to run
+ * @returns A Promise that resolves when the command finishes.
+ */
+async function runCommandInContainer(
+  container: Docker.Container,
+  command: string[],
+): Promise<void> {
+  // Run command
+  const exec = await container.exec({
+    Cmd: command,
+    AttachStdout: true,
+    AttachStderr: true,
+  });
+
+  // Hijack stream
+  const stream = await exec.start({});
+
+  // Create a null stream to output to
+  const nullStream = new Writable({
+    write(chunk, encoding, callback) {
+      callback();
+    },
+  });
+
+  // Redirect our output to the null stream
+  // Without this line, code does not run ¯\_(ツ)_/¯
+  docker.modem.demuxStream(stream, nullStream, nullStream);
+
+  // Await a promise that resolves when the stream ends (command completes).
+  await new Promise<void>((resolve, reject) => {
+    // Handle stream errors
+    stream.on('error', err => {
+      reject(err);
+    });
+
+    stream.on('end', () => {
+      process.stdout.write('\rCommand completed successfully. \n');
+      resolve();
+    });
+
+    stream.on('close', () => {
+      process.stdout.write('\rCommand completed successfully. \n');
+      resolve();
+    });
+  });
+
+  stream.destroy();
+}
+
+/**
  * Creates a new user in the specified Docker container, with the given userName.
  * @param containerId The ID of the Docker Container in which to create the user.
  * @param userName The userName to assign to the new user.
- * @returns A Promise that resolves to a User object containing the userName and ID.
  */
 async function createUser(
   containerId: string,
@@ -143,15 +193,30 @@ async function createUser(
   try {
     const container = docker.getContainer(containerId);
 
-    // Create the user in the container
-    const exec = await container.exec({
-      Cmd: [...CREATE_USER_CMD, userName],
-      AttachStdout: true,
-      AttachStderr: true,
-    });
-    await exec.start({});
+    // Update apt and install sudo command
+    const installSudo = [
+      '/bin/sh',
+      '-c',
+      'apt update && apt install sudo -y  > /dev/null 2>&1',
+    ];
+
+    // Create user and add them to sudoers command
+    const addSudoUser = [
+      '/bin/sh',
+      '-c',
+      `useradd -m -s /bin/bash ${userName} && usermod -aG sudo ${userName} && echo '${userName} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers`,
+    ];
+
+    // Update repo and install sudo
+    await runCommandInContainer(container, installSudo);
+
+    // Create user and add them to sudoers
+    await runCommandInContainer(container, addSudoUser);
   } catch (error) {
-    throw new Error('Create User Error: Container not found.');
+    if (error instanceof Error) {
+      throw new Error(`Create User Error: ${error.message}`);
+    }
+    throw new Error('Create User Error: An unknown error occurred.');
   }
 }
 
@@ -192,6 +257,10 @@ async function createContainer(
     Tty: true,
     HostConfig: {
       NetworkMode: `teamnet-${teamId}`,
+      CpuQuota: 20_000, // This
+      CpuPeriod: 100_000, // And this make a 20% CPU Usage Limit
+      Memory: 4294967296, // 4GB RAM Limit
+      MemorySwap: 4294967296 * 2, // 4GB RAM + 4GB Swap Limit
     },
   });
   return container.id;
@@ -237,7 +306,7 @@ async function createTeam(
     return {
       name,
       numMembers,
-      memberIds: [], // For testing only, should be empty initially
+      memberIds: [],
       containerId,
       networkId,
       networkName,
@@ -263,7 +332,7 @@ async function createSession(
   numMembersPerTeam: number,
   senderUid: string,
 ): Promise<CreateSessionResult> {
-  console.log(`--- Starting Scenario ${selectedScenario} Setup ---`);
+  console.log(`Starting Scenario ${selectedScenario} Setup`);
 
   // Exit if selected scenario is invalid
   if (selectedScenario < 0 || selectedScenario >= SCENARIOS.length) {
@@ -416,7 +485,7 @@ async function startSession(
  * @returns A Promise that resolves when all sessions have been cleaned up.
  */
 async function cleanupAllSessions(): Promise<void> {
-  console.log('--- Starting Cleanup of All Sessions ---');
+  console.log('Starting Cleanup of All Sessions');
   const sessionsSnapshot = await db
     .collection('sessions')
     .where('serverId', '==', serverId)
@@ -435,7 +504,7 @@ async function cleanupAllSessions(): Promise<void> {
     await sessionDoc.ref.delete();
   }
 
-  console.log('--- All Sessions Cleaned Up ---');
+  console.log('All Local Sessions Cleaned Up\n');
 }
 
 /**
