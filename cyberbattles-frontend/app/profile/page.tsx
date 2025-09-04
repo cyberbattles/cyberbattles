@@ -114,20 +114,21 @@ const handleDelete = async (e:any) => {
         // User was authenticated
         if (currentUser.photoURL){
             const photoURLRef = ref(storage, photoURL)
-            deleteObject(photoURLRef).then().catch((error) => {
-                setError(error)
+            deleteObject(photoURLRef).then().catch((e) => {
+                console.log("Unable to delete profile picture")
             })
         }
         deleteUser(currentUser).then(() => {
             alert("User successfully deleted");
             setLoading(false);    
             router.push('/')
-        }).catch((error) => {
+        }).catch((e) => {
             setError("Unable to delete user")
         })
-    }).catch((error) => {
+    }).catch((e) => {
         // error detected
         setError("Unable to authenticate user")
+
     })
 
     setLoading(false);    
@@ -272,7 +273,7 @@ return (
                         }
                     </div>
 
-                    {error && <p className="text-red-500 text-sm">{"error"}</p>}
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
 
 
                     <button
