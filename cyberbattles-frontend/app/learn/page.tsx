@@ -1,6 +1,9 @@
 'use client';
 import Navbar from "../../components/Navbar"
 import React, { useEffect, useRef, useState } from "react";
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { FaLock, FaUnlock} from "react-icons/fa";
 
 type ContentSegment = 
   | { type: "text"; content: string }
@@ -73,7 +76,21 @@ export default function LearnPage() {
         }
       ]
 
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [lockImages, setLockImages] = useState([false, true, true, true, true]);
+
+  const handleUnlock = () => {
+    const newIndex = Math.min(learnItems.length - 1, selectedIndex + 1);
+    if (newIndex > selectedIndex) {
+      const newLockImages = [...lockImages];
+
+    if (newIndex < lockImages.length) {
+      newLockImages[newIndex] = false;
+    }
+    setLockImages(newLockImages);
+  }
+  setSelectedIndex(newIndex);
+}
 
   const optionStyle = "mt-10 w-full border-bottom border-solid border-b-2 hover:scale-105 duration-300"
 
@@ -109,10 +126,11 @@ export default function LearnPage() {
                           ? 'bg-gradient-to-r from-gray-500 to-gray-950 text-white shadow-lg scale-105'
                           : 'bg-white/50 text-gray-700 hover:bg-white/80 hover:shadow-md hover:scale-102'
                       }`}
-                      onClick={() => setSelectedIndex(index)}
+                      
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-medium">{item.title}</span>
+                        {lockImages[index] ? <FaLock /> : <FaUnlock />}
                       </div>
                     </button>
                   ))}
@@ -143,9 +161,19 @@ export default function LearnPage() {
                               {seg.content}
                             </div>
                           ) : (
-                            <pre key={i} className="bg-gray-100 p-4 rounded-lg overflow-x-auto my-4">
-                              <code className="text-sm text-gray-900">{seg.content}</code>
-                            </pre>
+                            <div key={i} className="my-4">
+                              <SyntaxHighlighter
+                                language="bash"
+                                style={atomOneDark}
+                                customStyle={{
+                                  borderRadius: "0.5rem",
+                                  padding: "1rem",
+                                  fontSize: "0.9rem",
+                                }}
+                              >
+                                {String(seg.content)}
+                              </SyntaxHighlighter>
+                            </div>
                           )
                         )}
 
@@ -192,7 +220,22 @@ export default function LearnPage() {
                   ← Previous
                 </button>
                 <button
-                  onClick={() => setSelectedIndex(Math.min(learnItems.length - 1, selectedIndex + 1))}
+                  onClick={() => {
+                    const newIndex = Math.min(learnItems.length - 1, selectedIndex + 1);
+                    setSelectedIndex(newIndex);
+                    
+                    // Update lock status: unlock the next topic
+                    if (newIndex > selectedIndex) {
+                      const newLockImages = [...lockImages];
+                      
+                      // Unlock the next topic if we're not at the end
+                      if (newIndex < lockImages.length) {
+                        newLockImages[newIndex] = false;
+                      }
+                      
+                      setLockImages(newLockImages);
+                    }
+                  }}
                   disabled={selectedIndex === learnItems.length - 1}
                   className={`px-6 py-3 rounded-xl font-medium transition-all ${
                     selectedIndex === learnItems.length - 1
