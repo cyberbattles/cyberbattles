@@ -6,6 +6,7 @@ import * as Docker from 'dockerode';
 import {Duplex, PassThrough, Writable} from 'stream';
 import * as crypto from 'crypto';
 import {machineIdSync} from 'node-machine-id';
+import * as path from 'path';
 
 import {initializeApp, ServiceAccount, cert} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
@@ -13,7 +14,10 @@ import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
 const PORT = '1337';
-const SCENARIOS: string[] = ['ubuntu:latest'];
+const SCENARIOS: string[] = ['challenge_example'];
+const WIREGUARD_IMAGE = 'lscr.io/linuxserver/wireguard:latest';
+let nextAvailableWGPort = 51820;
+let nextAvilableSubnetOctet = 24;
 
 const docker = new Docker();
 
@@ -50,10 +54,6 @@ interface Team {
   memberIds: string[];
   /** The Docker containerId associated with the team. */
   containerId: string;
-  /** The ID of the Docker network associated with the team. */
-  networkId: string;
-  /** The name of the Docker network associated with the team. */
-  networkName: string;
   /** A unique identifier for the team. */
   id: string;
   /** The session ID of the session this team belongs to. */
@@ -78,6 +78,10 @@ interface Session {
   started: boolean;
   /** The ID of the server that created the session. */
   serverId: string;
+  /** The ID of the Docker network associated with the team. */
+  networkId: string;
+  /** The name of the Docker network associated with the team. */
+  networkName: string;
   /** A unique identifier for the session. */
   id: string;
 }
@@ -221,20 +225,51 @@ async function createUser(
 }
 
 /**
- * Creates a Docker network for the team with the specified team ID.
- * Network names are formatted as `teamnet-{teamId}`.
- * @param teamId The unique ID of the team.
- * @returns A Promise that resolves to an object containing the network ID and name.
+ * Creates a Docker network with the given scenario ID.
+ * Network names are formatted as `sessionNet-{sessionId}`.
+ * @param sessionId The unique ID of the session.
+ * @returns A Promise that resolves to an object containing the network ID, name and subnet.
  */
 async function createNetwork(
-  teamId: string,
-): Promise<{networkId: string; networkName: string}> {
-  const networkName = `teamnet-${teamId}`;
+  sessionId: string,
+): Promise<{networkId: string; networkName: string; networkSubnet: string}> {
+  // Get the next available subnet
+  const subnet = `10.12.${nextAvilableSubnetOctet}.0/24`;
+  nextAvilableSubnetOctet += 1; // Increment for next session
+
+  const IPAM = {
+    Driver: 'default',
+    Config: [
+      {
+        Subnet: subnet,
+        Gateway: `10.12.${nextAvilableSubnetOctet - 1}.1`,
+      },
+    ],
+  };
+
+  // Create the network
+  const networkName = `sessionNet-${sessionId}`;
   const networkId = await docker.createNetwork({
     Name: networkName,
     Driver: 'bridge',
+    IPAM: IPAM,
   });
-  return {networkId: networkId.id, networkName: networkName};
+
+  // Retrieve the network
+  const network = docker.getNetwork(networkId.id);
+
+  // Get the network details to find the allocated subnet
+  const networkData = await network.inspect();
+  const networkSubnet =
+    networkData.IPAM?.Config && networkData.IPAM.Config.length > 0
+      ? networkData.IPAM.Config[0].Subnet
+      : 'unknown';
+
+  return {
+    networkId: networkId.id,
+    networkName: networkName,
+    networkSubnet: networkSubnet,
+  };
 }
 
 /**
@@ -243,27 +278,132 @@ async function createNetwork(
  * @param image The Docker image to use for the container.
  * @param teamName The name of the team.
  * @param teamId The unique ID of the team.
- * @returns A Promise that resolves to the created Docker ccontacontainerId
+ * @param networkName The name of the Docker network to connect the container to.
+ * @returns A Promise that resolves to the created Docker containerId.
  **/
-async function createContainer(
+async function createTeamContainer(
   image: string,
   teamName: string,
   teamId: string,
+  networkName: string,
+  teamIndex: number,
 ): Promise<string> {
   const container = await docker.createContainer({
     Image: image,
-    Cmd: ['/bin/bash'],
     name: `teamcon-${teamName}-${teamId}`,
     Tty: true,
     HostConfig: {
-      NetworkMode: `teamnet-${teamId}`,
+      NetworkMode: networkName,
       CpuQuota: 20_000, // This
-      CpuPeriod: 100_000, // And this make a 20% CPU Usage Limit
+      CpuPeriod: 100_000, // And this makes a 20% CPU Usage Limit
       Memory: 4294967296, // 4GB RAM Limit
       MemorySwap: 4294967296 * 2, // 4GB RAM + 4GB Swap Limit
+      Sysctls: {
+        'net.ipv4.conf.all.src_valid_mark': '1',
+      },
+      Binds: [
+        `${path.resolve(__dirname, `./wg-configs/peer${teamIndex + 1}/peer${teamIndex + 1}.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
+        `${path.resolve(__dirname, './challenge-setup-script/supervisord.conf')}:/etc/supervisord.conf:ro,z`,
+      ],
+      RestartPolicy: {Name: 'unless-stopped'},
     },
   });
   return container.id;
+}
+
+async function createWgRouter(
+  sessionId: string,
+  networkName: string,
+  wgRouterIp: string,
+  wireguardPort: number,
+  numTeams: number,
+  numMembersPerTeam: number,
+): Promise<string> {
+  // Check if the WireGuard image is already pulled
+  const image = docker.getImage(WIREGUARD_IMAGE);
+  try {
+    await image.inspect();
+    console.log('WireGuard image already exists, skipping pull.');
+  } catch (error) {
+    console.log('Pulling WireGuard image');
+    await new Promise(resolve =>
+      docker.pull(WIREGUARD_IMAGE, {}, (_: Error, stream) => {
+        if (stream !== undefined) {
+          docker.modem.followProgress(stream, resolve);
+        }
+      }),
+    );
+    console.log('WireGuard Image pulled successfully.');
+  }
+
+  const container = await docker.createContainer({
+    Image: 'lscr.io/linuxserver/wireguard:latest',
+    name: `wg-router-${sessionId}`,
+
+    Env: [
+      'PUID=1000',
+      'PGID=1000',
+      `PEERS=${numTeams * numMembersPerTeam + numTeams}`,
+      'INTERNAL_SUBNET=10.12.0.0/24',
+      'ALLOWEDIPS=10.12.0.0/24',
+      `SERVERURL=${wgRouterIp}`,
+      'PEERDNS=1.1.1.1',
+      'PERSISTENTKEEPALIVE_PEERS=all',
+      `NUM_TEAMS=${numTeams}`,
+      `NUM_PLAYERS=${numMembersPerTeam}`,
+      `SERVER_IP=${wgRouterIp}`,
+      `SERVER_PORT=${wireguardPort}`,
+    ],
+    HostConfig: {
+      CapAdd: ['NET_ADMIN'],
+      Binds: [
+        `${path.resolve(__dirname, 'wg-configs')}:/config:z`,
+        `${path.resolve(__dirname, 'server-init-script')}:/custom-cont-init.d:ro,z`,
+      ],
+      PortBindings: {
+        [`${wireguardPort}/udp`]: [{HostPort: `${wireguardPort}`}],
+      },
+      Sysctls: {
+        'net.ipv4.conf.all.src_valid_mark': '1',
+        'net.ipv4.ip_forward': '1',
+      },
+      RestartPolicy: {Name: 'unless-stopped'},
+    },
+    Healthcheck: {
+      Test: ['CMD', 'test', '-f', '/config/init_done'],
+      Interval: 6000000000, // 6 seconds in nanoseconds
+    },
+    NetworkingConfig: {
+      EndpointsConfig: {
+        [networkName]: {
+          IPAMConfig: {IPv4Address: wgRouterIp},
+        },
+      },
+    },
+  });
+  console.log(`Starting wg-router container for Session: ${sessionId}...`);
+  await container.start();
+  const wgContainer = docker.getContainer(container.id);
+
+  console.log('Waiting for wg-router to become healthy...');
+  let isHealthy = false;
+  for (let i = 0; i < 30; i++) {
+    // Wait for max 30s
+    const inspectData = await wgContainer.inspect();
+    if (inspectData.State.Health?.Status === 'healthy') {
+      isHealthy = true;
+      break;
+    }
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  }
+  if (!isHealthy) {
+    throw new Error(
+      'WireGuard router container did not become healthy in time.',
+    );
+  }
+  console.log(`WireGuard Router for Session: ${sessionId} is healthy.`);
+
+  return wgContainer.id;
 }
 
 /**
@@ -278,6 +418,8 @@ async function createTeam(
   numMembers: number,
   selectedScenario: number,
   sessionId: string,
+  networkName: string,
+  teamIndex: number,
 ): Promise<Team> {
   // Check if the scenario is valid
   const dockerImage = SCENARIOS.at(selectedScenario);
@@ -290,11 +432,14 @@ async function createTeam(
   // Generate a unique ID for the team
   const teamId: string = generateId();
 
-  // Create a network for the team
-  const {networkId, networkName} = await createNetwork(teamId);
-
   // Create a container for the team
-  const containerId = await createContainer(dockerImage, name, teamId);
+  const containerId = await createTeamContainer(
+    dockerImage,
+    name,
+    teamId,
+    networkName,
+    teamIndex,
+  );
 
   try {
     const container = docker.getContainer(containerId);
@@ -308,13 +453,13 @@ async function createTeam(
       numMembers,
       memberIds: [],
       containerId,
-      networkId,
-      networkName,
       id: teamId,
       sessionId,
     };
   } catch (error) {
-    throw error;
+    throw new Error(
+      `Create Team Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
   }
 }
 
@@ -341,25 +486,36 @@ async function createSession(
     );
   }
 
-  // Check if Docker Image is already downloaded if not, pull it
-  const image = docker.getImage(SCENARIOS.at(selectedScenario) || '');
-  try {
-    await image.inspect();
-    console.log('Image already exists, skipping pull.');
-  } catch (error) {
-    console.log(`Pulling image: ${SCENARIOS.at(selectedScenario)}...`);
-    await new Promise(resolve =>
-      docker.pull(SCENARIOS.at(selectedScenario) || '', {}, (err, stream) => {
-        if (stream !== undefined) {
-          docker.modem.followProgress(stream, resolve);
-        }
-      }),
-    );
-    console.log('Image pulled successfully.');
-  }
-
   // Generate a unique ID for the session
   const sessionId: string = generateId();
+
+  // Create a network for the team
+  const {networkId, networkName, networkSubnet} =
+    await createNetwork(sessionId);
+
+  if (networkSubnet === 'unknown') {
+    throw new Error('Failed to determine network subnet.');
+  }
+
+  // Work out values for the WireGuard router
+  const ipBase = networkSubnet.split('/')[0].replace(/\.0$/, '');
+  const wgRouterIp = `${ipBase}.200`;
+  const wireguardPort = nextAvailableWGPort;
+  nextAvailableWGPort += 1; // Increment for next session
+
+  // Create the WireGuard router container
+  const wgContainerId = await createWgRouter(
+    sessionId,
+    networkName,
+    wgRouterIp,
+    wireguardPort,
+    numTeams,
+    numMembersPerTeam,
+  );
+
+  console.log(
+    `WireGuard Router created with Container ID: ${wgContainerId} on IP: ${wgRouterIp} and Port: ${wireguardPort}`,
+  );
 
   // Create and store teams
   const teamIds: string[] = [];
@@ -370,6 +526,8 @@ async function createSession(
       numMembersPerTeam,
       selectedScenario,
       sessionId,
+      networkName,
+      i,
     );
 
     const teamRef = db.collection('teams').doc(team.id);
@@ -387,6 +545,8 @@ async function createSession(
     adminUid: senderUid,
     started: false,
     serverId,
+    networkId,
+    networkName,
     id: sessionId,
   };
 
@@ -521,6 +681,19 @@ async function cleanupSession(session: Session): Promise<void> {
     return;
   }
 
+  // Remove the session network
+  try {
+    const network = docker.getNetwork(session.networkName);
+    await network.remove();
+    console.log(
+      `Removed network ${session.networkName} for session ${session.id}.`,
+    );
+  } catch (error) {
+    console.error(
+      `Cleanup Error: Network not found or already removed for session ${session.id}.`,
+    );
+  }
+
   for (const teamId of session.teamIds) {
     const teamRef = db.collection('teams').doc(teamId);
     const teamDoc = await teamRef.get();
@@ -537,17 +710,6 @@ async function cleanupSession(session: Session): Promise<void> {
     } catch (error) {
       console.error(
         `Cleanup Error: Container not found or already removed for team ${teamId}.`,
-      );
-    }
-
-    // Remove the network
-    try {
-      const network = docker.getNetwork(team.networkName);
-      await network.remove();
-      console.log(`Removed network ${team.networkName} for team ${teamId}.`);
-    } catch (error) {
-      console.error(
-        `Cleanup Error: Network not found or already removed for team ${teamId}.`,
       );
     }
 
@@ -626,53 +788,49 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     if (team?.containerId && userName) {
       console.log(`WebSocket connection established for ${userName}.`);
 
-      try {
-        const container = docker.getContainer(team.containerId);
+      const container = docker.getContainer(team.containerId);
 
-        // Start a bash shell in the container as the given user
-        const exec = await container.exec({
-          Cmd: ['/bin/bash'],
-          User: userName,
-          AttachStdin: true,
-          AttachStdout: true,
-          AttachStderr: true,
-          Tty: true,
-        });
+      // Start a bash shell in the container as the given user
+      const exec = await container.exec({
+        Cmd: ['/bin/bash'],
+        User: userName,
+        AttachStdin: true,
+        AttachStdout: true,
+        AttachStderr: true,
+        Tty: true,
+      });
 
-        // Hijack the exec command to create a terminal stream
-        const stream: Duplex = await exec.start({hijack: true, stdin: true});
+      // Hijack the exec command to create a terminal stream
+      const stream: Duplex = await exec.start({hijack: true, stdin: true});
 
-        // Handle stdout and stderr streams as well
-        const stdout = new PassThrough();
-        const stderr = new PassThrough();
-        stdout.on('data', (chunk: Buffer) => ws.send(chunk));
-        stderr.on('data', (chunk: Buffer) => ws.send(chunk));
+      // Handle stdout and stderr streams as well
+      const stdout = new PassThrough();
+      const stderr = new PassThrough();
+      stdout.on('data', (chunk: Buffer) => ws.send(chunk));
+      stderr.on('data', (chunk: Buffer) => ws.send(chunk));
 
-        // Let dockerode handle the combining of streams
-        docker.modem.demuxStream(stream, stdout, stderr);
+      // Let dockerode handle the combining of streams
+      docker.modem.demuxStream(stream, stdout, stderr);
 
-        // Handle the different ways the docker stream can end
-        stream.once('error', (err: Error) => {
-          ws.close(1011, 'Stream error: ' + err.message);
-          return;
-        });
-        stream.once('close', () => {
-          ws.close();
-          return;
-        });
+      // Handle the different ways the docker stream can end
+      stream.once('error', (err: Error) => {
+        ws.close(1011, 'Stream error: ' + err.message);
+        return;
+      });
+      stream.once('close', () => {
+        ws.close();
+        return;
+      });
 
-        // Handle input from the user
-        ws.on('message', (data: WebSocket) => {
-          stream.write(data);
-        });
+      // Handle input from the user
+      ws.on('message', (data: WebSocket) => {
+        stream.write(data);
+      });
 
-        ws.on('close', () => {
-          console.log(`Connection closed for ${userName}`);
-          return;
-        });
-      } catch (error) {
-        throw error;
-      }
+      ws.on('close', () => {
+        console.log(`Connection closed for ${userName}`);
+        return;
+      });
     } else {
       console.error('Container or user not found for WebSocket connection.');
       ws.close(1011, 'Target container not available.');
@@ -792,7 +950,7 @@ async function main() {
   });
 }
 
-process.on('SIGINT', async function () {
+process.on('SIGINT', async () => {
   console.log('\nCaught interrupt signal and beginning cleanup...');
   await cleanupAllSessions();
   process.exit(0);
