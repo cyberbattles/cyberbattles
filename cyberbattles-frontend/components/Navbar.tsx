@@ -6,10 +6,10 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
 function Navbar() {
-  const genericItems = ["Home", "Lab", "Learn"]
-  const genericLinks = ["/", "/lab", "/learn"]
-  const userItems = ["Home", "Leaderboard", "Traffic", "Shell"]
-  const userLinks = ["/dashboard", "/", "/", "/", "/"]
+  const genericItems = ["Home", "Leaderboard", "Lab", ]
+  const genericLinks = ["/", "/leaderboard", "/lab", ]
+  const userItems = ["Dashboard", "Leaderboard", "Learn", "Traffic", "Shell"]
+  const userLinks = ["/dashboard", "/leaderboard", "/learn", "/", "/", "/"]
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
   const [currentUser, setCurrentUser] = useState<any | null>(null)
