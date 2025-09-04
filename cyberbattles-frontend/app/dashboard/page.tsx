@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, getDocs, collection } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
@@ -14,6 +14,9 @@ const Dashboard = () => {
   // New state for the team join feature
   const [teamId, setTeamId] = useState("");
   const [joinMessage, setJoinMessage] = useState({ type: "", text: "" });
+  const [userCount, setCount] = useState(0);
+  const [teamCount, setTeamCount] = useState(0);
+  const [activeGames, setActiveGames] = useState(0);
 
   const handleLogout = async () => {
     try {
@@ -23,6 +26,54 @@ const Dashboard = () => {
       console.error("Logout failed:", error);
     }
   };
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      const snapshot = await getDocs(collection(db, "login"));
+      const uidCount = snapshot.size;
+      setCount(uidCount);
+    };
+
+    fetchUserCount(); // Call the async function
+  }, []);
+
+  useEffect(() => {
+    const fetchTeamCount = async () => {
+      const snapshot = await getDocs(collection(db, "teams"));
+      const teamCount = snapshot.size;
+      setTeamCount(teamCount);
+    };
+
+    fetchTeamCount(); // Call the async function
+  }, []);
+
+  useEffect(() => {
+    const fetchActiveGamesCount = async () => {
+      const snapshot = await getDocs(collection(db, "sessions"));
+  
+      // Count how many sessions have started === true
+      const activeCount = snapshot.docs.filter((doc) => {
+        const data = doc.data();
+        return data.started === true;
+      }).length;
+  
+      setActiveGames(activeCount);
+      console.log("Active games:", activeCount);
+    };
+  
+    fetchActiveGamesCount();
+  }, []);
+
+  // const fetchInformation = async () => {
+  //   const snapshot = await getDocs(collection(db, "login"));
+  //   const data = snapshot.docs.map((doc) => {
+  //     const d = doc.data();
+  //     return {
+       
+  //     };
+  //   });
+
+  // Get the amount of users in storage.
 
   const handleGetJwt = async () => {
     if (auth.currentUser) {
@@ -101,6 +152,7 @@ const Dashboard = () => {
     }
   };
 
+
   return (
     <>
       {/* Fixed Navbar */}
@@ -158,15 +210,15 @@ const Dashboard = () => {
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-lg font-semibold mb-2">Total Users</h2>
-              <p className="text-2xl font-bold text-blue-400">1,245</p>
+              <p className="text-2xl font-bold text-blue-400">{userCount}</p>
             </div>
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-lg font-semibold mb-2">Active Games</h2>
-              <p className="text-2xl font-bold text-green-400">5</p>
+              <p className="text-2xl font-bold text-green-400">{activeGames}</p>
             </div>
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Active Players</h2>
-              <p className="text-2xl font-bold text-yellow-400">76</p>
+              <h2 className="text-lg font-semibold mb-2">Total Teams</h2>
+              <p className="text-2xl font-bold text-yellow-400">{teamCount}</p>
             </div>
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
