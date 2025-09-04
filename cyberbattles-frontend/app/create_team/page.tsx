@@ -5,6 +5,9 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
+import ApiClient from "@/components/ApiClient";
+
+
 
 // TODO: Change this to be creating a session, rather than team as this is
 // controlled by the backend. Make API call :
@@ -15,19 +18,37 @@ import Navbar from "@/components/Navbar";
 // NOTE: Not implemented modularity for multiple scenarios on the backend yet.
 // For now just only setting up the basic scenario 'ubuntu-latest'
 
+
+
+
 const CreateTeam = () => {
+
     const router = useRouter();
-    const [teamName, setTeamName] = useState("");
-    const [playerCount, setPlayerCount] = useState(3);
+    const [scenario, setScenario] = useState(0);
+    const [numTeams, setNumberTeams] = useState(2);
+    const [numMembersPerTeam, setPlayersPerTeam] = useState(0);
+    
+
+    async function createSession() { // scenario (hardcode 0 for now), num teams, players per team
+        try {
+            const response = await ApiClient.post("/session", {
+              "selectedScenario" : scenario,
+              "numTeams" : numTeams,
+              "numMembersPerTeam" : numMembersPerTeam,
+              "token" : localStorage.getItem("token")
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error creating session:", error);
+        }
+    }
+
+   
+
   
     const handleCreateTeam = async () => {
       try {
-        if (!teamName.trim()) {
-          alert("Please enter a team name");
-          return;
-        }
-        // TODO: Add team creation logic here
-        console.log("Creating team:", { name: teamName, playerCount });
+        await createSession();
         router.push("/dashboard");
       } catch (error) {
         console.error("Create team failed:", error);
@@ -58,23 +79,33 @@ const CreateTeam = () => {
   
             {/* Create Team Form */}
             <section className="flex flex-col items-center space-y-8">
-              <div className="w-80">
-                <label htmlFor="teamName" className="block text-sm font-medium text-gray-300 mb-2">
-                  Team Name
+
+               <div className="w-80">
+                <label htmlFor="playerCount" className="block text-sm font-medium text-gray-300 mb-4">
+                  Number of teams: {numTeams}
                 </label>
-                <input
-                  id="teamName"
-                  type="text"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="Enter team name..."
-                  className="w-full px-4 py-3 bg-[#1e1e1e] border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition"
-                />
+                <div className="relative">
+                  <input
+                    id="playerCount"
+                    type="range"
+                    min="2"
+                    max="5"
+                    value={numMembersPerTeam}
+                    onChange={(e) => setNumberTeams(parseInt(e.target.value))}
+                    className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-sm text-gray-400 mt-2">
+                    <span>2</span>
+                    <span>3</span>
+                    <span>4</span>
+                    <span>5</span>
+                  </div>
+                </div>
               </div>
 
               <div className="w-80">
                 <label htmlFor="playerCount" className="block text-sm font-medium text-gray-300 mb-4">
-                  Number of Players: {playerCount}
+                  Number of Players Per Team: {numMembersPerTeam}
                 </label>
                 <div className="relative">
                   <input
@@ -82,8 +113,8 @@ const CreateTeam = () => {
                     type="range"
                     min="1"
                     max="5"
-                    value={playerCount}
-                    onChange={(e) => setPlayerCount(parseInt(e.target.value))}
+                    value={numMembersPerTeam}
+                    onChange={(e) => setPlayersPerTeam(parseInt(e.target.value))}
                     className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider"
                   />
                   <div className="flex justify-between text-sm text-gray-400 mt-2">

@@ -5,6 +5,7 @@ import { signOut } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import ApiClient from "@/components/ApiClient";
 
 const Lobby = () => {
   const router = useRouter();
@@ -13,11 +14,20 @@ const Lobby = () => {
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
   const [teamName, setTeamName] = useState("");
+
   
   // TODO: Setup backend call to get player, scenario and teams information
   // TODO: Check whether the user is authenticated as an admin or a regular player
   // and show actions appropriately
 
+   async function startSession() {
+        try {
+            const response = await ApiClient.post("/start-session");
+            return response.data;
+        } catch (error) {
+            console.error("Error starting session:", error);
+        }
+    }
 
   const handleLogout = async () => {
     try {
