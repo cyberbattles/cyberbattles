@@ -15,6 +15,8 @@ const Lobby = () => {
   const [teamName, setTeamName] = useState("");
   
   // TODO: Setup backend call to get player, scenario and teams information
+  // TODO: Check whether the user is authenticated as an admin or a regular player
+  // and show actions appropriately
 
 
   const handleLogout = async () => {

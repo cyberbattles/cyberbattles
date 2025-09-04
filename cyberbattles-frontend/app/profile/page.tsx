@@ -4,13 +4,15 @@ import Image from "next/image";
 import logo from "../../public/images/logo.png"
 import Navbar from "@/components/Navbar";
 import { auth } from "../../lib/firebase";
-import { getAuth, onAuthStateChanged, updateEmail } from "firebase/auth";
+import { getAuth, onAuthStateChanged, deleteUser, reauthenticateWithCredential } from "firebase/auth";
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
     updateProfile,
+    EmailAuthProvider
 } from "firebase/auth";
 import {
+    deleteObject,
     getDownloadURL,
     getStorage,
     ref,
@@ -18,6 +20,7 @@ import {
 } from "firebase/storage";
 import { useRouter } from "next/navigation";
 import { FileData } from "firebase/ai";
+import { AuthCredential, EmailAuthCredential } from "firebase/auth/web-extension";
 
 //------------------------------
 
@@ -41,6 +44,8 @@ const router = useRouter();
 // useState hooks
 const [currentUser, setCurrentUser] = useState<any | null>(null)
 const [photoURL, setPhotoURL] = useState("https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png")
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 
 const [selectedIndex, setSelectedIndex] = useState(0)
 const [username, setUsername] = useState("");
@@ -99,6 +104,36 @@ const handleUpload = async (e:any) => {
     
 }
 
+const handleDelete = async (e:any) => {
+    
+    setLoading(true);
+    
+    const credential = EmailAuthProvider.credential(email, password)
+
+    await reauthenticateWithCredential(currentUser, credential).then(() => {
+        // User was authenticated
+        if (currentUser.photoURL){
+            const photoURLRef = ref(storage, photoURL)
+            deleteObject(photoURLRef).then().catch((e) => {
+                console.log("Unable to delete profile picture")
+            })
+        }
+        deleteUser(currentUser).then(() => {
+            alert("User successfully deleted");
+            setLoading(false);    
+            router.push('/')
+        }).catch((e) => {
+            setError("Unable to delete user")
+        })
+    }).catch((e) => {
+        // error detected
+        setError("Unable to authenticate user")
+
+    })
+
+    setLoading(false);    
+}
+
 const handleCancel = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -146,62 +181,60 @@ return (
             </div>
             {/* Edit profile */}
             { selectedIndex === 0 &&
-                    <form onSubmit={handleUpload} className="p-5 w-full flex flex-col gap-20">
-                        <div className="flex flex-row w-full justify-between items-center">
-                            <div className="p-3 w-1/3 placeholder:text-white text-white ">
-                                Username:
-                            </div>
+                <form onSubmit={handleUpload} className="p-5 w-full flex flex-col gap-20">
+                    <div className="flex flex-row w-full justify-between items-center">
+                        <div className="p-3 w-1/3 placeholder:text-white text-white ">
+                            Username:
+                        </div>
+                        {
+                        currentUser &&
+                        <input
+                            className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder={currentUser.displayName}
+                        />
+                        }
+                    </div>
+                    <div className="flex flex-row w-full items-center">
+                        <div className="p-3 w-1/3 placeholder:text-white text-white ">
+                            Profile Picture:
+                        </div>
+                        <div
+                            className="flex flex-row items-center justify-between w-2/3">
                             {
-                            currentUser &&
-                            <input
-                                className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder={currentUser.displayName}
-                            />
+                                currentUser &&
+                                <img 
+                                    src={photoURL}
+                                    alt="avatar"
+                                    width={150}
+                                    height={150}
+                                    className="rounded-xl" />
                             }
-                        </div>
-                        <div className="flex flex-row w-full items-center">
-                            <div className="p-3 w-1/3 placeholder:text-white text-white ">
-                                Profile Picture:
-                            </div>
-                            <div
-                                className="flex flex-row items-center justify-between w-2/3">
-                                {
-                                    currentUser &&
-                                    <img 
-                                        src={photoURL}
-                                        alt="avatar"
-                                        width={200}
-                                        height={200}
-                                        className="rounded-xl" />
-                                }
-                                <input
-                                    className="w-2/3 ml-20 bg-blue-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
-                                    type="file" onChange={handleChange}/>
-                            </div>
-
+                            <input
+                                className="w-2/3 ml-5 bg-blue-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
+                                type="file" onChange={handleChange}/>
                         </div>
 
-                        {error && <p className="text-red-500 text-sm">{error}</p>}
+                    </div>
 
-                        <div className="flex flex-row w-full justify-between items-center gap-5">
-                            <button
-                            disabled={loading}
-                            onClick={handleUpload}
-                            className="bg-green-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
-                            >
-                                Save changes
-                            </button>
-                            <button
-                            onClick={handleCancel}
-                            className="rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold border-1"
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </form>
+                    <div className="flex flex-row w-full justify-between items-center gap-5">
+                        <button
+                        disabled={loading}
+                        onClick={handleUpload}
+                        className="bg-green-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
+                        >
+                            Save changes
+                        </button>
+                        <button
+                        onClick={handleCancel}
+                        className="rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold border-1"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             }
             {/* Authentication */}
             { selectedIndex === 1 &&
@@ -211,9 +244,46 @@ return (
             }
             {/* Delete account */}
             { selectedIndex === 2 &&
-                <form className="p-5 flex flex-col gap-10 w-full">
-                    <button>Delete</button>
-                </form>
+                <div className="p-5 w-full flex flex-col gap-5">
+                    <p className="mt-5">
+                        Are you sure you want to delete this account? This action is irreversible. <br/> <br/> Enter credentials:
+                    </p>
+
+                    <div className="flex flex-col w-full gap-5">
+                        {
+                        currentUser &&
+                        <>
+                        <input
+                            className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Email"
+                            required
+                            />
+                        <input
+                            className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Password"
+                            required
+                            />
+                        </>
+                        }
+                    </div>
+
+                    {error && <p className="text-red-500 text-sm">{error}</p>}
+
+
+                    <button
+                    disabled={loading}
+                    onClick={handleDelete}
+                    className="bg-red-600 rounded-xl text-white py-2 px-6 w-full hover:opacity-90 transition font-bold"
+                    >
+                        Delete Account
+                    </button>
+                </div>
             }
             </div>
         </div>
