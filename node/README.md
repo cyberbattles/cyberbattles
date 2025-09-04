@@ -1,32 +1,43 @@
 # Docker Orchestration Server Testing Guide
 
-This code is only designed and tested on Linux, please use a Linux VM or WSL when testing.
 
-### Prerequisites
+This code is only designed and tested on Linux, please use either a Linux computer, Linux VM or WSL when testing.
 
--   **Docker:** Ensure Docker is installed and the daemon is running. You can verify your installation by opening a terminal and running the command below:
+## Prerequisites
+
+- **Docker:** Ensure Docker is installed and the daemon is running. You can verify your installation by opening a terminal and running the command below. It should output a version number.
+
+  ```
+  docker -v
+  ```
+  If Docker is not installed:
+  - For WSL (it seems to work fine on my end) you'll need [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/).
+  - For any Linux VM you can just install [Docker Engine](https://docs.docker.com/engine/install/).
+- **NodeJS:** Ensure Node (and NPM) is installed by running the commands below. It should output two version numbers.
+  ```
+  npm -v ; node -v
+  ```
+  If Node and NPM aren't installed:
+  - Run `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash` to install *Node Version Manager*, then `nvm install 22` to install NPM and Node v22.
     
-    ```
-    docker -v
-    ```
-    
-
 ### 1. Backend Setup
 
 First, get the Node.js server running.
 
-2. ```
+1. ```
    cd node
    npm i
    npx tsc
    node build/src/server.js
    ```
-5.  The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
-    
+
+
+2. The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
 
 ### 2. Frontend Setup
 
 Next, start the Next.js frontend application in a new terminal.
+
 
 1.  Open a **new terminal window or tab**.
     
@@ -37,7 +48,7 @@ Next, start the Next.js frontend application in a new terminal.
     npm run dev
     ```
     
-4.  The development server will start. Navigate to the URL provided in your terminal (this is usually `http://localhost:3000`).
+3.  The development server will start. Navigate to the URL provided in your terminal (this is usually `http://localhost:3000`).
     
 
 ### 3. Testing Workflow
@@ -68,8 +79,9 @@ Follow these steps to test the full user flow.
     
     -   Go back to the Docker Terminal admin page (`http://localhost:1337`) and click Start Session.
 
-    -   Once started, the Team IDs and User ID dropdowns will autofill. Select the team that you joined previously, there should only be one User ID. I will add the ability to see your own User ID for convenience later.
+    -   Once started, the Team IDs and User ID dropdowns will autofill. Select the team that you joined previously, unless you've added other users there should only be your **User ID** in the **User ID** field.
         
     -   Your JWT will be autofilled from the first time it was entered, if you want to test the token of another user you can change it still. Otherwise leave it as is.
         
     -   Click to connect.
+
