@@ -82,6 +82,8 @@ interface Session {
   networkId: string;
   /** The name of the Docker network associated with the team. */
   networkName: string;
+  /** The container ID of the WireGuard router. */
+  wgContainerId: string;
   /** A unique identifier for the session. */
   id: string;
 }
@@ -234,18 +236,20 @@ async function createNetwork(
   sessionId: string,
 ): Promise<{networkId: string; networkName: string; networkSubnet: string}> {
   // Get the next available subnet
-  const subnet = `10.12.${nextAvilableSubnetOctet}.0/24`;
-  nextAvilableSubnetOctet += 1; // Increment for next session
+  const subnet = `172.12.${nextAvilableSubnetOctet}.0/24`;
 
   const IPAM = {
     Driver: 'default',
     Config: [
       {
         Subnet: subnet,
-        Gateway: `10.12.${nextAvilableSubnetOctet - 1}.1`,
+        Gateway: `172.12.${nextAvilableSubnetOctet}.1`,
       },
     ],
   };
+
+  // Increment for next session
+  nextAvilableSubnetOctet += 1;
 
   // Create the network
   const networkName = `sessionNet-${sessionId}`;
@@ -292,7 +296,10 @@ async function createTeamContainer(
     Image: image,
     name: `teamcon-${teamName}-${teamId}`,
     Tty: true,
+    Env: ['PUID=1000', 'PGID=1000'],
     HostConfig: {
+      CapAdd: ['NET_ADMIN'],
+      Dns: ['1.0.0.1', '1.1.1.1'],
       NetworkMode: networkName,
       CpuQuota: 20_000, // This
       CpuPeriod: 100_000, // And this makes a 20% CPU Usage Limit
@@ -326,13 +333,23 @@ async function createWgRouter(
     console.log('WireGuard image already exists, skipping pull.');
   } catch (error) {
     console.log('Pulling WireGuard image');
-    await new Promise(resolve =>
-      docker.pull(WIREGUARD_IMAGE, {}, (_: Error, stream) => {
-        if (stream !== undefined) {
-          docker.modem.followProgress(stream, resolve);
+    await new Promise((resolve, reject) => {
+      docker.pull(WIREGUARD_IMAGE, {}, (err: Error, stream) => {
+        if (err) {
+          return reject(err);
         }
-      }),
-    );
+        if (stream) {
+          docker.modem.followProgress(stream, (err, output) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(output);
+          });
+        } else {
+          reject(new Error('Docker pull stream is not available.'));
+        }
+      });
+    });
     console.log('WireGuard Image pulled successfully.');
   }
 
@@ -347,7 +364,6 @@ async function createWgRouter(
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
       `SERVERURL=${wgRouterIp}`,
-      'PEERDNS=1.1.1.1',
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
       `NUM_PLAYERS=${numMembersPerTeam}`,
@@ -356,6 +372,7 @@ async function createWgRouter(
     ],
     HostConfig: {
       CapAdd: ['NET_ADMIN'],
+      Dns: ['1.0.0.1', '1.1.1.1'],
       Binds: [
         `${path.resolve(__dirname, 'wg-configs')}:/config:z`,
         `${path.resolve(__dirname, 'server-init-script')}:/custom-cont-init.d:ro,z`,
@@ -501,7 +518,9 @@ async function createSession(
   const ipBase = networkSubnet.split('/')[0].replace(/\.0$/, '');
   const wgRouterIp = `${ipBase}.200`;
   const wireguardPort = nextAvailableWGPort;
-  nextAvailableWGPort += 1; // Increment for next session
+
+  // Increment for next session
+  nextAvailableWGPort += 1;
 
   // Create the WireGuard router container
   const wgContainerId = await createWgRouter(
@@ -514,7 +533,7 @@ async function createSession(
   );
 
   console.log(
-    `WireGuard Router created with Container ID: ${wgContainerId} on IP: ${wgRouterIp} and Port: ${wireguardPort}`,
+    `WireGuard Router created with Container ID: ${wgContainerId} at port: ${wireguardPort}`,
   );
 
   // Create and store teams
@@ -547,6 +566,7 @@ async function createSession(
     serverId,
     networkId,
     networkName,
+    wgContainerId,
     id: sessionId,
   };
 
@@ -681,6 +701,17 @@ async function cleanupSession(session: Session): Promise<void> {
     return;
   }
 
+  // Remove the WireGuard router container
+  try {
+    const wgContainer = docker.getContainer(session.wgContainerId);
+    await wgContainer.stop();
+    await wgContainer.remove();
+  } catch (error) {
+    console.error(
+      'Cleanup Error: WireGuard router container not found or already removed.',
+    );
+  }
+
   // Remove the session network
   try {
     const network = docker.getNetwork(session.networkName);
@@ -717,7 +748,6 @@ async function cleanupSession(session: Session): Promise<void> {
     await teamRef.delete();
   }
 
-  // Delete the session document itself
   console.log(`Session document ${session.id} deleted.`);
 }
 
