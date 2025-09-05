@@ -43,13 +43,13 @@ function Navbar() {
     <nav className="fixed w-full h-40 shadow-xl bg-black z-50">
       <div className="flex flex-basis items-center h-full w-full ">
         <div className="flex w-2/3 items-center pl-5">
-          <button onClick={handleClick} className="flex lg:hidden">
+          <div onClick={handleClick} className="flex lg:hidden">
             <Image src={hamburger} alt="hamburger" width={50} className="invert ml-10" />
-            <div className={`absolute w-50 h-80 pt-2 top-5 left-5 bg-black rounded-xl opacity-0 transition-opacity duration-700 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-              <button className="absolute top-5 right-5" onClick={handleClick}>
+            <div className={` absolute w-50 h-80 pt-2 top-5 left-5 bg-black rounded-xl opacity-0 transition-opacity duration-700 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="absolute top-5 right-5" onClick={handleClick}>
                 <Image src={close} alt="close" width={20} className="invert" />
-              </button>
-              <ul className={`flex flex-col justify-between w-full h-full py-10 ${isOpen ? '' : 'hidden'}`}>
+              </div>
+              <ul className={`flex flex-col justify-between items-center w-full h-full py-10 ${isOpen ? '' : 'hidden'}`}>
                 {items.map((item, index) => (
                   <Link key={item} href={links[index]}>
                     <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
@@ -59,7 +59,8 @@ function Navbar() {
                 ))}
               </ul>
             </div> 
-            </button>
+          </div>
+
           <Image src={logo} alt="logo" width={150} className="hidden xl:flex" />
           <ul className="justify-between w-full gap-5 mr-60 ml-10 hidden lg:flex ">
             {items.map((item, index) => (
