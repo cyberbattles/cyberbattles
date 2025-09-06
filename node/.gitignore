@@ -1,3 +1,5 @@
+wg-configs/*
+
 # Logs
 logs
 *.log
