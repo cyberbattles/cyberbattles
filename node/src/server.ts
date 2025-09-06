@@ -7,6 +7,7 @@ import {Duplex, PassThrough, Writable} from 'stream';
 import * as crypto from 'crypto';
 import {machineIdSync} from 'node-machine-id';
 import * as path from 'path';
+import * as fs from 'fs/promises';
 
 import {initializeApp, ServiceAccount, cert} from 'firebase-admin/app';
 import {getFirestore} from 'firebase-admin/firestore';
@@ -374,7 +375,7 @@ async function createWgRouter(
       CapAdd: ['NET_ADMIN'],
       Dns: ['1.0.0.1', '1.1.1.1'],
       Binds: [
-        `${path.resolve(__dirname, '../../wg-configs')}:/config:z`,
+        `${path.resolve(__dirname, `../../wg-configs/${sessionId}`)}:/config:z`,
         `${path.resolve(__dirname, '../../server-init-script')}:/custom-cont-init.d:ro,z`,
       ],
       PortBindings: {
@@ -387,7 +388,7 @@ async function createWgRouter(
       RestartPolicy: {Name: 'unless-stopped'},
     },
     Healthcheck: {
-      Test: ['CMD', 'test', '-f', '/config/init_done'],
+      Test: ['CMD', 'test', '-f', `/config/${sessionId}/init_done`],
       Interval: 6000000000, // 6 seconds in nanoseconds
     },
     NetworkingConfig: {
@@ -402,22 +403,37 @@ async function createWgRouter(
   await container.start();
   const wgContainer = docker.getContainer(container.id);
 
+  // Wait until init_done file is created by the container
   console.log('Waiting for wg-router to become healthy...');
   let isHealthy = false;
+  const initDonePath = path.resolve(
+    __dirname,
+    `../../wg-configs/${sessionId}/`,
+    'init_done',
+  );
+
   for (let i = 0; i < 30; i++) {
-    // Wait for max 30s
-    const inspectData = await wgContainer.inspect();
-    if (inspectData.State.Health?.Status === 'healthy') {
+    // Loop for a maximum of 30 seconds
+    try {
+      await fs.stat(initDonePath);
+
+      console.log('init_done file found. Container is healthy.');
       isHealthy = true;
       break;
+    } catch (error) {
+      // The file does not exist yet.
     }
+
+    // Wait for 1 second before the next check.
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
+
   if (!isHealthy) {
     throw new Error(
       'WireGuard router container did not become healthy in time.',
     );
   }
+
   console.log(`WireGuard Router for Session: ${sessionId} is healthy.`);
 
   return wgContainer.id;
@@ -921,8 +937,6 @@ async function main() {
         senderUid,
       );
 
-      console.log(result);
-
       return res.status(201).json({result: result});
     } catch (error) {
       const errorMessage = `Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -959,8 +973,6 @@ async function main() {
         sessionId.trim(),
         senderUid,
       );
-
-      console.log(result);
 
       if (!result.success) {
         return res.status(400).json({result: result.message});
