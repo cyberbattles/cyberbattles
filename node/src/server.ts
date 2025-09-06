@@ -292,6 +292,7 @@ async function createTeamContainer(
   teamId: string,
   networkName: string,
   teamIndex: number,
+  sessionId: string,
 ): Promise<string> {
   const container = await docker.createContainer({
     Image: image,
@@ -310,7 +311,7 @@ async function createTeamContainer(
         'net.ipv4.conf.all.src_valid_mark': '1',
       },
       Binds: [
-        `${path.resolve(__dirname, `../../wg-configs/peer${teamIndex + 1}/peer${teamIndex + 1}.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
+        `${path.resolve(__dirname, `../../wg-configs/${sessionId}/peer${teamIndex + 1}/peer${teamIndex + 1}.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
         `${path.resolve(__dirname, '../../challenge-setup-script/supervisord.conf')}:/etc/supervisord.conf:ro,z`,
       ],
       RestartPolicy: {Name: 'unless-stopped'},
@@ -472,6 +473,7 @@ async function createTeam(
     teamId,
     networkName,
     teamIndex,
+    sessionId,
   );
 
   try {
@@ -749,6 +751,20 @@ async function cleanupSession(session: Session): Promise<void> {
 
     // Delete the team document
     await teamRef.delete();
+
+    // Delete the WireGuard config files
+    try {
+      const sessionDir = path.resolve(
+        __dirname,
+        `../../wg-configs/${session.id}`,
+      );
+      await fs.rm(sessionDir, {recursive: true, force: true});
+      console.log(`Deleted WireGuard config files for session ${session.id}.`);
+    } catch (error) {
+      console.error(
+        `Cleanup Error: Failed to delete WireGuard config files for session ${session.id}.`,
+      );
+    }
   }
 
   // Remove the session network
