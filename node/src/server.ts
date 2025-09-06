@@ -309,8 +309,8 @@ async function createTeamContainer(
         'net.ipv4.conf.all.src_valid_mark': '1',
       },
       Binds: [
-        `${path.resolve(__dirname, `./wg-configs/peer${teamIndex + 1}/peer${teamIndex + 1}.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
-        `${path.resolve(__dirname, './challenge-setup-script/supervisord.conf')}:/etc/supervisord.conf:ro,z`,
+        `${path.resolve(__dirname, `../../wg-configs/peer${teamIndex + 1}/peer${teamIndex + 1}.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
+        `${path.resolve(__dirname, '../../challenge-setup-script/supervisord.conf')}:/etc/supervisord.conf:ro,z`,
       ],
       RestartPolicy: {Name: 'unless-stopped'},
     },
@@ -356,7 +356,7 @@ async function createWgRouter(
   const container = await docker.createContainer({
     Image: 'lscr.io/linuxserver/wireguard:latest',
     name: `wg-router-${sessionId}`,
-
+    Tty: false,
     Env: [
       'PUID=1000',
       'PGID=1000',
@@ -374,8 +374,8 @@ async function createWgRouter(
       CapAdd: ['NET_ADMIN'],
       Dns: ['1.0.0.1', '1.1.1.1'],
       Binds: [
-        `${path.resolve(__dirname, 'wg-configs')}:/config:z`,
-        `${path.resolve(__dirname, 'server-init-script')}:/custom-cont-init.d:ro,z`,
+        `${path.resolve(__dirname, '../../wg-configs')}:/config:z`,
+        `${path.resolve(__dirname, '../../server-init-script')}:/custom-cont-init.d:ro,z`,
       ],
       PortBindings: {
         [`${wireguardPort}/udp`]: [{HostPort: `${wireguardPort}`}],
@@ -712,19 +712,6 @@ async function cleanupSession(session: Session): Promise<void> {
     );
   }
 
-  // Remove the session network
-  try {
-    const network = docker.getNetwork(session.networkName);
-    await network.remove();
-    console.log(
-      `Removed network ${session.networkName} for session ${session.id}.`,
-    );
-  } catch (error) {
-    console.error(
-      `Cleanup Error: Network not found or already removed for session ${session.id}.`,
-    );
-  }
-
   for (const teamId of session.teamIds) {
     const teamRef = db.collection('teams').doc(teamId);
     const teamDoc = await teamRef.get();
@@ -746,6 +733,20 @@ async function cleanupSession(session: Session): Promise<void> {
 
     // Delete the team document
     await teamRef.delete();
+  }
+
+  // Remove the session network
+  try {
+    const network = docker.getNetwork(session.networkName);
+    await network.remove();
+    console.log(
+      `Removed network ${session.networkName} for session ${session.id}.`,
+    );
+  } catch (error) {
+    console.error(error);
+    console.error(
+      `Cleanup Error: Network not found or already removed for session ${session.id}.`,
+    );
   }
 
   console.log(`Session document ${session.id} deleted.`);
@@ -909,7 +910,7 @@ async function main() {
         typeof numMembersPerTeam !== 'number'
       ) {
         // If data is missing or invalid, send a 'Bad Request' response
-        return res.status(400).json({result: 'Invalid request body'}).send();
+        return res.status(400).json({result: 'Invalid request body'});
       }
 
       // Create the new session
@@ -920,11 +921,13 @@ async function main() {
         senderUid,
       );
 
-      return res.status(201).json({result: result}).send();
+      console.log(result);
+
+      return res.status(201).json({result: result});
     } catch (error) {
       const errorMessage = `Error creating session: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error(errorMessage);
-      return res.status(500).json({result: errorMessage}).send();
+      return res.status(500).json({result: errorMessage});
     }
   });
 
@@ -948,7 +951,7 @@ async function main() {
 
       // Check if sessionId is provided and is a string
       if (typeof sessionId !== 'string') {
-        return res.status(400).json({result: 'Invalid session ID'}).send();
+        return res.status(400).json({result: 'Invalid session ID'});
       }
 
       // Start the session
@@ -957,21 +960,20 @@ async function main() {
         senderUid,
       );
 
+      console.log(result);
+
       if (!result.success) {
-        return res.status(400).json({result: result.message}).send();
+        return res.status(400).json({result: result.message});
       } else {
-        return res
-          .status(200)
-          .json({
-            result: result.message,
-            teamsAndMembers: result.teamsAndMembers,
-          })
-          .send();
+        return res.status(200).json({
+          result: result.message,
+          teamsAndMembers: result.teamsAndMembers,
+        });
       }
     } catch (error) {
       const errorMessage = `Error starting session: ${error instanceof Error ? error.message : 'Unknown error'}`;
       console.error(errorMessage);
-      return res.status(500).json({result: errorMessage}).send();
+      return res.status(500).json({result: errorMessage});
     }
   });
 
