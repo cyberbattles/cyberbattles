@@ -37,7 +37,12 @@ This code is only designed and tested on Linux, please use either a Linux comput
 
 ### 1. Backend Setup
 
-First, get the Node.js server running.
+Only addition I need to make to this PR is you _should_ run this before getting started:
+`sudo docker build -t challenge_example node/dockerfiles/challenge_example`
+
+Automatic building of images is still not working perfectly, and takes a _really long time_. That's being worked on.
+
+Then, get the Node.js server running.
 
 1. ```
    cd node
