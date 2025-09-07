@@ -24,6 +24,8 @@ initializeApp({
 const db = getFirestore();
 const serverId = machineIdSync();
 
+const cors = require("cors");
+
 /**
  * An interface representing a user in the session.
  */
@@ -692,6 +694,13 @@ async function main() {
 
   // Parse JSON request bodies
   app.use(express.json());
+  
+  // Allows requests from the frontend
+  app.use(cors({
+      origin: "http://localhost:3000", 
+      methods: ["GET", "POST", "OPTIONS"],
+      allowedHeaders: ["Origin", "Content-Type", "Authorization"],
+  }));
 
   // Handle WebSocket connections
   await handleWSConnection(wss);
