@@ -85,6 +85,7 @@ async function buildImages(dockerfilesPath: string): Promise<void> {
       console.log(`Image ${imageTag} already exists, skipping build.`);
 
       // Skip to the next Dockerfile
+      SCENARIOS.push(imageTag);
       continue;
     } catch (error) {
       // Image does not exist, proceed to build
