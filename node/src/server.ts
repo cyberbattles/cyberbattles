@@ -215,11 +215,21 @@ async function createUser(
       `useradd -m -s /bin/bash ${userName} && usermod -aG sudo ${userName} && echo '${userName} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers`,
     ];
 
+    // Set a default password for the user command
+    const setPassword = [
+      '/bin/sh',
+      '-c',
+      `echo '${userName}:${userName}' | chpasswd`,
+    ];
+
     // Update repo and install sudo
     await runCommandInContainer(container, installSudo);
 
     // Create user and add them to sudoers
     await runCommandInContainer(container, addSudoUser);
+
+    // Set the user's password
+    await runCommandInContainer(container, setPassword);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Create User Error: ${error.message}`);
@@ -295,7 +305,6 @@ async function createTeamContainer(
   teamName: string,
   teamId: string,
   networkName: string,
-  teamIndex: number,
   sessionId: string,
 ): Promise<string> {
   const container = await docker.createContainer({
@@ -315,7 +324,7 @@ async function createTeamContainer(
         'net.ipv4.conf.all.src_valid_mark': '1',
       },
       Binds: [
-        `${path.resolve(__dirname, `../../wg-configs/${sessionId}/peer${teamIndex + 1}/peer${teamIndex + 1}.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
+        `${path.resolve(__dirname, `../../wg-configs/${sessionId}/container-${teamId}/wg0.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
         `${path.resolve(__dirname, '../../challenge-setup-script/supervisord.conf')}:/etc/supervisord.conf:ro,z`,
       ],
       RestartPolicy: {Name: 'unless-stopped'},
@@ -335,6 +344,7 @@ async function createTeamContainer(
  * @param wireguardPort The UDP port on which WireGuard will listen.
  * @param numTeams The number of teams in the session (used for peer config generation).
  * @param numMembersPerTeam The number of members per team (used for peer config generation).
+ * @param teamIds The IDs of the teams in the session (used for peer config generation).
  * @returns A Promise that resolves to the created WireGuard router containerId.
  **/
 async function createWgRouter(
@@ -344,6 +354,7 @@ async function createWgRouter(
   wireguardPort: number,
   numTeams: number,
   numMembersPerTeam: number,
+  teamIds: string[],
 ): Promise<string> {
   // Check if the WireGuard image is already pulled
   const image = docker.getImage(WIREGUARD_IMAGE);
@@ -372,6 +383,9 @@ async function createWgRouter(
     console.log('WireGuard Image pulled successfully.');
   }
 
+  // Convert teamIds to space-seperated string
+  const teamIdsStr = teamIds.join(' ');
+
   // Create wg-router, config provided by @Howard
   const container = await docker.createContainer({
     Image: 'lscr.io/linuxserver/wireguard:latest',
@@ -389,6 +403,7 @@ async function createWgRouter(
       `NUM_PLAYERS=${numMembersPerTeam}`,
       `SERVER_IP=${wgRouterIp}`,
       `SERVER_PORT=${wireguardPort}`,
+      `TEAM_IDS=${teamIdsStr}`,
     ],
     HostConfig: {
       CapAdd: ['NET_ADMIN'],
@@ -472,7 +487,7 @@ async function createTeam(
   selectedScenario: number,
   sessionId: string,
   networkName: string,
-  teamIndex: number,
+  teamId: string,
 ): Promise<Team> {
   // Check if the scenario is valid
   const dockerImage = SCENARIOS.at(selectedScenario);
@@ -482,16 +497,12 @@ async function createTeam(
     );
   }
 
-  // Generate a unique ID for the team
-  const teamId: string = generateId();
-
   // Create a container for the team
   const containerId = await createTeamContainer(
     dockerImage,
     name,
     teamId,
     networkName,
-    teamIndex,
     sessionId,
   );
 
@@ -560,6 +571,12 @@ async function createSession(
   // Increment for next session
   nextAvailableWGPort += 1;
 
+  // Pre-generate teamIds
+  const teamIds: string[] = [];
+  for (let i = 0; i < numTeams; i++) {
+    teamIds.push(generateId());
+  }
+
   // Create the WireGuard router container
   const wgContainerId = await createWgRouter(
     sessionId,
@@ -568,6 +585,7 @@ async function createSession(
     wireguardPort,
     numTeams,
     numMembersPerTeam,
+    teamIds,
   );
 
   console.log(
@@ -575,7 +593,6 @@ async function createSession(
   );
 
   // Create and store teams
-  const teamIds: string[] = [];
   for (let i = 0; i < numTeams; i++) {
     const teamName = `Team-${i + 1}`;
     const team: Team = await createTeam(
@@ -584,12 +601,11 @@ async function createSession(
       selectedScenario,
       sessionId,
       networkName,
-      i,
+      teamIds[i],
     );
 
     const teamRef = db.collection('teams').doc(team.id);
     await teamRef.set(team);
-    teamIds.push(team.id);
     console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
@@ -1034,7 +1050,7 @@ async function main() {
 process.on('SIGINT', async () => {
   console.log('\nCaught interrupt signal and beginning cleanup...');
   await cleanupAllSessions();
-  throw 'Process terminated';
+  process.exit(0);
 });
 
 // Start server
