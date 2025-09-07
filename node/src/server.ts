@@ -12,8 +12,6 @@ import {getFirestore} from 'firebase-admin/firestore';
 import {getAuth} from 'firebase-admin/auth';
 import * as serviceAccount from '../cyberbattles-dd31f-18566f4ef322.json';
 
-import cors from "cors";
-
 const PORT = '1337';
 const SCENARIOS: string[] = ['ubuntu:latest'];
 
@@ -694,12 +692,6 @@ async function main() {
 
   // Parse JSON request bodies
   app.use(express.json());
-
-  app.use(cors({
-    origin: "http://localhost:3000",   
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  }));
 
   // Handle WebSocket connections
   await handleWSConnection(wss);
