@@ -213,7 +213,7 @@ return (
                                     className="rounded-xl" />
                             }
                             <input
-                                className="w-2/3 ml-5 bg-blue-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
+                                className="w-2/3 ml-5 bg-blue-600 rounded-xl text-white py-2 px-6  hover:opacity-90 transition font-bold"
                                 type="file" onChange={handleChange}/>
                         </div>
 

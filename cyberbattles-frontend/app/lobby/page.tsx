@@ -2,23 +2,88 @@
 import React, { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, getDocs, getFirestore, onSnapshot } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import ApiClient from "@/components/ApiClient";
 
+
 const Lobby = () => {
   const router = useRouter();
-  const [players, setPlayers] = useState([]);
+  const [teamId, setTeamId] = useState("");
+  const [players, setPlayers] = useState<string[]>([]);
   const [currentScenario, setCurrentScenario] = useState("");
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
-  const [teamName, setTeamName] = useState("");
 
+  // [teamID, memberIDs]
+  const [team, setTeam] = useState<any>(null);
+  // Get the current user
+  const [currentUser, setCurrentUser] = useState<any | null>(null)
+
+  try{
+      onAuthStateChanged(auth, (user) => {
+          if (user && !currentUser){
+            setCurrentUser(user)
+          }
+      })
+      
+    }  catch (error) {
+      setCurrentUser(null)
+      console.error("Failed:", error);
+    }
+    
   
   // TODO: Setup backend call to get player, scenario and teams information
   // TODO: Check whether the user is authenticated as an admin or a regular player
   // and show actions appropriately
+
+  async function findTeam(uid: string) {
+
+    // Check if the teamId has already been set, if so return
+    if (teamId) {
+      return;
+    }
+
+    try{
+      const teamsRef = collection(db, "teams");
+      const q =  query(teamsRef, where("memberIds", "array-contains", uid))
+
+      // Populate the teamId and Players hooks
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        const teamID = doc.data().id;
+        const teamMembers = doc.data().memberIds;
+
+        setTeamId(teamID);
+        setPlayers(teamMembers);
+        setTeam(doc.data())
+        
+      })
+
+    } catch (error) {
+      console.log("Failed", error);
+    }
+  }
+
+  async function getUsername(uid: string) {
+    let ret = ""
+    try{
+      const loginRef = collection(db, "login");
+      const q = query(loginRef, where("UID", "==", uid))
+
+      // Populate the teamId and Players hooks
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        ret = doc.data().userName;
+      })
+
+    } catch (error) {
+      console.log("Failed", error);
+    }
+    return ret;
+  }
 
    async function startSession() {
         try {
@@ -46,7 +111,15 @@ const Lobby = () => {
 
   };
 
- 
+  if (currentUser) {
+    findTeam(currentUser.uid);
+    // let name = getUsername(currentUser.uid);
+    // name.then(value => {
+    //   console.log("the username is", value)
+    // })
+    // console.log(team)
+  }
+  
 
   return (
     <>
@@ -64,7 +137,7 @@ const Lobby = () => {
             <ul className="space-y-4">
               <li>
                 <div className="text-sm text-gray-400">Team:</div>
-                <div className="font-semibold text-blue-400">Team 1</div>
+                <div className="font-semibold text-blue-400">{teamId && team.name}</div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
@@ -127,10 +200,10 @@ const Lobby = () => {
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
               <div className="space-y-3">
-                {players.map((player) => (
-                  <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg">
+                {players.map((player, index) => (
+                  <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={index}>
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">PlayerName</span>
+                      <span className="font-medium">{player}</span>
                     </div>
                     
                   </div>
@@ -140,6 +213,8 @@ const Lobby = () => {
 
             {/* Game Controls */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
+
+              Game Controls
               
               {isHost && (
                 <div className="space-y-4">
