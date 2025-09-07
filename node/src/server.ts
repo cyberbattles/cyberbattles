@@ -189,7 +189,8 @@ async function runCommandInContainer(
 }
 
 /**
- * Creates a new user in the specified Docker container, with the given userName.
+ * Creates a new user in the specified Docker container, with the given userName
+ * and sudoers permissions.
  * @param containerId The ID of the Docker Container in which to create the user.
  * @param userName The userName to assign to the new user.
  */
@@ -279,11 +280,14 @@ async function createNetwork(
 
 /**
  * Creates a Docker container for the team with the specified image, name, and team ID.
+ * Attaches to the given network and configures WireGuard.
  * Container names are formatted as `teamcon-{teamName}-{teamId}`.
  * @param image The Docker image to use for the container.
  * @param teamName The name of the team.
  * @param teamId The unique ID of the team.
  * @param networkName The name of the Docker network to connect the container to.
+ * @param teamIndex The index of the team (0-based) used for WireGuard config selection.
+ * @param sessionId The unique ID of the session.
  * @returns A Promise that resolves to the created Docker containerId.
  **/
 async function createTeamContainer(
@@ -320,6 +324,19 @@ async function createTeamContainer(
   return container.id;
 }
 
+/**
+ * Creates and starts a WireGuard router container for the session.
+ * Configures the container with the specified IP address and port,
+ * and connects it to the given Docker network.
+ * Container names are formatted as `wg-router-{sessionId}`.
+ * @param sessionId The unique ID of the session.
+ * @param networkName The name of the Docker network to connect the container to.
+ * @param wgRouterIp The IP address to assign to the WireGuard router within the network.
+ * @param wireguardPort The UDP port on which WireGuard will listen.
+ * @param numTeams The number of teams in the session (used for peer config generation).
+ * @param numMembersPerTeam The number of members per team (used for peer config generation).
+ * @returns A Promise that resolves to the created WireGuard router containerId.
+ **/
 async function createWgRouter(
   sessionId: string,
   networkName: string,
@@ -355,6 +372,7 @@ async function createWgRouter(
     console.log('WireGuard Image pulled successfully.');
   }
 
+  // Create wg-router, config provided by @Howard
   const container = await docker.createContainer({
     Image: 'lscr.io/linuxserver/wireguard:latest',
     name: `wg-router-${sessionId}`,
@@ -404,7 +422,7 @@ async function createWgRouter(
   await container.start();
   const wgContainer = docker.getContainer(container.id);
 
-  // Wait until init_done file is created by the container
+  // Wait until init_done file is created by the container (i.e. container is healthy)
   console.log('Waiting for wg-router to become healthy...');
   let isHealthy = false;
   const initDonePath = path.resolve(
@@ -413,12 +431,12 @@ async function createWgRouter(
     'init_done',
   );
 
+  // Loop for a maximum of 30 seconds
   for (let i = 0; i < 30; i++) {
-    // Loop for a maximum of 30 seconds
     try {
       await fs.stat(initDonePath);
 
-      console.log('init_done file found. Container is healthy.');
+      console.log(`WireGuard Router for Session: ${sessionId} is healthy.`);
       isHealthy = true;
       break;
     } catch (error) {
@@ -435,8 +453,6 @@ async function createWgRouter(
     );
   }
 
-  console.log(`WireGuard Router for Session: ${sessionId} is healthy.`);
-
   return wgContainer.id;
 }
 
@@ -445,6 +461,9 @@ async function createWgRouter(
  * @param name The name of the team.
  * @param numMembers The number of members in the team.
  * @param selectedScenario The index of the scenario to use.
+ * @param sessionId The unique ID of the session.
+ * @param networkName The name of the Docker network to connect the container to.
+ * @param teamIndex The index of the team (0-based) used for WireGuard config selection.
  * @returns A Promise that resolves to a Team object containing the created team and its members.
  */
 async function createTeam(
@@ -504,6 +523,7 @@ async function createTeam(
  * @param selectedScenario The index of the scenario to use.
  * @param numTeams The number of teams to create.
  * @param numMembersPerTeam The number of members in each team.
+ * @param senderUid The UID of the user creating the session.
  * @returns A Promise that resolves to an object containing the session and team IDs.
  */
 async function createSession(
@@ -707,9 +727,8 @@ async function cleanupAllSessions(): Promise<void> {
 
 /**
  * Cleans up a single session by stopping and removing its containers and networks.
- * Re
  * Deletes the session document from Firestore upon completion.
- * @param sessionId The ID of the session to clean up.
+ * @param session The session object to clean up.
  * @returns A Promise that resolves when the cleanup is complete.
  */
 async function cleanupSession(session: Session): Promise<void> {
@@ -890,6 +909,7 @@ async function handleWSConnection(wss: WebSocketServer): Promise<void> {
         stream.write(data);
       });
 
+      // Handle WebSocket closure
       ws.on('close', () => {
         console.log(`Connection closed for ${userName}`);
         return;
@@ -908,7 +928,7 @@ async function main() {
   const server: http.Server = http.createServer(app);
   const wss = new WebSocket.Server({server});
 
-  // Serve the example xterm.js client
+  // Serve the example xterm.js webpage
   app.use(express.static('public'));
 
   // Parse JSON request bodies
@@ -1010,12 +1030,14 @@ async function main() {
   });
 }
 
+// Catch CTRL-C and clean up any active sessions before exiting
 process.on('SIGINT', async () => {
   console.log('\nCaught interrupt signal and beginning cleanup...');
   await cleanupAllSessions();
-  process.exit(0);
+  throw 'Process terminated';
 });
 
+// Start server
 main().catch(err => {
   console.error('Error starting the server:', err);
 });
