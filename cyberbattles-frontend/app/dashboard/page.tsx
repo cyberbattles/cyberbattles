@@ -170,7 +170,7 @@ const Dashboard = () => {
             </div>
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
-              <h3 className="text-lg font-semibold mb-2">Want to get started and get a team going?</h3>
+              <h3 className="text-lg font-semibold mb-2">Want to get started?</h3>
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleGoToTeam}
