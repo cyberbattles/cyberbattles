@@ -46,12 +46,12 @@ const CreateTeam = () => {
    
 
   
-    const handleCreateTeam = async () => {
+    const handleCreateSession = async () => {
       try {
         await createSession();
-        router.push("/dashboard");
+        router.push("/lobby");
       } catch (error) {
-        console.error("Create team failed:", error);
+        console.error("Create session failed:", error);
       }
     };
 
@@ -130,7 +130,7 @@ const CreateTeam = () => {
               <div className="flex flex-col items-center space-y-4">
                 <button
                   className="w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
-                  onClick={handleCreateTeam}
+                  onClick={handleCreateSession}
                 >
                   Create Team
                 </button>
