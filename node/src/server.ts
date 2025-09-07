@@ -190,7 +190,7 @@ async function runCommandInContainer(
 
 /**
  * Creates a new user in the specified Docker container, with the given userName
- * and sudoers permissions.
+ * and sudoers permissions. A default password is also set to the userName.
  * @param containerId The ID of the Docker Container in which to create the user.
  * @param userName The userName to assign to the new user.
  */
@@ -296,7 +296,6 @@ async function createNetwork(
  * @param teamName The name of the team.
  * @param teamId The unique ID of the team.
  * @param networkName The name of the Docker network to connect the container to.
- * @param teamIndex The index of the team (0-based) used for WireGuard config selection.
  * @param sessionId The unique ID of the session.
  * @returns A Promise that resolves to the created Docker containerId.
  **/
