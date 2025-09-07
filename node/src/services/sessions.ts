@@ -10,6 +10,7 @@ import {
 } from '../types';
 import {db} from './firebase';
 import {
+  getScenarios,
   createNetwork,
   createTeamContainer,
   createWgRouter,
@@ -18,7 +19,6 @@ import {
 } from './docker';
 import {generateId} from '../helpers';
 
-const SCENARIOS: string[] = ['challenge_example'];
 let nextAvailableWGPort = 51820;
 const serverId = machineIdSync();
 
@@ -29,7 +29,7 @@ const serverId = machineIdSync();
  * @param selectedScenario The index of the scenario to use.
  * @param sessionId The unique ID of the session.
  * @param networkName The name of the Docker network to connect the container to.
- * @param teamIndex The index of the team (0-based) used for WireGuard config selection.
+ * @param teamIndex The index of the team used for WireGuard config selection.
  * @returns A Promise that resolves to a Team object containing the created team and its members.
  */
 export async function createTeam(
@@ -40,8 +40,10 @@ export async function createTeam(
   networkName: string,
   teamId: string,
 ): Promise<Team> {
+  const scenarios: string[] = await getScenarios();
+
   // Check if the scenario is valid
-  const dockerImage = SCENARIOS.at(selectedScenario);
+  const dockerImage = scenarios.at(selectedScenario);
   if (dockerImage === undefined) {
     throw new Error(
       'Invalid scenario selected. Please choose a valid scenario.',
@@ -96,8 +98,10 @@ export async function createSession(
 ): Promise<CreateSessionResult> {
   console.log(`Starting Scenario ${selectedScenario} Setup`);
 
+  const scenarios: string[] = await getScenarios();
+
   // Exit if selected scenario is invalid
-  if (selectedScenario < 0 || selectedScenario >= SCENARIOS.length) {
+  if (selectedScenario < 0 || selectedScenario >= scenarios.length) {
     throw new Error(
       'Invalid scenario selected. Please choose a valid scenario.',
     );
