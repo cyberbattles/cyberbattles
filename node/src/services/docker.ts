@@ -3,10 +3,117 @@ import {Writable} from 'stream';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
+const SCENARIOS: string[] = [];
 const WIREGUARD_IMAGE = 'lscr.io/linuxserver/wireguard:latest';
-let nextAvilableSubnetOctet = 24;
+let nextAvailableSubnet = 24;
 
 export const docker = new Docker();
+
+/**
+ * A stream handler that ensures a Docker stream is fully consumed.
+ * This is necessary for some Docker stuff to complete successfully.
+ * @param stream The Docker stream to handle.
+ * @returns A Promise that resolves to a boolean indicating if there was an error in the stream.
+ */
+async function handleStream(stream: NodeJS.ReadableStream): Promise<boolean> {
+  // Create a null stream to output to
+  const nullStream = new Writable({
+    write(chunk, encoding, callback) {
+      callback();
+    },
+  });
+
+  // Redirect our output to the null stream
+  // Without this line, code does not run ¯\_(ツ)_/¯
+  docker.modem.demuxStream(stream, nullStream, nullStream);
+
+  let streamError = false;
+
+  // Await a promise that resolves when the stream ends.
+  await new Promise<void>((resolve, reject) => {
+    // Handle stream errors
+    stream.on('error', err => {
+      streamError = true;
+      reject(err);
+    });
+
+    stream.on('end', () => {
+      resolve();
+    });
+
+    stream.on('close', () => {
+      resolve();
+    });
+  });
+
+  return streamError;
+}
+
+/**
+ * Retrieves the list of available scenario Docker images.
+ * If the SCENARIOS array is empty, it starts the build process for all scenarios.
+ * @returns A Promise that resolves to an array of scenario image tags.
+ */
+export async function getScenarios(): Promise<string[]> {
+  if (SCENARIOS.length === 0) {
+    await buildImages(path.resolve(__dirname, '../../../dockerfiles')).catch(
+      err => {
+        console.error('Error building Docker images:', err);
+      },
+    );
+  }
+  return SCENARIOS || [];
+}
+
+/**
+ * Builds all provided scenarios found in the dockerfilesPath directory.
+ * Stores the built image tags in the SCENARIOS array.
+ * @param dockerfilesPath The path to the directory containing scenario subdirectories with Dockerfiles.
+ */
+async function buildImages(dockerfilesPath: string): Promise<void> {
+  const dockerfiles = await fs.readdir(dockerfilesPath);
+
+  // Iterate over each Dockerfile and build the image
+  for (let file of dockerfiles) {
+    const dockerfilePath = path.join(dockerfilesPath, file, 'Dockerfile');
+    const imageTag = `${file}`;
+
+    // Check if the image already exists
+    const image = docker.getImage(imageTag);
+    try {
+      await image.inspect();
+      console.log(`Image ${imageTag} already exists, skipping build.`);
+
+      // Skip to the next Dockerfile
+      continue;
+    } catch (error) {
+      // Image does not exist, proceed to build
+    }
+
+    // Read all files and directories within the context path
+    const contextPath = path.dirname(dockerfilePath);
+    const contextFiles = await fs.readdir(contextPath);
+
+    // Build the image
+    console.log(`Building image with tag: ${imageTag}`);
+    const stream = await docker.buildImage(
+      {
+        context: contextPath,
+        src: contextFiles,
+      },
+      {
+        t: imageTag,
+      },
+    );
+
+    if (await handleStream(stream)) {
+      console.error(`Error building image: ${imageTag}`);
+    } else {
+      console.log(`Successfully built image: ${imageTag}`);
+      SCENARIOS.push(imageTag);
+    }
+  }
+}
 
 /**
  * A helper function to run a command in a container and show a loading indicator.
@@ -28,35 +135,11 @@ export async function runCommandInContainer(
   // Hijack stream
   const stream = await exec.start({});
 
-  // Create a null stream to output to
-  const nullStream = new Writable({
-    write(chunk, encoding, callback) {
-      callback();
-    },
-  });
+  if (await handleStream(stream)) {
+    throw new Error(`Error running command: ${command.join(' ')}`);
+  }
 
-  // Redirect our output to the null stream
-  // Without this line, code does not run ¯\_(ツ)_/¯
-  docker.modem.demuxStream(stream, nullStream, nullStream);
-
-  // Await a promise that resolves when the stream ends (command completes).
-  await new Promise<void>((resolve, reject) => {
-    // Handle stream errors
-    stream.on('error', err => {
-      reject(err);
-    });
-
-    stream.on('end', () => {
-      process.stdout.write('\rCommand completed successfully. \n');
-      resolve();
-    });
-
-    stream.on('close', () => {
-      process.stdout.write('\rCommand completed successfully. \n');
-      resolve();
-    });
-  });
-
+  // Ensure the stream is properly closed
   stream.destroy();
 }
 
@@ -120,20 +203,20 @@ export async function createNetwork(
   sessionId: string,
 ): Promise<{networkId: string; networkName: string; networkSubnet: string}> {
   // Get the next available subnet
-  const subnet = `172.12.${nextAvilableSubnetOctet}.0/24`;
+  const subnet = `172.12.${nextAvailableSubnet}.0/24`;
 
   const IPAM = {
     Driver: 'default',
     Config: [
       {
         Subnet: subnet,
-        Gateway: `172.12.${nextAvilableSubnetOctet}.1`,
+        Gateway: `172.12.${nextAvailableSubnet}.1`,
       },
     ],
   };
 
   // Increment for next session
-  nextAvilableSubnetOctet += 1;
+  nextAvailableSubnet += 1;
 
   // Create the network
   const networkName = `sessionNet-${sessionId}`;
