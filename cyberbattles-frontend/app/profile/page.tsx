@@ -48,10 +48,12 @@ const [email, setEmail] = useState("");
 const [password, setPassword] = useState("");
 
 const [selectedIndex, setSelectedIndex] = useState(0)
-const [username, setUsername] = useState("");
 const [photo, setPhoto] = useState(null);
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
+
+const [username, setUsername] = useState("");
+const [usernameError, setUsernameError] = useState("");
 
 {/* Check if the user auth state has changed. If so update the currentUser .*/}
 try{
@@ -182,20 +184,42 @@ return (
             {/* Edit profile */}
             { selectedIndex === 0 &&
                 <form onSubmit={handleUpload} className="p-5 w-full flex flex-col gap-20">
-                    <div className="flex flex-row w-full justify-between items-center">
-                        <div className="p-3 w-1/3 placeholder:text-white text-white ">
-                            Username:
+                    <div className="flex flex-row w-full justify-between">
+                        <div className="flex flex-row w-full items-center">
+                            <div className="pl-3 pb-5 w-1/3 placeholder:text-white text-white ">
+                                Username:
+                            </div>
+                            <div className="w-2/3 flex flex-col">
+                                { currentUser && 
+                                <input
+                                    className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => {
+                                        const uname = e.target.value;
+                                        if (uname.length > 20) {
+                                            setUsername(uname);
+                                            setUsernameError("Username must be less than 20 characters");
+                                        } else if (uname.length < 3) {
+                                            setUsername(uname);
+                                            setUsernameError("Username must be at least 3 characters");
+                                        } else if (!/^[a-zA-Z0-9]+$/.test(uname)) {
+                                            setUsername(uname);
+                                            setUsernameError("Username can only contain letters and numbers");
+                                        } else {
+                                            setUsername(uname);
+                                            setUsernameError("");
+                                        }
+                                    }}
+                                    
+                                    placeholder={currentUser.displayName}
+                                />
+                                }
+                                <div className="text-red-500 min-h-[2rem] pl-2 pt-1">
+                                    {usernameError}
+                                </div>
+                            </div>
                         </div>
-                        {
-                        currentUser &&
-                        <input
-                            className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            placeholder={currentUser.displayName}
-                        />
-                        }
                     </div>
                     <div className="flex flex-row w-full items-center">
                         <div className="p-3 w-1/3 placeholder:text-white text-white ">
@@ -221,7 +245,7 @@ return (
 
                     <div className="flex flex-row w-full justify-between items-center gap-5">
                         <button
-                        disabled={loading}
+                        disabled={loading || usernameError !== ""}
                         onClick={handleUpload}
                         className="bg-green-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
                         >
