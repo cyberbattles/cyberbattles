@@ -346,7 +346,7 @@ export async function cleanupSession(session: Session): Promise<void> {
     try {
       const sessionDir = path.resolve(
         __dirname,
-        `../../wg-configs/${session.id}`,
+        `../../../wg-configs/${session.id}`,
       );
       await fs.rm(sessionDir, {recursive: true, force: true});
       console.log(`Deleted WireGuard config files for session ${session.id}.`);

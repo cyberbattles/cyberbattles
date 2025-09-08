@@ -4,10 +4,16 @@ import {WebSocketServer} from 'ws';
 import {handleWSConnection} from './services/websockets';
 import apiRoutes from './routes';
 import {cleanupAllSessions} from './services/sessions';
+import {getScenarios} from './services/docker';
 
 const PORT = '1337';
 
 async function main() {
+  // Prebuild Docker images before loading
+  console.log('Prebuilding Docker images...');
+  await getScenarios();
+
+  // Setup Express server and WebSocket server
   const app = express();
   app.use(require('sanitize').middleware);
   const server = http.createServer(app);
