@@ -4,7 +4,7 @@ import * as path from 'path';
 
 import {db} from '../services/firebase';
 import {createSession, startSession} from '../services/sessions';
-import {getWgAddress} from '../services/docker';
+import {getWgAddress} from '../helpers';
 import {CreateSessionResult, StartSessionResult, Team, User} from '../types';
 import {verifyToken} from '../helpers';
 
@@ -159,7 +159,11 @@ router.get(
       );
 
       // Get the IP address of the user's team's container
-      const containerIp = await getWgAddress(team.sessionId, team.id);
+      const containerIp = await getWgAddress(
+        team.sessionId,
+        team.id,
+        configNumber,
+      );
 
       try {
         // Read and enocde the files
