@@ -205,7 +205,7 @@ return (
                                             setUsernameError("Username must be at least 3 characters");
                                         } else if (!/^[a-zA-Z0-9]+$/.test(uname)) {
                                             setUsername(uname);
-                                            setUsernameError("Username can only contain letters and numbers");
+                                            setUsernameError("Username must be alphanumeric");
                                         } else {
                                             setUsername(uname);
                                             setUsernameError("");
