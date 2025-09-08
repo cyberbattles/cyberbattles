@@ -9,7 +9,7 @@ This endpoint **creates a new session**.
 - `selectedScenario`: `number` - The index of the scenario to use.
 - `numTeams`: `number` - How many teams to create.
 - `numMembersPerTeam`: `number` - How many members each team should have.
-- `token`: `string` - The sender's authentication token.
+- `token`: `string` - The sender's JWT token.
 
 **Responses:**
 
@@ -25,7 +25,7 @@ This endpoint **starts a previously created session**.
 **Request Body:**
 
 - `sessionId`: `string` - The ID of the session to start.
-- `token`: `string` - The sender's authentication token.
+- `token`: `string` - The sender's JWT token.
 
 **Responses:**
 
@@ -43,7 +43,7 @@ This endpoint **retrieves a user's WireGuard VPN configuration**.
 - `sessionId`: `string` - The session the user is in.
 - `teamId`: `string` - The team the user is in.
 - `userId`: `string` - The user's ID.
-- `token`: `string` - The user's authentication token. The user ID derived from this token must match the `userId` in the URL.
+- `token`: `string` - The user's JWT token. The user ID derived from this token must match the `userId` in the URL.
 
 **Responses:**
 
@@ -53,6 +53,30 @@ This endpoint **retrieves a user's WireGuard VPN configuration**.
 - `403 Forbidden`: The specified user is not a member of the specified team.
 - `404 Not Found`: The user or team could not be found in the database.
 - `500 Internal Server Error`: The server failed to read the configuration files or encountered another error.
+
+## `WS /terminals/:teamId/:userId/:token`
+
+This endpoint **establishes a WebSocket connection** to provide an interactive terminal session within a team's specific Docker container.
+
+**Connection URL Parameters:**
+
+- `teamId`: `string` - The ID of the team whose container you want to access.
+- `userId`: `string` - The user's ID.
+- `token`: `string` - The user's JWT token. The user ID associated with this token must match the `userId` in the URL.
+
+**Connection Behavior:**
+
+- On a successful connection, the server starts a `/bin/bash` shell inside the specified team's Docker container.
+- Any data sent from the client through the WebSocket is piped directly to the shell's standard input.
+- Any data from the shell's standard output and standard error is sent back to the client.
+
+**Disconnection Reasons (Close Codes):**
+The server will close the connection with a specific code if an issue occurs:
+
+- `1011 Internal Error`: Sent if the connection URL is malformed, the target container can't be found, or a stream error happens.
+- `4001 Unauthorized`: The provided token is invalid or doesn't match the `userId`.
+- `4002 Not Started`: The session that the team belongs to has not been started yet.
+- `4003 Forbidden`: The specified user is not a member of the requested team.
 
 # Docker Orchestration Server Testing Guide
 
