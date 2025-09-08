@@ -29,7 +29,7 @@ async function handleStream(stream: NodeJS.ReadableStream): Promise<boolean> {
 
   let streamError = false;
 
-  // Await a promise that resolves when the stream ends.
+  // Await a promise that resolves when the stream ends
   await new Promise<void>((resolve, reject) => {
     // Handle stream errors
     stream.on('error', err => {
@@ -377,7 +377,7 @@ export async function createWgRouter(
       RestartPolicy: {Name: 'unless-stopped'},
     },
     Healthcheck: {
-      Test: ['CMD', 'test', '-f', `/config/${sessionId}/init_done`],
+      Test: ['CMD', 'test', '-f', `/config/init_done`],
       Interval: 6000000000, // 6 seconds in nanoseconds
     },
     NetworkingConfig: {
@@ -400,7 +400,6 @@ export async function createWgRouter(
     `../../../wg-configs/${sessionId}/`,
     'init_done',
   );
-
   // Loop for a maximum of 30 seconds
   for (let i = 0; i < 30; i++) {
     try {
@@ -413,7 +412,7 @@ export async function createWgRouter(
       // The file does not exist yet.
     }
 
-    // Wait for 1 second before the next check.
+    // Wait for 1 second before checking again
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
