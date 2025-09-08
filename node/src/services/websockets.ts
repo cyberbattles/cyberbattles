@@ -29,9 +29,13 @@ export async function handleWSConnection(wss: WebSocketServer): Promise<void> {
 
     // Verify the token
     try {
-      const senderUid = await verifyToken(urlParts[4]);
-      if (!senderUid || senderUid.length === 0) {
+      const tokenUid = await verifyToken(urlParts[4]);
+      if (!tokenUid || tokenUid.length === 0) {
         throw new Error('Invalid token');
+      }
+      const senderUid = urlParts[3];
+      if (tokenUid !== senderUid || senderUid.length === 0) {
+        throw new Error('Token UID does not match sender UID');
       }
     } catch (error) {
       console.error('WebSocket token verification failed:', error);
