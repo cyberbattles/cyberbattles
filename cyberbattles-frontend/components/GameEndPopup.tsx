@@ -60,10 +60,9 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
       {/* Popup Content */}
       <div className="relative bg-[#1e1e1e] border border-gray-600 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
         {/* Header with celebration effect */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-center">
-          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 animate-pulse" />
+        <div className="relative bg-gradient-to-r from-red-700 to-blue-700 p-6 text-center">
           <div className="relative">
-            <h1 className="text-3xl font-bold text-white mb-2">🎉 Game Complete! 🎉</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">Game Finished</h1>
             <div className="text-xl text-yellow-200 font-semibold">
               Winner: <span className="text-yellow-100">{winningTeam}</span>
             </div>
