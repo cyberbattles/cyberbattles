@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [error, setError] = useState("");
   const [isRegister, setIsRegister] = useState(false);
 
@@ -77,7 +78,22 @@ export default function LoginPage() {
                 className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  const uname = e.target.value;
+                  if (uname.length > 20) {
+                      setUsername(uname);
+                      setUsernameError("Username must be less than 20 characters");
+                  } else if (uname.length < 3) {
+                      setUsername(uname);
+                      setUsernameError("Username must be at least 3 characters");
+                  } else if (!/^[a-zA-Z0-9]+$/.test(uname)) {
+                      setUsername(uname);
+                      setUsernameError("Username must be alphanumeric");
+                  } else {
+                      setUsername(uname);
+                      setUsernameError("");
+                  }
+                }}
                 placeholder="Username"
                 required
               />
@@ -108,8 +124,10 @@ export default function LoginPage() {
                 required
               />
             )}
-
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <div className="text-red-500 min-h-[2rem] pl-2 pt-1">
+              {usernameError}
+              {error && <p className="text-red-500 text-sm">{error}</p>}
+            </div>
 
             <button
               type="submit"
