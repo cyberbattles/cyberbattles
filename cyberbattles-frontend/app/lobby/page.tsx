@@ -5,6 +5,7 @@ import { signOut } from "firebase/auth";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import GameEndPopup from "@/components/GameEndPopup";
 
 const Lobby = () => {
   const router = useRouter();
@@ -13,11 +14,20 @@ const Lobby = () => {
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
   const [teamName, setTeamName] = useState("");
-  
+  const [showGameEndPopup, setShowGameEndPopup] = useState(false);
+
+
+
   // TODO: Setup backend call to get player, scenario and teams information
   // TODO: Check whether the user is authenticated as an admin or a regular player
   // and show actions appropriately
 
+  // These additions are present in the Big Beautiful Pull Request ™️
+
+
+  // TODO: This component shall be moved to the Terminal Page as it should appear
+  // at the end of a game. 
+  
 
   const handleLogout = async () => {
     try {
@@ -26,6 +36,14 @@ const Lobby = () => {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const toggleHost = (isHost: boolean,setIsHost: { (value: React.SetStateAction<boolean>): void; (arg0: boolean): void; }) => {
+    setIsHost(!isHost);
+  };
+
+  const toggleEndGame = (showGameEndPopup: boolean,setShowGameEndPopup: { (value: React.SetStateAction<boolean>): void; (arg0: boolean): void; }) => {
+    setShowGameEndPopup(!showGameEndPopup);
   };
 
   const handleLeaveLobby = () => {
@@ -40,6 +58,16 @@ const Lobby = () => {
 
   return (
     <>
+      <GameEndPopup
+        isVisible={showGameEndPopup}
+        onClose={() => setShowGameEndPopup(false)}
+        winningTeam="Red Team"
+        isAdmin= {isHost}
+        gameScore={{
+          team1: { name: "Red Team", score: 850 },
+          team2: { name: "Blue Team", score: 720 } 
+        }}
+      />  
       {/* Fixed Navbar */}
       <Navbar />
 
@@ -146,6 +174,8 @@ const Lobby = () => {
                     >
                       {gameStatus === "starting" ? "Starting Game..." : "Start Game"}
                     </button>
+                    
+                    
                    
                   </div>
                 </div>
@@ -158,6 +188,25 @@ const Lobby = () => {
                   <div>Challenges: 5</div>
                   <div>Difficulty: Beginner</div>
                 </div>
+
+                <button className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
+
+                      onClick={() => toggleHost(isHost,setIsHost)}
+                      >
+                  {isHost ? "Remove Host" : "Become Host"}
+
+                </button>
+                <div>
+                  
+
+                </div>
+                <button className="px-4 py-2 bg-red-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
+
+                  onClick={() => toggleEndGame(showGameEndPopup, setShowGameEndPopup)}
+                  >
+                  {showGameEndPopup ? "Hide End Game Popup" : "Show End Game Popup"}
+                </button>
+
               </div>
             </div>
           </section>
