@@ -36,11 +36,10 @@ export async function verifyToken(token: string): Promise<string> {
 export async function getWgAddress(
   sessionId: string,
   teamId: string,
-  configNumber: number,
 ): Promise<string> {
   const filePath = path.resolve(
     __dirname,
-    `../../../wg-configs/${sessionId}/${configNumber}-member-${teamId}/wg1.conf`,
+    `../../../wg-configs/${sessionId}/container-${teamId}/wg0.conf`,
   );
 
   try {
