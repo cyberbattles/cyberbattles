@@ -1,6 +1,11 @@
 import {Router, Request, Response} from 'express';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+
+import {db} from '../services/firebase';
 import {createSession, startSession} from '../services/sessions';
-import {CreateSessionResult, StartSessionResult} from '../types';
+import {getWgAddress} from '../helpers';
+import {CreateSessionResult, StartSessionResult, Team, User} from '../types';
 import {verifyToken} from '../helpers';
 
 const router = Router();
@@ -92,5 +97,97 @@ router.post('/start-session', async (req: Request, res: Response) => {
     return res.status(500).json({result: errorMessage});
   }
 });
+
+// Return the WireGuard config for a user in a session
+router.get(
+  '/config/:sessionId/:teamId/:userId/:token',
+  async (req: Request, res: Response) => {
+    try {
+      // Get the sessionId, teamId, userId, and token from the request params
+      const {sessionId, teamId, userId, token} = req.params;
+
+      // Verify the token
+      try {
+        const tokenUid = await verifyToken(token);
+        if (!userId || userId.length === 0) {
+          throw new Error('Invalid token');
+        }
+        if (tokenUid !== userId) {
+          throw new Error('Token UID does not match user ID');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
+
+      // Validate parameters
+      if (
+        typeof sessionId !== 'string' ||
+        typeof teamId !== 'string' ||
+        typeof userId !== 'string'
+      ) {
+        return res.status(400).send('Invalid parameters');
+      }
+
+      // Look up the team and user based on the URL parameters
+      const userNameRef = db.collection('login').doc(userId);
+      const userDoc = await userNameRef.get();
+      const user = userDoc.data() as User | undefined;
+      const teamRef = db.collection('teams').doc(teamId);
+      const teamDoc = await teamRef.get();
+      const team = teamDoc.data() as Team | undefined;
+      if (!user || !team) {
+        return res.status(404).send('User or team not found');
+      }
+
+      // Confirm the user is in the given team
+      if (!team.memberIds.includes(user.UID)) {
+        return res.status(403).send('User is not in the given team');
+      }
+
+      // Work out which config to give the user
+      const configNumber = team.memberIds.indexOf(user.UID) + 1;
+
+      // Read the config file and qr code
+      const configPath = path.join(
+        __dirname,
+        `../../../wg-configs/${sessionId}/${configNumber}-member-${teamId}/wg1.conf`,
+      );
+      const imagePath = path.join(
+        __dirname,
+        `../../../wg-configs/${sessionId}/${configNumber}-member-${teamId}/wg1.png`,
+      );
+
+      // Get the IP address of the user's team's container
+      const containerIp = await getWgAddress(
+        team.sessionId,
+        team.id,
+        configNumber,
+      );
+
+      try {
+        // Read and enocde the files
+        const configFileText = await fs.readFile(configPath, 'utf8');
+        const imageBuffer = await fs.readFile(imagePath);
+        const qrCodeBase64 = imageBuffer.toString('base64');
+
+        // Send the config file and qr code back to the sender
+        return res.status(200).json({
+          config: configFileText,
+          qrCode: qrCodeBase64,
+          username: user.userName,
+          ipAddress: containerIp,
+        });
+      } catch (fileError) {
+        console.error('Error reading config or image file:', fileError);
+        return res.status(500).send('Error reading config or image file');
+      }
+    } catch (error) {
+      const errorMessage = `Error retrieving config: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(errorMessage);
+      return res.status(500).send(errorMessage);
+    }
+  },
+);
 
 export default router;
