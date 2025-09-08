@@ -1,5 +1,12 @@
 'use client';
 
+// REF: https://claude.ai/chat/599256c2-bde2-40df-8ad5-3acb29f3ecae
+// REF: https://www.qovery.com/blog/react-xtermjs-a-react-library-to-build-terminals/
+// REF: https://www.npmjs.com/package/xterm-for-react
+// REF: https://www.tkcnn.com/github/xtermjs/xterm.js.html
+// REF: https://chatgpt.com/c/68b93e97-0f38-832f-a207-b02b0dc4eef6
+// REF: https://chatgpt.com/c/68beb1a6-1bd0-832f-87b6-5e5e8d36dcdb
+
 import Navbar from "@/components/Navbar";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
@@ -7,17 +14,23 @@ import React, { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
+import { getAuth } from "firebase/auth"
+import { db } from "../../lib/firebase";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 export default function Shell() {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const xtermRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
+  const xtermRef = useRef<any | null>(null);
+  const fitAddonRef = useRef<any | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isTerminalInitialized, setIsTerminalInitialized] = useState(false);
+  const [currentTeam, setCurrentTeam] = useState("");
+  const [currentUsername, setCurrentUserName] = useState("");
   const isMountedRef = useRef(false);
-
+  const auth = getAuth();
+  
   // Track component mount status
   useEffect(() => {
     isMountedRef.current = true;
@@ -29,6 +42,34 @@ export default function Shell() {
       }
     };
   }, []);
+
+  // Get username and team names
+  const fetchTeamById = async (teamUid: string) => {
+    const teamRef = doc(db, "teams", teamUid);
+    const teamSnap = await getDoc(teamRef);
+  
+    if (teamSnap.exists()) {
+      const teamData = teamSnap.data();
+      return teamData.name;
+    } else {
+      console.warn("No such team!");
+      return null;
+    }
+  };
+
+  // Get username and team names
+  const fetchUsernameById = async (userUid: string) => {
+    const userRef = doc(db, "login", userUid);
+    const userSnap = await getDoc(userRef);
+  
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      return userData.userName;
+    } else {
+      console.warn("No such user!");
+      return null;
+    }
+  };
 
   // Listen for auth state changes
   useEffect(() => {
@@ -43,36 +84,50 @@ export default function Shell() {
 
   // Initialize terminal and WebSocket connection
   useEffect(() => {
+    // Only proceed if the ref is available and component is mounted
     if (!terminalRef.current || !isMountedRef.current || xtermRef.current) return;
 
-    const term = new Terminal({
-      cursorBlink: true,
-      fontSize: 14,
-      fontFamily: 'Consolas, "Liberation Mono", Menlo, Courier, monospace',
-      theme: {
-        background: '#1a1a1a',
-        foreground: '#f0f0f0',
-        cursor: '#ffffff',
-      },
-    });
-    
-    const fitAddon = new FitAddon();
-    
-    try {
-      term.loadAddon(fitAddon);
-      fitAddonRef.current = fitAddon;
-      term.open(terminalRef.current);
-      xtermRef.current = term;
-      
-      // Initialize WebSocket connection
-      initWebSocketConnection(term);
-      
-      if (isMountedRef.current) {
-        setIsTerminalInitialized(true);
+    // Use a function to handle the async import and initialization
+    const initializeTerminal = async () => {
+      try {
+        // Dynamically import the browser-only libraries inside the hook
+        const { Terminal } = await import("xterm");
+        const { FitAddon } = await import("xterm-addon-fit");
+
+        const term = new Terminal({
+          cursorBlink: true,
+          fontSize: 14,
+          fontFamily: 'Consolas, "Liberation Mono", Menlo, Courier, monospace',
+          theme: {
+            background: '#1a1a1a',
+            foreground: '#f0f0f0',
+            cursor: '#ffffff',
+          },
+        });
+
+        const fitAddon = new FitAddon();
+
+        term.loadAddon(fitAddon);
+        fitAddonRef.current = fitAddon;
+        
+        if (terminalRef.current) {
+          term.open(terminalRef.current);
+        }
+
+        xtermRef.current = term;
+        
+        // Initialize WebSocket connection
+        initWebSocketConnection(term);
+        
+        if (isMountedRef.current) {
+          setIsTerminalInitialized(true);
+        }
+      } catch (error) {
+        console.error("Terminal initialization error:", error);
       }
-    } catch (error) {
-      console.error("Terminal initialization error:", error);
-    }
+    };
+
+    initializeTerminal();
 
     return () => {
       if (xtermRef.current) {
@@ -93,15 +148,19 @@ export default function Shell() {
   // WebSocket connection function
   const initWebSocketConnection = async (term: Terminal) => {
     try {
-      const token = "";
-      const teamId = "07249a5056678c63";
+      const token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImVmMjQ4ZjQyZjc0YWUwZjk0OTIwYWY5YTlhMDEzMTdlZjJkMzVmZTEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQk1XIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2N5YmVyYmF0dGxlcy1kZDMxZiIsImF1ZCI6ImN5YmVyYmF0dGxlcy1kZDMxZiIsImF1dGhfdGltZSI6MTc1NzMyMDUwNSwidXNlcl9pZCI6ImJwMFlPNWY3WnpTYnJZbTVKRUpvWHNuZG03cDEiLCJzdWIiOiJicDBZTzVmN1p6U2JyWW01SkVKb1hzbmRtN3AxIiwiaWF0IjoxNzU3MzI1OTI3LCJleHAiOjE3NTczMjk1MjcsImVtYWlsIjoidG9tdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsidG9tdGVzdEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.hqJ_CNdv4NyD_3k7Hpc-JwmxDIx650QIlt1f6eKmSJhJJYbH_NIN8f6P648aW7wG5J-au_yoIpc0bWfrOiIzmbBfrjrOSkrJ-h1IJX21zPsCTZHiUKylOCSZKoc9cGzpBCyDalOaFkZ4w8tDfsm--6tg0nJRIivnaDoc_TfGz5SgFvOfx1aCju4SuBV49PNc0ey8MijwSXnsylCP9tusdEiosmfRW__2vkY8kMCx7_8-fQPoJG7xYHum0Y6SwR4bggk1sKBNb4GCKiMr3pYodVh9XZgluSaSQyK0HdSireBQmd9dkfbs8nBjPFV30eTAO2uMmCvVK3mJss7jroVMZg";
+      const teamId = "44290c3f9208b031";
       const userId = currentUser?.uid || "bp0YO5f7ZzSbrYm5JEJoXsndm7p1";
+
+      const teamName = await fetchTeamById(teamId);
+      const userName = await fetchUsernameById(userId);
       
       term.writeln(`Connecting to terminal...\r\n`);
-      term.writeln(`Team: ${teamId}, User: ${userId}\r\n`);
+      term.writeln(`Team Id: ${teamId} Team Name: ${teamName}, User Id: ${userId}, User Name: ${userName}\r\n`);
   
+      const host = "localhost:1337"; 
       const ws = new WebSocket(
-        `ws://${window.location.host}/terminals/${teamId}/${userId}/${token}`
+      `ws://${host}/terminals/${teamId}/${userId}/${token}`
       );
       
       wsRef.current = ws;
@@ -145,7 +204,7 @@ export default function Shell() {
         if (!isMountedRef.current) return;
         setIsConnected(false);
         console.log("WebSocket closed:", event.code, event.reason);
-        term.writeln(`\r\n\x1b[31mConnection closed: ${event.code} - ${event.reason || 'No reason provided'}\x1b[0m`);
+        term.writeln(`\r\n\x1b[31mConnection closed: ${event.code} - ${event.reason || 'Make sure backend is running.'}\x1b[0m`);
       };
   
       ws.onerror = (error) => {
