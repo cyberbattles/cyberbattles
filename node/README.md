@@ -1,3 +1,59 @@
+# ExpressJS API Endpoints
+
+## `POST /session`
+
+This endpoint **creates a new session**.
+
+**Request Body:**
+
+- `selectedScenario`: `number` - The index of the scenario to use.
+- `numTeams`: `number` - How many teams to create.
+- `numMembersPerTeam`: `number` - How many members each team should have.
+- `token`: `string` - The sender's authentication token.
+
+**Responses:**
+
+- `201 Created`: The session was created successfully. The body will be a JSON object like `{ "result": { "sessionId": "...", "teamIds": ["...", "..."] } }`.
+- `400 Bad Request`: The request body is missing data or has the wrong types.
+- `401 Unauthorized`: The provided token is invalid.
+- `500 Internal Server Error`: Something went wrong on the server.
+
+## `POST /start-session`
+
+This endpoint **starts a previously created session**.
+
+**Request Body:**
+
+- `sessionId`: `string` - The ID of the session to start.
+- `token`: `string` - The sender's authentication token.
+
+**Responses:**
+
+- `200 OK`: The session started successfully. The body will be a JSON object like `{ "result": "Session started", "teamsAndMembers": { "teamId1": ["user1", "user2"], ... } }`.
+- `400 Bad Request`: The `sessionId` is invalid or the session couldn't be started (e.g., not enough users joined).
+- `401 Unauthorized`: The provided token is invalid.
+- `500 Internal Server Error`: Something went wrong on the server.
+
+## `GET /config/:sessionId/:teamId/:userId/:token`
+
+This endpoint **retrieves a user's WireGuard VPN configuration**.
+
+**URL Parameters:**
+
+- `sessionId`: `string` - The session the user is in.
+- `teamId`: `string` - The team the user is in.
+- `userId`: `string` - The user's ID.
+- `token`: `string` - The user's authentication token. The user ID derived from this token must match the `userId` in the URL.
+
+**Responses:**
+
+- `200 OK`: The request was successful. The body will be a JSON object containing the config file text, a Base64 encoded QR code, the username, and the team's container IP address: `{ "config": "...", "qrCode": "...", "username": "...", "ipAddress": "..." }`.
+- `400 Bad Request`: The URL parameters are invalid.
+- `401 Unauthorized`: The token is invalid or doesn't match the `userId`.
+- `403 Forbidden`: The specified user is not a member of the specified team.
+- `404 Not Found`: The user or team could not be found in the database.
+- `500 Internal Server Error`: The server failed to read the configuration files or encountered another error.
+
 # Docker Orchestration Server Testing Guide
 
 This code is only designed and tested on Linux, please use either a Linux computer, Linux VM or WSL when testing.
