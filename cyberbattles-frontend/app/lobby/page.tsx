@@ -27,8 +27,6 @@ const Lobby = () => {
 
   // TODO: This component shall be moved to the Terminal Page as it should appear
   // at the end of a game. 
-  
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -38,9 +36,10 @@ const Lobby = () => {
     }
   };
 
+  // TODO: remove these 2 functions, they are just there to see how the popup looks.
   const toggleHost = (isHost: boolean,setIsHost: { (value: React.SetStateAction<boolean>): void; (arg0: boolean): void; }) => {
     setIsHost(!isHost);
-  };
+  }; 
 
   const toggleEndGame = (showGameEndPopup: boolean,setShowGameEndPopup: { (value: React.SetStateAction<boolean>): void; (arg0: boolean): void; }) => {
     setShowGameEndPopup(!showGameEndPopup);
@@ -48,6 +47,7 @@ const Lobby = () => {
 
   const handleLeaveLobby = () => {
     router.push("/dashboard");
+    // TODO: Implement functionality which removes the user from the scenario and team
   };
 
   const handleStartGame = () => {
@@ -188,7 +188,8 @@ const Lobby = () => {
                   <div>Challenges: 5</div>
                   <div>Difficulty: Beginner</div>
                 </div>
-
+                
+                {/* TODO: These 2 buttons need to be removed once functionality is fully implemented */}
                 <button className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
 
                       onClick={() => toggleHost(isHost,setIsHost)}
