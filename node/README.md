@@ -37,11 +37,6 @@ This code is only designed and tested on Linux, please use either a Linux comput
 
 ### 1. Backend Setup
 
-Only addition I need to make to this PR is you _should_ run this before getting started:
-`sudo docker build -t challenge_example node/dockerfiles/challenge_example`
-
-Automatic building of images is still not working perfectly, and takes a _really long time_. That's being worked on.
-
 Then, get the Node.js server running.
 
 1. ```
@@ -51,7 +46,7 @@ Then, get the Node.js server running.
    node build/src/server.js
    ```
 
-2. The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
+2. If you haven't run the server before (or have added new Dockerfiles to the `dockerfiles` dir) then this _will_ take a while, as it prebuilds all the provided scenarios. The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
 
 ### 2. Frontend Setup
 
