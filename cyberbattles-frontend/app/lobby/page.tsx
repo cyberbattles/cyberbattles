@@ -11,7 +11,7 @@ import ApiClient from "@/components/ApiClient";
 
 const Lobby = () => {
   const router = useRouter();
-  const [teamId, setTeamId] = useState("");
+  const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState<string[]>([]);
   const [currentScenario, setCurrentScenario] = useState("");
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
@@ -21,31 +21,18 @@ const Lobby = () => {
   const [team, setTeam] = useState<any>(null);
   // Get the current user
   const [currentUser, setCurrentUser] = useState<any | null>(null)
-
-  try{
-      onAuthStateChanged(auth, (user) => {
-          if (user && !currentUser){
-            setCurrentUser(user)
-          }
-      })
-      
-    }  catch (error) {
-      setCurrentUser(null)
-      console.error("Failed:", error);
-    }
     
   
   // TODO: Setup backend call to get player, scenario and teams information
   // TODO: Check whether the user is authenticated as an admin or a regular player
   // and show actions appropriately
 
+  // Find the team associated with the given user id
   async function findTeam(uid: string) {
-
     // Check if the teamId has already been set, if so return
     if (teamId) {
       return;
     }
-
     try{
       const teamsRef = collection(db, "teams");
       const q =  query(teamsRef, where("memberIds", "array-contains", uid))
@@ -54,12 +41,8 @@ const Lobby = () => {
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
         const teamID = doc.data().id;
-        const teamMembers = doc.data().memberIds;
-
         setTeamId(teamID);
-        setPlayers(teamMembers);
-        setTeam(doc.data())
-        
+        setTeam(doc.data());
       })
 
     } catch (error) {
@@ -67,17 +50,31 @@ const Lobby = () => {
     }
   }
 
+  // Populate the players hook with the usernames of players
+  async function getPlayers() {
+    if (players.length != 0) {
+      return;
+    }
+    const teamMembers = team.memberIds;
+    let arr: string[] = []
+    teamMembers.forEach((memberId: string, index: number) => {
+      let name = getUsername(memberId);
+      name.then((value: string) => {
+        arr.push(value)
+        setPlayers(arr)
+      })
+    });
+  }
+
+  // Get the username associated with given uid
   async function getUsername(uid: string) {
     let ret = ""
     try{
-      const loginRef = collection(db, "login");
-      const q = query(loginRef, where("UID", "==", uid))
-
-      // Populate the teamId and Players hooks
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        ret = doc.data().userName;
-      })
+      const docRef = doc(db, "login", uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        ret = docSnap.data().userName;
+      }
 
     } catch (error) {
       console.log("Failed", error);
@@ -111,15 +108,26 @@ const Lobby = () => {
 
   };
 
+  // Get the auth state and set the current user
+  try{
+      onAuthStateChanged(auth, (user) => {
+          if (user && !currentUser){
+            setCurrentUser(user);
+          }
+      })
+      
+    }  catch (error) {
+      setCurrentUser(null);
+      console.error("Failed:", error);
+    }
+
+  // Get the team information and players list from firebase
   if (currentUser) {
-    findTeam(currentUser.uid);
-    // let name = getUsername(currentUser.uid);
-    // name.then(value => {
-    //   console.log("the username is", value)
-    // })
-    // console.log(team)
+      findTeam(currentUser.uid);
+    if (team) {
+      getPlayers();
+    }
   }
-  
 
   return (
     <>
@@ -141,7 +149,7 @@ const Lobby = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
-                <div className="font-semibold">{players.length}/2</div>
+                <div className="font-semibold">{players.length}/5</div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
