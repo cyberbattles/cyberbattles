@@ -186,4 +186,68 @@ router.get(
   },
 );
 
+// Return a team's pcap file for their container
+router.get('/captures/:teamId/:token', async (req: Request, res: Response) => {
+  try {
+    // Get the teamId and token from the request params
+    const {teamId, token} = req.params;
+
+    // Verify the token
+    let userUid: string;
+    try {
+      const tokenUid = await verifyToken(token);
+      if (tokenUid === '') {
+        throw new Error('Invalid token');
+      }
+      userUid = tokenUid;
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      return res.status(401).send();
+    }
+
+    // Validate the teamId
+    if (typeof teamId !== 'string') {
+      return res.status(400).send('Invalid parameters');
+    }
+
+    // Look up the team based on the URL parameters
+    const teamRef = db.collection('teams').doc(teamId);
+    const teamDoc = await teamRef.get();
+    const team = teamDoc.data() as Team | undefined;
+    if (!team) {
+      return res.status(404).send('Team not found');
+    }
+
+    // Verify the user is in the team
+    if (!team.memberIds.includes(userUid)) {
+      return res.status(403).send('User is not in the given team');
+    }
+
+    try {
+      // Check if the pcap file exists
+      const pcapPath = path.join(
+        __dirname,
+        `../../../captures/${team.sessionId}/${teamId}.pcap`,
+      );
+      if (!fs.access(pcapPath)) {
+        return res.status(404).send('Capture file not found.');
+      }
+
+      // Send the pcap file back to the sender, letting Express handle the hard parts
+      return res.sendFile(pcapPath, err => {
+        if (err) {
+          console.error('Error sending file:', err);
+        }
+      });
+    } catch (fileError) {
+      console.error('Error reading pcap file:', fileError);
+      return res.status(500).send('Error reading pcap file');
+    }
+  } catch (error) {
+    const errorMessage = `Error retrieving pcap: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    console.error(errorMessage);
+    return res.status(500).send(errorMessage);
+  }
+});
+
 export default router;

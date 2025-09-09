@@ -1,5 +1,5 @@
 import {docker} from './docker';
-import {exec, execSync} from 'child_process';
+import {exec} from 'child_process';
 import * as path from 'path';
 
 /**
@@ -31,22 +31,4 @@ export async function startTrafficCap(
     }
   });
   console.log(`Capture started for container ${containerId}.`);
-}
-
-/**
- * Stops capturing (wireguard) network traffic for a given Docker container.
- * @param containerId - The ID of the Docker container to stop capturing traffic from.
- */
-export async function stopTrafficCap(containerId: string): Promise<void> {
-  const containerInfo = await docker.getContainer(containerId).inspect();
-  const pid = containerInfo.State.Pid;
-
-  if (!pid || pid === 0) {
-    console.error('Invalid PID retrieved for container:', containerId);
-    return;
-  }
-
-  const command = `sudo nsenter -t ${pid} -n pkill tcpdump`;
-
-  execSync(command);
 }

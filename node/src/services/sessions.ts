@@ -18,7 +18,7 @@ import {
   docker,
 } from './docker';
 import {generateId} from '../helpers';
-import {startTrafficCap, stopTrafficCap} from './trafficcap';
+import {startTrafficCap} from './trafficcap';
 
 let nextAvailableWGPort = 51820;
 const serverId = machineIdSync();
@@ -339,15 +339,6 @@ export async function cleanupSession(session: Session): Promise<void> {
     const team = teamDoc.data() as Team;
 
     if (!team) continue;
-
-    // Gracefully stop traffic capture
-    try {
-      await stopTrafficCap(team.containerId);
-    } catch (error) {
-      console.error(
-        `Cleanup Error: Failed to stop traffic capture for team ${teamId}.`,
-      );
-    }
 
     // Stop and remove the container
     try {
