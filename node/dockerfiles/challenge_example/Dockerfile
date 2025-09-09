@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 RUN apt update && \
-    apt install vim openssh-server supervisor sudo python3 wireguard curl iproute2 resolvconf iputils-ping tcpdump -y
+  apt install tcpdump vim openssh-server supervisor sudo python3 wireguard curl iproute2 resolvconf iputils-ping tcpdump -y
 
 RUN mkdir /var/run/sshd
 
