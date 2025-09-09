@@ -159,11 +159,7 @@ router.get(
       );
 
       // Get the IP address of the user's team's container
-      const containerIp = await getWgAddress(
-        team.sessionId,
-        team.id,
-        configNumber,
-      );
+      const containerIp = await getWgAddress(team.sessionId, team.id);
 
       try {
         // Read and enocde the files
