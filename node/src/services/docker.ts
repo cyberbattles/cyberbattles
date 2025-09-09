@@ -74,7 +74,7 @@ async function buildImages(dockerfilesPath: string): Promise<void> {
   const dockerfiles = await fs.readdir(dockerfilesPath);
 
   // Iterate over each Dockerfile and build the image
-  for (let file of dockerfiles) {
+  for (const file of dockerfiles) {
     const dockerfilePath = path.join(dockerfilesPath, file, 'Dockerfile');
     const imageTag = `${file}`;
 
@@ -377,7 +377,7 @@ export async function createWgRouter(
       RestartPolicy: {Name: 'unless-stopped'},
     },
     Healthcheck: {
-      Test: ['CMD', 'test', '-f', `/config/init_done`],
+      Test: ['CMD', 'test', '-f', '/config/init_done'],
       Interval: 6000000000, // 6 seconds in nanoseconds
     },
     NetworkingConfig: {
