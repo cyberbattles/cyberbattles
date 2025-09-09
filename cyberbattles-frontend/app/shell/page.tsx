@@ -248,10 +248,11 @@ export default function Shell() {
         }}
       />
       
-      <div className="flex justify-center">
+      <div>
         <FlagPopup />  
       </div>
-      
+
+      {/* Consider removing this footer  -Liam*/}
       <div style={{
         padding: '10px 16px',
         backgroundColor: '#2c3e50',
