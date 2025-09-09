@@ -1,5 +1,7 @@
 wg-configs/*
 
+*.pcap
+
 # Logs
 logs
 *.log
