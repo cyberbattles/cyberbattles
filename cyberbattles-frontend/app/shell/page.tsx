@@ -144,9 +144,9 @@ export default function Shell() {
   // WebSocket connection function
   const initWebSocketConnection = async (term: Terminal) => {
     try {
-      const token = "***REMOVED***fQ.eyJuYW1lIjoiQk1XIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2N5YmVyYmF0dGxlcy1kZDMxZiIsImF1ZCI6ImN5YmVyYmF0dGxlcy1kZDMxZiIsImF1dGhfdGltZSI6MTc1NzMyMDUwNSwidXNlcl9pZCI6ImJwMFlPNWY3WnpTYnJZbTVKRUpvWHNuZG03cDEiLCJzdWIiOiJicDBZTzVmN1p6U2JyWW01SkVKb1hzbmRtN3AxIiwiaWF0IjoxNzU3MzI1OTI3LCJleHAiOjE3NTczMjk1MjcsImVtYWlsIjoidG9tdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsidG9tdGVzdEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.hqJ_CNdv4NyD_3k7Hpc-JwmxDIx650QIlt1f6eKmSJhJJYbH_NIN8f6P648aW7wG5J-au_yoIpc0bWfrOiIzmbBfrjrOSkrJ-h1IJX21zPsCTZHiUKylOCSZKoc9cGzpBCyDalOaFkZ4w8tDfsm--6tg0nJRIivnaDoc_TfGz5SgFvOfx1aCju4SuBV49PNc0ey8MijwSXnsylCP9tusdEiosmfRW__2vkY8kMCx7_8-fQPoJG7xYHum0Y6SwR4bggk1sKBNb4GCKiMr3pYodVh9XZgluSaSQyK0HdSireBQmd9dkfbs8nBjPFV30eTAO2uMmCvVK3mJss7jroVMZg";
-      const teamId = "44290c3f9208b031";
-      const userId = currentUser?.uid || "bp0YO5f7ZzSbrYm5JEJoXsndm7p1";
+      const token = "";
+      const teamId = "";
+      const userId = currentUser?.uid || "";
 
       const teamName = await fetchTeamById(teamId);
       const userName = await fetchUsernameById(userId);
