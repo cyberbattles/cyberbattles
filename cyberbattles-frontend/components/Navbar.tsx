@@ -1,6 +1,8 @@
 import Image from "next/image"
 import Link from "next/link";
 import logo from "../public/images/logo.png"
+import close from "../public/images/close_icon.png"
+import hamburger from "../public/images/hamburger_icon.png"
 import React, { useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -14,6 +16,12 @@ function Navbar() {
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
   const [currentUser, setCurrentUser] = useState<any | null>(null)
   const [photoURL, setPhotoURL] = useState("https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png")
+
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleClick = () => {
+    setIsOpen(!isOpen);
+  }
 
   {/* Check if the user auth state has changed. If so update the currentUser .*/}
   try{
@@ -35,8 +43,26 @@ function Navbar() {
     <nav className="fixed w-full h-40 shadow-xl bg-black z-50">
       <div className="flex flex-basis items-center h-full w-full ">
         <div className="flex w-2/3 items-center pl-5">
-          <Image src={logo} alt="logo" width={150} className="hidden lg:flex" />
-          <ul className="flex  w-full gap-20 mr-80 ml-10 lg:ml-20">
+          <div onClick={handleClick} className="flex lg:hidden">
+            <Image src={hamburger} alt="hamburger" width={50} className="invert ml-10" />
+            <div className={` absolute w-50 h-80 pt-2 top-5 left-5 bg-black rounded-xl opacity-0 transition-opacity duration-700 ease-in-out ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="absolute top-5 right-5" onClick={handleClick}>
+                <Image src={close} alt="close" width={20} className="invert" />
+              </div>
+              <ul className={`flex flex-col justify-between items-center w-full h-full py-10 ${isOpen ? '' : 'hidden'}`}>
+                {items.map((item, index) => (
+                  <Link key={item} href={links[index]}>
+                    <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
+                      {item}
+                    </li>
+                  </Link>
+                ))}
+              </ul>
+            </div> 
+          </div>
+
+          <Image src={logo} alt="logo" width={150} className="hidden xl:flex" />
+          <ul className="justify-between w-full gap-5 mr-60 ml-10 hidden lg:flex ">
             {items.map((item, index) => (
               <Link key={item} href={links[index]}>
                 <li className="capitalize text-2xl hover:scale-110 duration-300 font-bold cursor-pointer">
@@ -46,12 +72,12 @@ function Navbar() {
             ))}
           </ul>
         </div>
-        <div className="flex justify-end items-center w-1/3 pr-5 gap-5">
+        <div className="flex justify-end items-center w-full lg:w-1/3 pr-5 gap-5">
         
         <div className="">
             { currentUser &&
               <Link href="/dashboard">
-              <p className="capitalize hidden md:flex text-2xl hover:scale-110 duration-300">
+              <p className="flex text-2xl hover:scale-110 duration-300">
                   {currentUser.displayName}
               </p>
               </Link>
