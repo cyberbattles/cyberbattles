@@ -14,6 +14,7 @@ import { MdOutlineSignalWifiStatusbarConnectedNoInternet4 } from "react-icons/md
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "xterm/css/xterm.css";
+import FlagPopup from "@/components/FlagPopup";
 
 export default function Shell() {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -247,6 +248,11 @@ export default function Shell() {
         }}
       />
       
+      <div>
+        <FlagPopup />  
+      </div>
+
+      {/* Consider removing this footer  -Liam*/}
       <div style={{
         padding: '10px 16px',
         backgroundColor: '#2c3e50',
@@ -257,7 +263,7 @@ export default function Shell() {
       }}>
         <span>Web Terminal v1.0</span>
         <span>Press Enter to execute commands</span>
-      </div>
+      </div>    
     </div>
   );
 }
