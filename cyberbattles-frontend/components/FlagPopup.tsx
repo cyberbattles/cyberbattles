@@ -1,7 +1,9 @@
 // REF: Adapted from https://vaul.emilkowal.ski/inputs
+// REF: Flag png is from https://fonts.google.com/icons 
 
 import { Drawer } from 'vaul';
-
+import flag from '../public/images/flag.png'
+import Image from "next/image"
 
 export default function FlagPopup() {
 
@@ -10,12 +12,12 @@ export default function FlagPopup() {
 
   return (
     <Drawer.Root>
-      <Drawer.Trigger className="relative flex w-1/3 h-15 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 font-bold shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#ba1e1e] dark:hover:bg-[#981818] dark:text-white text-2xl">
-        Submit Flag
+      <Drawer.Trigger className="absolute right-10 bottom-15 flex w-15 h-15 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 font-bold shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#ba1e1e] dark:hover:bg-[#981818] dark:text-white text-2xl">
+        <Image src={flag} alt="Flag icon" width={150}/>
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/65" />
-        <Drawer.Content className="dark:bg-[#ba1e1e] w-1/3 left-1/2 transform -translate-x-1/2 flex fixed justify-center items-center bottom-0 max-h-[70vh] rounded-t-[50px]">
+        <Drawer.Content className="dark:bg-[#ba1e1e] w-1/3 flex absolute right-10 bottom-0 max-h-[70vh] rounded-t-[50px]">
           <div className="max-w-md w-full mx-auto overflow-auto p-4 rounded-t-[10px]">
             <Drawer.Handle />
             <Drawer.Title className="font-bold text-center dark:text-white text-2xl mt-8">Submit Flag</Drawer.Title>
