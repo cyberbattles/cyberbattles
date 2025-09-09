@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
 const NetworkTraffic = () => {
+
+  // TODO: Integrate the API  
+
   const router = useRouter();
   const [packets, setPackets] = useState([]);
   const [selectedPacket, setSelectedPacket] = useState(null);
