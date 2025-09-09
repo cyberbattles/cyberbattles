@@ -78,6 +78,24 @@ The server will close the connection with a specific code if an issue occurs:
 - `4002 Not Started`: The session that the team belongs to has not been started yet.
 - `4003 Forbidden`: The specified user is not a member of the requested team.
 
+## `GET /captures/:teamId/:token`
+
+This endpoint **downloads the network packet capture (`.pcap`) file** for a specific team's container. A `.pcap` file contains network traffic data that can be analyzed with tools like Wireshark.
+
+**URL Parameters:**
+
+- `teamId`: `string` - The ID of the team whose capture file you want to download.
+- `token`: `string` - The JWT token for a user who is a member of that team.
+
+**Responses:**
+
+- `200 OK`: The request was successful. The server will respond with the `.pcap` file.
+- `400 Bad Request`: The `teamId` parameter is invalid.
+- `401 Unauthorized`: The provided token is invalid.
+- `403 Forbidden`: The user associated with the token is not a member of the specified team.
+- `404 Not Found`: The team does not exist, or the capture file for that team could not be found on the server.
+- `500 Internal Server Error`: The server encountered an error while trying to read and send the file.
+
 # Docker Orchestration Server Testing Guide
 
 This code is only designed and tested on Linux, please use either a Linux computer, Linux VM or WSL when testing.
@@ -166,58 +184,18 @@ Follow these steps to test the full user flow.
 
 4. **Start the Session** and then **Connect to the Web Terminal**
 
-   - Go back to the Docker Terminal admin page (`http://localhost:1337`) and click Start Session. _NOTE:_ this will take a while (e.g. 30-120 seconds) it is having to run updates inside the container and execute a few commands.
+   - Go back to the Docker Terminal admin page (`http://localhost:1337`) and click Start Session. _NOTE:_ this can take a while (e.g. 30-120 seconds) it is having to run updates inside the container and execute a few commands.
 
    - Once started, the Team IDs and User ID dropdowns will autofill. Select the team that you joined previously, unless you've added other users there should only be your **User ID** in the **User ID** field.
    - Your JWT will be autofilled from the first time it was entered, if you want to test the token of another user you can change it still. Otherwise leave it as is.
    - Click to connect.
 
-5. **Connect to the Other User via SSH**:
+5. **Connect to the Other User via SSH**
 
-   - On your host machine, open a new terminal window and navigate to the `node` folder again.
-   - Note the Team ID that you _didn't join_ from the Web Terminal (under the Connect to Terminal header).
-   - Connect to the WireGuard VPN via the right config e.g.:
-
-   ```
-   sudo wg-quick up wg-configs/1b3a0125279ded35/1-member-4abb4814f007e817/wg1.conf
-   ```
-
-   Where here `1b3a0125279ded35` is the `Session ID` and `4abb4814f007e817` is the Team ID.
-   You should get an output that looks something like this:
-
-   ```
-   [#] ip link add wg1 type wireguard
-   [#] wg setconf wg1 /dev/fd/63
-   [#] ip -4 address add 10.12.0.4 dev wg1
-   [#] ip link set mtu 1420 up dev wg1
-   [#] ip -4 route add 10.12.0.0/24 dev wg1
-   ```
-
-   - Found out the correct IP to connect to by running the `ip a` in the Web Terminal, the output should look like this. Note your WireGuard IP Address (example bolded below):
-
-   ```
-   me2@fcf4e7a616e5:/$ ip a
-   1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
-       link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
-       inet 127.0.0.1/8 scope host lo
-          valid_lft forever preferred_lft forever
-       inet6 ::1/128 scope host
-          valid_lft forever preferred_lft forever
-   2: eth0@if63: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default
-       link/ether 4e:1c:ff:fd:ed:53 brd ff:ff:ff:ff:ff:ff link-netnsid 0
-       inet 172.12.24.2/24 brd 172.12.24.255 scope global eth0
-          valid_lft forever preferred_lft forever
-   3: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP> mtu 1420 qdisc noqueue state UNKNOWN group default qlen 1000
-       link/none
-       inet **10.12.0.2**/32 scope global wg0
-          valid_lft forever preferred_lft forever
-   me2@fcf4e7a616e5:/$
-   ```
-
-   - For this test, where there is only two teams, if your IP Address ends in `.2` then you should SSH to `10.12.0.3`. Or the other way around if your IP Address ends in `.3`. E.g my second user has the username and password `me2`.
-
-   ```
-   ssh me2@10.12.0.3
-   ```
-
+   - Go back to the Docker Terminal admin page at `http://localhost:1337`, and in the `Connect to Terminal` menu, select the other team _and_ other user you created/joined with.
+   - Click the `Get Config` button, that is next to the `Connect to Terminal`
+   - Click the `Download .conf` button, and run the suggested command below the QR Code. Copy and paste it directly into your terminal and just run it, you will be prompted for a SSH password (which is the same as your username).
    - Voila! You now have an SSH connection _and_ a Web Terminal connection. You can now communicate with between users, without the other user knowing where the traffic is coming from.
+
+6. **(Optional) Access Network Activity of Your Team's Container**
+   - Go back to the Docker Terminal admin page at `http://localhost:1337`, and in the `Connect to Terminal` menu, click the `View PCAP` button, this will load an overlay with the _live_ network activity of your Container's **WireGuard** interface i.e. any traffic travelling between containers (not over the network), so if you've SSH'ed into that container for example.
