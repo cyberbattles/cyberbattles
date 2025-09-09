@@ -15,44 +15,6 @@ const NetworkTraffic = () => {
   const [protocolFilter, setProtocolFilter] = useState("all");
   const intervalRef = useRef(null);
 
-  // Mock packet generation
-  const generatePacket = () => {
-    const protocols = ["TCP", "UDP", "HTTP", "HTTPS", "DNS", "ICMP", "ARP", "SSH"];
-    const sources = ["192.168.1.10", "10.0.0.5", "172.16.0.20", "192.168.1.1", "8.8.8.8", "1.1.1.1"];
-    const destinations = ["192.168.1.1", "10.0.0.1", "172.16.0.1", "8.8.8.8", "1.1.1.1", "74.125.224.72"];
-    
-    const protocol = protocols[Math.floor(Math.random() * protocols.length)];
-    const source = sources[Math.floor(Math.random() * sources.length)];
-    const destination = destinations[Math.floor(Math.random() * destinations.length)];
-    
-    return {
-      id: Date.now() + Math.random(),
-      timestamp: new Date().toLocaleTimeString(),
-      source,
-      destination,
-      protocol,
-      length: Math.floor(Math.random() * 1500) + 64,
-      info: "info",
-      raw: generateRawData(),
-      flags: protocol === "TCP" ? ["SYN", "ACK", "PSH"][Math.floor(Math.random() * 3)] : null
-    };
-  };
-
-
-  const generateRawData = () => {
-    const hexChars = "0123456789abcdef";
-    let raw = "";
-    for (let i = 0; i < 16; i++) {
-      for (let j = 0; j < 16; j++) {
-        raw += hexChars[Math.floor(Math.random() * 16)];
-        raw += hexChars[Math.floor(Math.random() * 16)];
-        if (j < 15) raw += " ";
-      }
-      if (i < 15) raw += "\n";
-    }
-    return raw;
-  };
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
