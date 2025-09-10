@@ -125,15 +125,22 @@ export async function createSession(
   }
 
   // Create the WireGuard router container
-  const wgContainerId = await createWgRouter(
-    sessionId,
-    networkName,
-    wgRouterIp,
-    wireguardPort,
-    numTeams,
-    numMembersPerTeam,
-    teamIds,
-  );
+  let wgContainerId: string;
+  try {
+    wgContainerId = await createWgRouter(
+      sessionId,
+      networkName,
+      wgRouterIp,
+      wireguardPort,
+      numTeams,
+      numMembersPerTeam,
+      teamIds,
+    );
+  } catch (error) {
+    throw new Error(
+      `WireGuard Router Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
 
   console.log(
     `WireGuard Router created with Container ID: ${wgContainerId} at port: ${wireguardPort}`,
@@ -142,15 +149,25 @@ export async function createSession(
   // Create and store teams
   for (let i = 0; i < numTeams; i++) {
     const teamName = `Team-${i + 1}`;
-    const team: Team = await createTeam(
-      teamName,
-      numMembersPerTeam,
-      scenarioId,
-      sessionId,
-      networkName,
-      teamIds[i],
-    );
+    let team: Team;
 
+    // Create the team
+    try {
+      team = await createTeam(
+        teamName,
+        numMembersPerTeam,
+        scenarioId,
+        sessionId,
+        networkName,
+        teamIds[i],
+      );
+    } catch (error) {
+      throw new Error(
+        `Team Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+
+    // Store the team in Firestore
     const teamRef = db.collection('teams').doc(team.id);
     await teamRef.set(team);
     console.log(`Created team: ${team.name} with ID: ${team.id}`);

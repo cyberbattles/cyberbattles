@@ -400,8 +400,8 @@ export async function createWgRouter(
     `../../../wg-configs/${sessionId}/`,
     'init_done',
   );
-  // Loop for a maximum of 30 seconds
-  for (let i = 0; i < 30; i++) {
+  // Loop for a maximum of 60 seconds
+  for (let i = 0; i < 60; i++) {
     try {
       await fs.stat(initDonePath);
 
