@@ -209,10 +209,14 @@
         </div>
         <hr style="border-color: #444; margin: 15px 0" />
         <div class="controls">
-          <label for="scenario-index">Scenario:</label>
-          <select id="scenario-index" name="scenario-index">
-            <option value="0">0: ubuntu:latest</option>
-          </select>
+          <label for="scenario-id">Scenario ID:</label>
+          <input
+            type="text"
+            id="scenario-id"
+            name="scenario-id"
+            value="8429abfca004aed7"
+            size="25"
+          />
           <label for="num-teams">Num Teams:</label>
           <input
             type="number"
@@ -373,16 +377,14 @@
             return;
           }
 
-          const selectedScenario = parseInt(
-            document.getElementById('scenario-index').value,
-          );
+          const scenarioId = document.getElementById('scenario-id').value;
           const numTeams = parseInt(document.getElementById('num-teams').value);
           const numMembersPerTeam = parseInt(
             document.getElementById('num-members').value,
           );
 
           const response = await postData('/api/session', {
-            selectedScenario,
+            scenarioId,
             numTeams,
             numMembersPerTeam,
             token,
