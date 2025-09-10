@@ -1,3 +1,18 @@
+# Orchestration Server README
+
+- [How to Add New Challenges/Scenarios](#how-to-add-new-challengesscenarios)
+- [ExpressJS API Endpoints](#expressjs-api-endpoints)
+  - [`POST /session`](#post-session)
+  - [`POST /start-session`](#post-start-session)
+  - [`GET /config/:sessionId/:teamId/:userId/:token`](#get-configsessionidteamiduseridtoken)
+  - [`WS /terminals/:teamId/:userId/:token`](#ws-terminalsteamiduseridtoken)
+  - [`GET /captures/:teamId/:token`](#get-capturesteamidtoken)
+- [Docker Orchestration Server Testing Guide](#docker-orchestration-server-testing-guide)
+  - [Prerequisites](#prerequisites)
+  - [1. Backend Setup](#1-backend-setup)
+  - [2. Frontend Setup](#2-frontend-setup)
+  - [3. Testing Workflow](#3-testing-workflow)
+
 # How to Add New Challenges/Scenarios
 
 To add a new challenge/scenario, you need to create a new folder in the `node/dockerfiles` directory.
