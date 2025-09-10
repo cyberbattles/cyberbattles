@@ -38,6 +38,18 @@ router.post('/session', async (req: Request, res: Response) => {
       return res.status(400).json({result: 'Invalid request body'});
     }
 
+    // Check that numTeams and numMembersPerTeam are in valid range
+    if (numTeams < 1 || numTeams > 5) {
+      return res
+        .status(400)
+        .json({result: 'numTeams must be between 1 and 5 (inclusive)'});
+    }
+    if (numMembersPerTeam < 1 || numMembersPerTeam > 5) {
+      return res.status(400).json({
+        result: 'numMembersPerTeam must be between 1 and 5 (inclusive)',
+      });
+    }
+
     // Create the new session
     const result: CreateSessionResult = await createSession(
       scenarioId.trim(),
