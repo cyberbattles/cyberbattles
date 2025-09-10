@@ -49,7 +49,7 @@ This endpoint **creates a new session**.
 **Responses:**
 
 - `201 Created`: The session was created successfully. The body will be a JSON object like `{ "result": { "sessionId": "...", "teamIds": ["...", "..."] } }`.
-- `400 Bad Request`: The request body is missing data or has the wrong types.
+- `400 Bad Request`: The request body is missing data or has the wrong types. Or the parameters are out of range (e.g., too many teams or players).
 - `401 Unauthorized`: The provided token is invalid.
 - `500 Internal Server Error`: Something went wrong on the server.
 
