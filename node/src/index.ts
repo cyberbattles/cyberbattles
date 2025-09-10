@@ -13,9 +13,8 @@ const PORT = '1337';
 async function main() {
   // Sync Docker images with Firestore
   const dockerFiles = path.join(__dirname, '../../dockerfiles');
-  const downloads = path.join(__dirname, '../../downloads');
 
-  await syncFolders(dockerFiles, 'dockerfiles');
+  await syncFolders(dockerFiles);
 
   // Prebuild Docker images before loading
   console.log('Prebuilding Docker images...');

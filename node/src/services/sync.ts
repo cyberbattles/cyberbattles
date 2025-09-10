@@ -5,6 +5,48 @@ import * as admin from 'firebase-admin';
 import JSZip = require('jszip');
 
 import {scenariosCollection} from './firebase';
+import {generateId} from '../helpers';
+
+// This file was vibe coded, courtesy of Gemini 2.5 Pro.
+// I don't like trying to read Firebase docs.
+// It has been edited, reviewed and tested by @smp46.
+
+/**
+ * Parses a metadata.csv file from a given folder path.
+ * If a scenario_id is not found, it generates one and writes it back to the file.
+ * @param folderPath The path to the folder containing the metadata.csv.
+ * @returns A Promise that resolves with a structured metadata object.
+ */
+async function parseMetadata(
+  folderPath: string,
+): Promise<Record<string, string>> {
+  const metadataPath = path.join(folderPath, 'metadata.csv');
+  const metadata: Record<string, string> = {};
+
+  try {
+    const fileContent = await fs.readFile(metadataPath, 'utf-8');
+    const lines = fileContent.split('\n');
+    for (const line of lines) {
+      if (line.trim() === '') continue; // Skip empty lines
+      const [key, ...valueParts] = line.split(',');
+      if (key && valueParts.length > 0) {
+        metadata[key.trim()] = valueParts.join(',').trim();
+      }
+    }
+  } catch (_) {}
+
+  // If no scenario_id exists in the metadata, generate and persist one.
+  if (!metadata.scenario_id) {
+    const newId = generateId();
+    metadata.scenario_id = newId;
+
+    const newEntry = `\nscenario_id,${newId}`;
+
+    await fs.appendFile(metadataPath, newEntry, 'utf-8');
+  }
+
+  return metadata;
+}
 
 /**
  * A helper function to recursively read files in a directory.
@@ -42,21 +84,33 @@ async function zipFolder(folderPath: string): Promise<Buffer> {
 }
 
 /**
- * Sends a zip buffer to Firestore, stored as a Base64 string.
- * @param folderId A unique identifier for the folder (e.g., the folder name).
+ * Sends a zipped scenario and its metadata to Firestore.
+ * The document ID will be the scenario_id from the metadata.
+ * @param metadata The parsed metadata object.
  * @param zipBuffer The zip data as a Buffer.
  */
-async function sendZipToFirestore(
-  folderId: string,
+async function uploadScenarioToFirestore(
+  metadata: Record<string, string>,
   zipBuffer: Buffer,
 ): Promise<void> {
+  if (!metadata.scenario_id) {
+    throw new Error(
+      'Cannot upload scenario without a scenario_id in metadata.',
+    );
+  }
+
   const base64Data = zipBuffer.toString('base64');
-  await scenariosCollection.doc(folderId).set({
-    name: folderId,
+
+  const docData = {
+    ...metadata, // Insert metadata fields into the document
     zipData: base64Data,
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
-  });
-  console.log(`Sent ${folderId} to Firestore.`);
+  };
+
+  await scenariosCollection.doc(metadata.scenario_id).set(docData);
+  console.log(
+    `Sent ${metadata.folderName} (ID: ${metadata.scenario_id}) to Firestore.`,
+  );
 }
 
 /**
@@ -80,7 +134,7 @@ async function receiveZipFromFirestore(
     return null;
   }
 
-  console.log(` Received ${folderId} from Firestore.`);
+  console.log(`Received ${folderId} from Firestore.`);
   return Buffer.from(data.zipData, 'base64');
 }
 
@@ -113,48 +167,77 @@ async function unzipToFolder(
 }
 
 /**
- * Sync function that compares local folders with Firestore
- * and performs uploads or downloads as needed.
+ * The main sync function that renames local folders to match their scenario_id,
+ * then syncs with Firestore.
  * @param localFoldersPath The parent directory containing all folders to be synced.
- * @param downloadedFoldersPath The directory where folders from Firestore will be saved.
  */
-export async function syncFolders(
-  localFoldersPath: string,
-  downloadedFoldersPath: string,
-) {
-  // Get list of local folder names
-  const localDirents = await fs.readdir(localFoldersPath, {
-    withFileTypes: true,
-  });
-  const localFolderNames = localDirents
-    .filter(dirent => dirent.isDirectory())
-    .map(dirent => dirent.name);
+export async function syncFolders(localFoldersPath: string) {
+  console.log('Starting Sync Process');
 
-  // Get list of folder documents from Firestore
-  const snapshot = await scenariosCollection.get();
-  const firestoreFolderNames = snapshot.docs.map(doc => doc.id);
+  // Pre-sync local folder renaming
+  let localDirents = await fs.readdir(localFoldersPath, {withFileTypes: true});
+  let localFolders = localDirents.filter(dirent => dirent.isDirectory());
 
-  // Find folders to upload (which exists locally, but not in Firestore)
-  const foldersToUpload = localFolderNames.filter(
-    name => !firestoreFolderNames.includes(name),
-  );
+  for (const folder of localFolders) {
+    const originalPath = path.join(localFoldersPath, folder.name);
+    const metadata = await parseMetadata(originalPath);
+    const targetName = metadata.scenario_id;
 
-  for (const folderName of foldersToUpload) {
-    const folderPath = path.join(localFoldersPath, folderName);
-    const zipBuffer = await zipFolder(folderPath);
-    await sendZipToFirestore(folderName, zipBuffer);
+    if (folder.name !== targetName) {
+      const newPath = path.join(localFoldersPath, targetName);
+      console.log(`Renaming local folder: "${folder.name}" -> "${targetName}"`);
+      await fs.rename(originalPath, newPath);
+    }
   }
 
-  // Find folders to download (exists in Firestore, but not locally)
-  const foldersToDownload = firestoreFolderNames.filter(
-    name => !localFolderNames.includes(name),
+  // Re-read directories now that renames are complete
+  localDirents = await fs.readdir(localFoldersPath, {withFileTypes: true});
+  localFolders = localDirents.filter(dirent => dirent.isDirectory());
+
+  const localScenarios = new Map<
+    string,
+    {path: string; metadata: Record<string, string>}
+  >();
+
+  for (const folder of localFolders) {
+    const folderPath = path.join(localFoldersPath, folder.name);
+    // The folder name and scenario_id should now match
+    const metadata = await parseMetadata(folderPath);
+    localScenarios.set(metadata.scenario_id, {path: folderPath, metadata});
+  }
+
+  // Get list of scenario IDs from Firestore
+  const localScenarioIds = Array.from(localScenarios.keys());
+
+  const snapshot = await scenariosCollection.get();
+  const firestoreScenarioIds = snapshot.docs.map(doc => doc.id);
+
+  // Find scenarios to upload (exist locally, but not in Firestore)
+  const scenariosToUpload = localScenarioIds.filter(
+    id => !firestoreScenarioIds.includes(id),
   );
 
-  for (const folderName of foldersToDownload) {
-    const zipBuffer = await receiveZipFromFirestore(folderName);
+  for (const scenarioId of scenariosToUpload) {
+    const scenario = localScenarios.get(scenarioId);
+    if (scenario) {
+      const zipBuffer = await zipFolder(scenario.path);
+      await uploadScenarioToFirestore(scenario.metadata, zipBuffer);
+    }
+  }
+
+  // Find scenarios to download (exist in Firestore, but not locally)
+  const scenariosToDownload = firestoreScenarioIds.filter(
+    (id: string) => !localScenarioIds.includes(id),
+  );
+
+  for (const scenarioId of scenariosToDownload) {
+    const zipBuffer = await receiveZipFromFirestore(scenarioId);
+
     if (zipBuffer) {
-      const destinationPath = path.join(downloadedFoldersPath, folderName);
+      const destinationPath = path.join(localFoldersPath, scenarioId);
       await unzipToFolder(zipBuffer, destinationPath);
+    } else {
+      console.warn(`Could not download ${scenarioId}, zip data is missing.`);
     }
   }
 

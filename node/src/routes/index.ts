@@ -14,7 +14,7 @@ const router = Router();
 router.post('/session', async (req: Request, res: Response) => {
   try {
     // Extract the data from the request body
-    const {selectedScenario, numTeams, numMembersPerTeam, token} = req.body;
+    const {scenarioId, numTeams, numMembersPerTeam, token} = req.body;
 
     // Verify the token
     let senderUid: string;
@@ -30,7 +30,7 @@ router.post('/session', async (req: Request, res: Response) => {
 
     // Validate incoming data
     if (
-      typeof selectedScenario !== 'number' ||
+      typeof scenarioId !== 'string' ||
       typeof numTeams !== 'number' ||
       typeof numMembersPerTeam !== 'number'
     ) {
@@ -40,7 +40,7 @@ router.post('/session', async (req: Request, res: Response) => {
 
     // Create the new session
     const result: CreateSessionResult = await createSession(
-      selectedScenario,
+      scenarioId.trim(),
       numTeams,
       numMembersPerTeam,
       senderUid,
