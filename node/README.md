@@ -1,3 +1,23 @@
+# How to Add New Challenges/Scenarios
+
+To add a new challenge/scenario, you need to create a new folder in the `node/dockerfiles` directory.
+The folder name will be used as the scenario name throughout the application. The folder must contain a valid `Dockerfile`, a `metadata.csv` file, other dependencies (e.g. those that are copied in the Dockerfile) can be placed there as well.
+
+The format of the `metadata.csv` file is as follows, where the first column is the field name and the second column is the value (which you should change):
+
+```csv
+scenario_title, An Awesome Example Scenario
+scenario_description, A nicely written description of the scenario.
+scenario_difficulty, Easy
+```
+
+Before syncing, a unique ID will be generated for the scenario, the folder will be renamed to this ID, and the metadata will be stored in Firebase. The scenario ID will be used when creating sessions.
+
+**Any** scenario you add to this folder will automatically sync with Firebase, similarly any added online
+will be automatically downloaded and built by the backend server on startup.
+
+**A 100MB limit is enforced on the size of the scenario folder.**
+
 # ExpressJS API Endpoints
 
 ## `POST /session`
@@ -6,7 +26,7 @@ This endpoint **creates a new session**.
 
 **Request Body:**
 
-- `selectedScenario`: `number` - The index of the scenario to use.
+- `scenaroId`: string - The ID of the scenario to use.
 - `numTeams`: `number` - How many teams to create.
 - `numMembersPerTeam`: `number` - How many members each team should have.
 - `token`: `string` - The sender's JWT token.
@@ -175,7 +195,7 @@ Follow these steps to test the full user flow.
 
    - Open the Docker Terminal admin page at `http://localhost:1337`.
    - Paste your copied JWT into the **Admin JWT** field.
-   - To create a session, change values to your liking, and click "Create Session". (For this example it will assume you have created 2 teams with 1 user each.
+   - To create a session, change values to your liking, and click "Create Session". (For this example it will assume you have created 2 teams with 1 user each). The Scenario will default to the example, but this can be changed to any scenario you have added to the `node/dockerfiles` directory.
 
 3. **Join Different Teams on Different Web Accounts** (repeat this for each account)
 

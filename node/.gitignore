@@ -1,7 +1,7 @@
 wg-configs/*
 
 *.pcap
-catpures/*
+captures/*
 
 # Logs
 logs
