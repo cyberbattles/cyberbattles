@@ -301,6 +301,9 @@ export async function cleanupAllSessions(): Promise<void> {
     .where('serverId', '==', serverId)
     .get();
 
+  // Clean up any old config & pcap directories that don't have an active session
+  await cleanupOldConfigs();
+
   if (sessionsSnapshot.empty) {
     console.log('No active sessions found to clean up.');
     return;
@@ -393,4 +396,54 @@ export async function cleanupSession(session: Session): Promise<void> {
   }
 
   console.log(`Session document ${session.id} deleted.`);
+}
+
+/**
+ * Deletes WireGuard configuration and Pcap directories that don't have an active session.
+ * Active is any session that exists in Firestore.
+ */
+async function cleanupOldConfigs(): Promise<void> {
+  // Fetch all active session IDs from Firestore
+  const activeSessionIds = new Set<string>();
+  const sessionsSnapshot = await db.collection('sessions').get();
+  sessionsSnapshot.forEach(doc => {
+    activeSessionIds.add(doc.id);
+  });
+
+  // Read the wg-configs directory
+  const wgBaseDir = path.resolve(__dirname, '../../../wg-configs');
+  try {
+    for (const dirEntry of await fs.readdir(wgBaseDir, {withFileTypes: true})) {
+      if (
+        dirEntry.isDirectory() &&
+        activeSessionIds.has(dirEntry.name) === false
+      ) {
+        await fs.rm(path.join(wgBaseDir, dirEntry.name), {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+  } catch (_) {
+    // We don't care if this fails
+  }
+
+  const pcapBaseDir = path.resolve(__dirname, '../../../captures');
+  try {
+    for (const dirEntry of await fs.readdir(pcapBaseDir, {
+      withFileTypes: true,
+    })) {
+      if (
+        dirEntry.isDirectory() &&
+        activeSessionIds.has(dirEntry.name) === false
+      ) {
+        await fs.rm(path.join(pcapBaseDir, dirEntry.name), {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+  } catch (_) {
+    // We also don't care if this fails
+  }
 }
