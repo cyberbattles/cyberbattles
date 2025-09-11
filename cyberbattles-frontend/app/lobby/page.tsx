@@ -4,7 +4,7 @@ import close from "@/public/images/close_icon.png"
 import React, { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
-import { collection, query, where, doc, getDoc, getDocs, getFirestore, onSnapshot } from "firebase/firestore";
+import { collection, query, where, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -63,7 +63,6 @@ const Lobby = () => {
       userObj.then((value: any) => {
         players.set(memberId, value)
         setPlayers(new Map(players));
-        console.log(players)
       })
     });
   }
@@ -112,8 +111,47 @@ const Lobby = () => {
     setIsHost(true);
   }
 
-  const removePlayer = () => {
-    console.log("testin")
+  const removePlayer = async (uid: string) => {
+
+    if(!teamId){
+      return;
+    }
+    console.log(uid);
+
+    // Create a new members array without the given uid
+
+    let newMembers: string[] = [];
+    team.memberIds.forEach((value: string) => {
+      if (value != uid){
+        newMembers.push(value);
+      }
+    })
+
+    // Update the memberids field in the team document on firestore
+
+    // Get the team document
+    let docRef = doc(db, "teams", teamId);
+    // Update the team document
+    await updateDoc(docRef, {
+      memberIds:newMembers
+    }).then(() => {
+      console.log("Team doc successfully updated");
+    }).catch((error: any) => {
+      console.error("Error updating document: ", error)
+    })
+
+    // Update the use state hooks to remove member
+
+    players.delete(uid);
+    setPlayers(new Map(players));
+
+    docRef = doc(db, "teams", teamId);
+    // Populate the teamId and Players hooks
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()){
+      setTeamId(docSnap.data().teamId);
+      setTeam(docSnap.data());
+    }
   }
 
    async function startSession() {
@@ -248,17 +286,17 @@ const Lobby = () => {
               <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
               <div className="space-y-3">
                 {
-                  team && (team.memberIds.map((uid: string) => (
+                  (players.size != 0) && (team.memberIds.map((uid: string) => (
 
                   <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
                     {/* Player name */}
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">{players.get(uid).userName}</span>
+                      <span className="font-medium">{players.get(uid) && players.get(uid).userName}</span>
                     </div>
                     {/* Remove player button */}
                     {
                       isHost &&
-                      <div className="" onClick={removePlayer}>
+                      <div className="" onClick={() => removePlayer(uid)}>
                         <Image src={close} alt="close" width={20} className="invert" />
                       </div>
                     }      
