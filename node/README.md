@@ -227,7 +227,7 @@ Follow these steps to test the full user flow.
 
 5. **Connect to the Other User via SSH**
 
-   - Go back to the Docker Terminal admin page at `http://localhost:1337`, and in the `Connect to Terminal` menu, select the other team _and_ other user you created/joined with.
+   - Go back to the Docker Terminal admin page at `http://localhost:1337`, and in the `Connect to Terminal` menu, select the other team _and_ other user you created/joined with. You will also need to change the JWT to that user's JWT.
    - Click the `Get Config` button, that is next to the `Connect to Terminal`
    - Click the `Download .conf` button, and run the suggested command below the QR Code. Copy and paste it directly into your terminal and just run it, you will be prompted for a SSH password (which is the same as your username).
    - Voila! You now have an SSH connection _and_ a Web Terminal connection. You can now communicate with between users, without the other user knowing where the traffic is coming from.
