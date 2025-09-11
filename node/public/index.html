@@ -62,6 +62,9 @@
       button:hover {
         background-color: #005fa3;
       }
+      #cleanup-session-btn:hover {
+        background-color: #c9302c; /* Darker red on hover */
+      }
       #terminal-container {
         padding: 10px;
       }
@@ -245,6 +248,12 @@
             readonly
           />
           <button id="start-session-btn">Start Session</button>
+          <button
+            id="cleanup-session-btn"
+            style="display: none; background-color: #d9534f"
+          >
+            Cleanup Session
+          </button>
         </div>
         <div id="session-info" style="display: none">
           <h3>Created Team IDs</h3>
@@ -369,6 +378,8 @@
           term.write('\r\nAttempting to create a new session...\r\n');
           document.getElementById('get-config-btn').style.display = 'none';
           document.getElementById('view-pcap-btn').style.display = 'none';
+          // ## HIDE CLEANUP BUTTON ON NEW CREATION ATTEMPT ##
+          document.getElementById('cleanup-session-btn').style.display = 'none';
           const token = document.getElementById('admin-jwt').value;
           if (!token) {
             term.write(
@@ -408,6 +419,9 @@
               teamList.appendChild(listItem);
             });
             sessionInfoDiv.style.display = 'block';
+            // ## SHOW CLEANUP BUTTON ON SUCCESS ##
+            document.getElementById('cleanup-session-btn').style.display =
+              'inline-block';
           } else {
             const errorMsg =
               response.data.result || `Status: ${response.status}`;
@@ -730,6 +744,71 @@ ssh ${data.username}@${data.ipAddress}`;
           }
         }
       });
+
+      // ## NEW EVENT LISTENER FOR CLEANUP BUTTON ##
+      document
+        .getElementById('cleanup-session-btn')
+        .addEventListener('click', async () => {
+          const sessionId = document.getElementById('session-id').value;
+          const token = document.getElementById('admin-jwt').value;
+
+          if (!sessionId || !token) {
+            term.write(
+              '\r\nERROR: Session ID and Admin JWT are required for cleanup.\r\n',
+            );
+            return;
+          }
+
+          // Confirm with the user because this is a destructive action
+          const isConfirmed = confirm(
+            `Are you sure you want to permanently delete session ${sessionId}? This action cannot be undone.`,
+          );
+
+          if (!isConfirmed) {
+            term.write('\r\nSession cleanup cancelled by user.\r\n');
+            return;
+          }
+
+          term.write(`\r\nAttempting to clean up session: ${sessionId}...\r\n`);
+
+          try {
+            const response = await fetch(`/api/cleanup/${sessionId}/${token}`);
+            const responseText = await response.text(); // Cleanup returns plain text
+
+            if (response.ok) {
+              term.write(`SUCCESS: ${responseText}\r\n`);
+              // Reset UI elements to a clean state
+              document.getElementById('session-id').value = '';
+              document.getElementById('team-id-list').innerHTML = '';
+              document.getElementById('session-info').style.display = 'none';
+              document.getElementById('teamId').innerHTML =
+                '<option>-- Start a session first --</option>';
+              document.getElementById('userId').innerHTML =
+                '<option>-- Select a team first --</option>';
+              document.getElementById('get-config-btn').style.display = 'none';
+              document.getElementById('view-pcap-btn').style.display = 'none';
+              document.getElementById('cleanup-session-btn').style.display =
+                'none';
+              createdTeamIds = [];
+              sessionTeams = [];
+              if (ws && ws.readyState !== WebSocket.CLOSED) {
+                ws.close();
+                term.reset();
+                term.write(
+                  'Welcome! Use the controls above to manage sessions.\r\n',
+                );
+              }
+            } else {
+              term.write(
+                `\r\nERROR: Failed to clean up session (Status: ${response.status}). Server says: ${responseText}\r\n`,
+              );
+            }
+          } catch (error) {
+            term.write(
+              `\r\nERROR: A network error occurred during cleanup: ${error.message}\r\n`,
+            );
+          }
+        });
     </script>
   </body>
 </html>

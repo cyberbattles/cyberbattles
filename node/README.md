@@ -2,11 +2,12 @@
 
 - [How to Add New Challenges/Scenarios](#how-to-add-new-challengesscenarios)
 - [ExpressJS API Endpoints](#expressjs-api-endpoints)
-  - [`POST /session`](#post-session)
-  - [`POST /start-session`](#post-start-session)
-  - [`GET /config/:sessionId/:teamId/:userId/:token`](#get-configsessionidteamiduseridtoken)
-  - [`WS /terminals/:teamId/:userId/:token`](#ws-terminalsteamiduseridtoken)
-  - [`GET /captures/:teamId/:token`](#get-capturesteamidtoken)
+  - [`POST /api/session`](#post-apisession)
+  - [`POST /api/start-session`](#post-apistart-session)
+  - [`GET /api/cleanup/:sessionId/:token`](#get-apicleanupsessionidtoken)
+  - [`GET /api/config/:sessionId/:teamId/:userId/:token`](#get-apiconfigsessionidteamiduseridtoken)
+  - [`WS /terminals/:teamId/:userId/:token`](#ws-apiterminalsteamiduseridtoken)
+  - [`GET /api/captures/:teamId/:token`](#get-apicapturesteamidtoken)
 - [Docker Orchestration Server Testing Guide](#docker-orchestration-server-testing-guide)
   - [Prerequisites](#prerequisites)
   - [1. Backend Setup](#1-backend-setup)
@@ -35,7 +36,7 @@ will be automatically downloaded and built by the backend server on startup.
 
 # ExpressJS API Endpoints
 
-## `POST /session`
+## `POST /api/session`
 
 This endpoint **creates a new session**.
 
@@ -53,7 +54,7 @@ This endpoint **creates a new session**.
 - `401 Unauthorized`: The provided token is invalid.
 - `500 Internal Server Error`: Something went wrong on the server.
 
-## `POST /start-session`
+## `POST /api/start-session`
 
 This endpoint **starts a previously created session**.
 
@@ -69,7 +70,25 @@ This endpoint **starts a previously created session**.
 - `401 Unauthorized`: The provided token is invalid.
 - `500 Internal Server Error`: Something went wrong on the server.
 
-## `GET /config/:sessionId/:teamId/:userId/:token`
+## `GET /api/cleanup/:sessionId/:token`
+
+This endpoint **terminates and cleans up all resources** associated with a given session. This is a destructive action that stops and removes all related Docker containers, networks, and deletes session data from the database. 🧹
+
+**URL Parameters:**
+
+- `sessionId`: `string` - The ID of the session you want to delete.
+- `token`: `string` - The authentication token of the user who created the session.
+
+**Responses:**
+
+- `200 OK`: The session and all its resources were successfully removed. The response body will be a plain text message: `Session cleaned up successfully`.
+- `400 Bad Request`: The `sessionId` parameter is invalid.
+- `401 Unauthorized`: The provided token is invalid.
+- `403 Forbidden`: The user attempting the cleanup is **not the original admin** who created the session.
+- `404 Not Found`: The session with the specified ID does not exist.
+- `500 Internal Server Error`: The server failed during the cleanup process. This can happen if the session document couldn't be deleted after the cleanup actions were performed.
+
+## `GET /api/config/:sessionId/:teamId/:userId/:token`
 
 This endpoint **retrieves a user's WireGuard VPN configuration**.
 
@@ -113,7 +132,7 @@ The server will close the connection with a specific code if an issue occurs:
 - `4002 Not Started`: The session that the team belongs to has not been started yet.
 - `4003 Forbidden`: The specified user is not a member of the requested team.
 
-## `GET /captures/:teamId/:token`
+## `GET /api/captures/:teamId/:token`
 
 This endpoint **downloads the network packet capture (`.pcap`) file** for a specific team's container. A `.pcap` file contains network traffic data that can be analyzed with tools like Wireshark.
 

@@ -3,9 +3,19 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 
 import {db} from '../services/firebase';
-import {createSession, startSession} from '../services/sessions';
+import {
+  createSession,
+  startSession,
+  cleanupSession,
+} from '../services/sessions';
 import {getWgAddress} from '../helpers';
-import {CreateSessionResult, StartSessionResult, Team, User} from '../types';
+import {
+  CreateSessionResult,
+  StartSessionResult,
+  Team,
+  User,
+  Session,
+} from '../types';
 import {verifyToken} from '../helpers';
 
 const router = Router();
@@ -249,5 +259,60 @@ router.get('/captures/:teamId/:token', async (req: Request, res: Response) => {
     return res.status(500).send(errorMessage);
   }
 });
+
+// Kill and cleanup a given sesssion
+router.get(
+  '/cleanup/:sessionId/:token',
+  async (req: Request, res: Response) => {
+    try {
+      // Get the sessionId and token from the request params
+      const {sessionId, token} = req.params;
+
+      // Verify the token
+      let senderUid: string;
+      try {
+        senderUid = await verifyToken(token);
+        if (!senderUid || senderUid.length === 0) {
+          throw new Error('Invalid token');
+        }
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        return res.status(401).send();
+      }
+
+      // Validate the sessionId
+      if (typeof sessionId !== 'string') {
+        return res.status(400).send('Invalid parameters');
+      }
+
+      // Get the session from Firestore
+      const sessionRef = db.collection('sessions').doc(sessionId.trim());
+      const sessionDoc = await sessionRef.get();
+      const sessionData = sessionDoc.data() as Session | undefined;
+
+      // Check that the sender is the session creator
+      if (!sessionDoc.exists) {
+        return res.status(404).send('Session not found');
+      }
+      if (!sessionData || sessionData.adminUid !== senderUid) {
+        return res
+          .status(403)
+          .send('Only the session creator can clean up the session');
+      }
+
+      // Cleanup the session
+      await cleanupSession(sessionData);
+
+      // Delete the session document from Firestore
+      await sessionRef.delete();
+
+      return res.status(200).send('Session cleaned up successfully');
+    } catch (error) {
+      const errorMessage = `Error cleaning up session: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      console.error(errorMessage);
+      return res.status(500).send(errorMessage);
+    }
+  },
+);
 
 export default router;

@@ -1,6 +1,7 @@
 import {machineIdSync} from 'node-machine-id';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as admin from 'firebase-admin';
 import {
   CreateSessionResult,
   Session,
@@ -169,12 +170,22 @@ export async function createSession(
     networkName,
     wgContainerId,
     id: sessionId,
+    createdAt: admin.firestore.Timestamp.now(),
   };
 
   // Upload session data to Firestore
   const taskRef = db.collection('sessions').doc(session.id);
   await taskRef.set(session);
   console.log('Uploaded session data to Firestore:', session.id);
+
+  // Removes session after 4 hours
+  setTimeout(
+    () => {
+      console.log(`Auto-cleaning up session ${session.id} after 4 hours.`);
+      cleanupSession(session);
+    },
+    4 * 60 * 60 * 1000,
+  );
 
   return {sessionId, teamIds};
 }
@@ -369,7 +380,6 @@ export async function cleanupSession(session: Session): Promise<void> {
       `Removed network ${session.networkName} for session ${session.id}.`,
     );
   } catch (error) {
-    console.error(error);
     console.error(
       `Cleanup Error: Network not found or already removed for session ${session.id}.`,
     );

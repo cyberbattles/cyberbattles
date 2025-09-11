@@ -1,3 +1,5 @@
+import * as admin from 'firebase-admin';
+
 /**
  * An interface representing a user in the session.
  */
@@ -56,6 +58,8 @@ export interface Session {
   wgContainerId: string;
   /** A unique identifier for the session. */
   id: string;
+  /** The timestamp when the session was created. */
+  createdAt: admin.firestore.Timestamp;
 }
 
 /**
