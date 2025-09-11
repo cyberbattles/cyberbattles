@@ -1,4 +1,6 @@
 "use client";
+import Image from "next/image"
+import close from "@/public/images/close_icon.png"
 import React, { useState, useEffect } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -81,6 +83,7 @@ const Lobby = () => {
     return ret;
   }
 
+  // FUNCTION: check if the currently signed in user is sessions admin (host)
   async function checkHost() {
     // If the team hook is not set, do nothing
     if (!team) {
@@ -106,6 +109,7 @@ const Lobby = () => {
       console.log("this user is admin");
       setIsHost(true);
     }
+    setIsHost(true);
   }
 
    async function startSession() {
@@ -133,6 +137,10 @@ const Lobby = () => {
   const handleStartGame = () => {
 
   };
+
+  const removePlayer = () => {
+    console.log("testin")
+  }
 
   // --------------------------------------
 
@@ -238,11 +246,19 @@ const Lobby = () => {
               <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
               <div className="space-y-3">
                 {players.map((player, index) => (
+
                   <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={index}>
+                    {/* Player name */}
                     <div className="flex items-center gap-3">
                       <span className="font-medium">{player}</span>
                     </div>
-                    
+                    {/* Remove player button */}
+                    {
+                      isHost &&
+                      <div className="" onClick={removePlayer}>
+                        <Image src={close} alt="close" width={20} className="invert" />
+                      </div>
+                    }      
                   </div>
                 ))}
               </div>
