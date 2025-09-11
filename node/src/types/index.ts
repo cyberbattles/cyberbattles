@@ -41,7 +41,7 @@ export interface Session {
   /** The number of users in the session. */
   numUsers: number;
   /** The index of the selected scenario. */
-  selectedScenario: number;
+  scenarioId: string;
   /** The UID of the admin who created the session. */
   adminUid: string;
   /** Indicates whether the session has started. */

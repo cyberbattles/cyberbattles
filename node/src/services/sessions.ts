@@ -27,7 +27,7 @@ const serverId = machineIdSync();
  * Creates a new team with the specified name, number of members, and scenario.
  * @param name The name of the team.
  * @param numMembers The number of members in the team.
- * @param selectedScenario The index of the scenario to use.
+ * @param scenarioId The ID of the scenario to use for the team.
  * @param sessionId The unique ID of the session.
  * @param networkName The name of the Docker network to connect the container to.
  * @param teamIndex The index of the team used for WireGuard config selection.
@@ -36,24 +36,14 @@ const serverId = machineIdSync();
 export async function createTeam(
   name: string,
   numMembers: number,
-  selectedScenario: number,
+  scenarioId: string,
   sessionId: string,
   networkName: string,
   teamId: string,
 ): Promise<Team> {
-  const scenarios: string[] = await getScenarios();
-
-  // Check if the scenario is valid
-  const dockerImage = scenarios.at(selectedScenario);
-  if (dockerImage === undefined) {
-    throw new Error(
-      'Invalid scenario selected. Please choose a valid scenario.',
-    );
-  }
-
   // Create a container for the team
   const containerId = await createTeamContainer(
-    dockerImage,
+    scenarioId,
     name,
     teamId,
     networkName,
@@ -85,24 +75,25 @@ export async function createTeam(
 /**
  * Starts a new session with the specified scenario, number of teams, and number of members per team.
  * Once finished, it uploads the session data to Firestore.
- * @param selectedScenario The index of the scenario to use.
+ * @param scenarioId The ID of the scenario to use for the session.
  * @param numTeams The number of teams to create.
  * @param numMembersPerTeam The number of members in each team.
  * @param senderUid The UID of the user creating the session.
  * @returns A Promise that resolves to an object containing the session and team IDs.
  */
 export async function createSession(
-  selectedScenario: number,
+  scenarioId: string,
   numTeams: number,
   numMembersPerTeam: number,
   senderUid: string,
 ): Promise<CreateSessionResult> {
-  console.log(`Starting Scenario ${selectedScenario} Setup`);
+  console.log(`Starting Scenario ${scenarioId} Setup`);
 
   const scenarios: string[] = await getScenarios();
 
   // Exit if selected scenario is invalid
-  if (selectedScenario < 0 || selectedScenario >= scenarios.length) {
+  if (!scenarios.includes(scenarioId)) {
+    console.error('Invalid scenario selected:', scenarioId);
     throw new Error(
       'Invalid scenario selected. Please choose a valid scenario.',
     );
@@ -154,7 +145,7 @@ export async function createSession(
     const team: Team = await createTeam(
       teamName,
       numMembersPerTeam,
-      selectedScenario,
+      scenarioId,
       sessionId,
       networkName,
       teamIds[i],
@@ -170,7 +161,7 @@ export async function createSession(
     teamIds,
     numTeams,
     numUsers: numTeams * numMembersPerTeam,
-    selectedScenario,
+    scenarioId,
     adminUid: senderUid,
     started: false,
     serverId,
