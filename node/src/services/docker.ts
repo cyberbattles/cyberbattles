@@ -346,6 +346,9 @@ export async function createWgRouter(
     Image: 'lscr.io/linuxserver/wireguard:latest',
     name: `wg-router-${sessionId}`,
     Tty: false,
+    ExposedPorts: {
+      [`${wireguardPort}/udp`]: {},
+    },
     Env: [
       'PUID=1000',
       'PGID=1000',
@@ -353,11 +356,12 @@ export async function createWgRouter(
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
       `SERVERURL=${wgRouterIp}`,
+      `SERVERPORT=${wireguardPort}`,
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
       `NUM_PLAYERS=${numMembersPerTeam}`,
       `SERVER_IP=${wgRouterIp}`,
-      `SERVER_PORT=${wireguardPort}`,
+      `WIREGUARD_PORT=${wireguardPort}`,
       `TEAM_IDS=${teamIdsStr}`,
     ],
     HostConfig: {
@@ -368,7 +372,7 @@ export async function createWgRouter(
         `${path.resolve(__dirname, '../../../server-init-script')}:/custom-cont-init.d:ro,z`,
       ],
       PortBindings: {
-        [`${wireguardPort}/udp`]: [{HostPort: `${wireguardPort}`}],
+        [`${wireguardPort}/udp`]: [{HostPort: `${wireguardPort}/udp`}],
       },
       Sysctls: {
         'net.ipv4.conf.all.src_valid_mark': '1',
