@@ -18,10 +18,16 @@ import {
   createUser,
   docker,
 } from './docker';
-import {generateId} from '../helpers';
+import {
+  generateId,
+  getAvailableWGPort,
+  getAvailableSubnet,
+  releaseWGPort,
+  releaseSubnet,
+} from '../helpers';
 import {startTrafficCap} from './trafficcap';
 
-let nextAvailableWGPort = 51820;
+// Get a unique ID for this server instance
 const serverId = machineIdSync();
 
 /**
@@ -103,9 +109,17 @@ export async function createSession(
   // Generate a unique ID for the session
   const sessionId: string = generateId();
 
+  // Get the next available subnet for the session
+  const allocatedSubnet = getAvailableSubnet();
+  if (!allocatedSubnet) {
+    throw new Error('Virtual network space is full. Please try again later.');
+  }
+
   // Create a network for the team
-  const {networkId, networkName, networkSubnet} =
-    await createNetwork(sessionId);
+  const {networkId, networkName, networkSubnet} = await createNetwork(
+    sessionId,
+    allocatedSubnet,
+  );
 
   if (networkSubnet === 'unknown') {
     throw new Error('Failed to determine network subnet.');
@@ -114,10 +128,11 @@ export async function createSession(
   // Work out values for the WireGuard router
   const ipBase = networkSubnet.split('/')[0].replace(/\.0$/, '');
   const wgRouterIp = `${ipBase}.200`;
-  const wireguardPort = nextAvailableWGPort;
+  const wireguardPort = getAvailableWGPort();
 
-  // Increment for next session
-  nextAvailableWGPort += 1;
+  if (wireguardPort === null) {
+    throw new Error('No available WireGuard ports. Please try again later.');
+  }
 
   // Pre-generate teamIds
   const teamIds: string[] = [];
@@ -157,6 +172,15 @@ export async function createSession(
     console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
+  // Removes session after 4 hours
+  setTimeout(
+    () => {
+      console.log(`Auto-cleaning up session ${session.id} after 4 hours.`);
+      cleanupSession(session);
+    },
+    4 * 60 * 60 * 1000,
+  );
+
   // Create a session object
   const session: Session = {
     teamIds,
@@ -169,6 +193,8 @@ export async function createSession(
     networkId,
     networkName,
     wgContainerId,
+    wgPort: wireguardPort,
+    subnet: allocatedSubnet,
     id: sessionId,
     createdAt: admin.firestore.Timestamp.now(),
   };
@@ -177,15 +203,6 @@ export async function createSession(
   const taskRef = db.collection('sessions').doc(session.id);
   await taskRef.set(session);
   console.log('Uploaded session data to Firestore:', session.id);
-
-  // Removes session after 4 hours
-  setTimeout(
-    () => {
-      console.log(`Auto-cleaning up session ${session.id} after 4 hours.`);
-      cleanupSession(session);
-    },
-    4 * 60 * 60 * 1000,
-  );
 
   return {sessionId, teamIds};
 }
@@ -384,6 +401,10 @@ export async function cleanupSession(session: Session): Promise<void> {
       `Cleanup Error: Network not found or already removed for session ${session.id}.`,
     );
   }
+
+  // Release the allocated subnet and WireGuard port
+  releaseSubnet(session.subnet);
+  releaseWGPort(session.wgPort);
 
   console.log(`Session document ${session.id} deleted.`);
 }
