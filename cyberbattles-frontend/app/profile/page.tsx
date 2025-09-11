@@ -18,6 +18,7 @@ import {
     ref,
     uploadBytes
 } from "firebase/storage";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { FileData } from "firebase/ai";
 import { AuthCredential, EmailAuthCredential } from "firebase/auth/web-extension";
@@ -73,8 +74,8 @@ try{
 
 // Firebase functions
 const handleChange = (e:any) => {
-    console.log(e)
-    console.log(e.target.files[0])
+    // console.log(e)
+    // console.log(e.target.files[0])
     if (e.target.files[0]) {
         setPhoto(e.target.files[0])
     }
@@ -98,7 +99,22 @@ const handleUpload = async (e:any) => {
     }
 
     if (username) {
-        await updateProfile(currentUser, {displayName: username})
+        await updateProfile(currentUser, {displayName: username});
+        const uid = currentUser.uid;
+        
+        // const docRef = db.collection('your_collection').doc('your_document_id');
+
+        // docRef.update({
+        //     fieldName1: 'newValue1',
+        //     fieldName2: 'newValue2'
+        // })
+        // .then(() => {
+        //     console.log("Document successfully updated!");
+        // })
+        // .catch((error: any) => {
+        //     console.error("Error updating document: ", error);
+        // });
+
     }
 
     setLoading(false)
