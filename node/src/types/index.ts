@@ -56,6 +56,10 @@ export interface Session {
   networkName: string;
   /** The container ID of the WireGuard router. */
   wgContainerId: string;
+  /** The external port of the WireGuard router for this session. */
+  wgPort: number;
+  /** The allocaed virtual subnet for this session. */
+  subnet: string;
   /** A unique identifier for the session. */
   id: string;
   /** The timestamp when the session was created. */
