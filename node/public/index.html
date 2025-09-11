@@ -24,6 +24,56 @@
         max-width: 1200px;
         width: 100%;
       }
+      .header-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        width: 100%;
+        margin-bottom: -10px;
+      }
+      #health-status-container {
+        position: relative;
+        display: inline-block;
+      }
+      #health-status-indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #888;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+      #health-status-indicator.healthy {
+        background-color: #28a745;
+      }
+      #health-status-indicator.unhealthy {
+        background-color: #dc3545;
+      }
+      #health-tooltip {
+        visibility: hidden;
+        width: 280px;
+        background-color: #111;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1;
+        top: 125%;
+        left: 50%;
+        margin-left: -140px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        border: 1px solid #555;
+        font-family: monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        pointer-events: none;
+      }
+      #health-status-container:hover #health-tooltip {
+        visibility: visible;
+        opacity: 1;
+      }
       fieldset {
         border: 1px solid #555;
         border-radius: 5px;
@@ -63,7 +113,7 @@
         background-color: #005fa3;
       }
       #cleanup-session-btn:hover {
-        background-color: #c9302c; /* Darker red on hover */
+        background-color: #c9302c;
       }
       #terminal-container {
         padding: 10px;
@@ -94,7 +144,6 @@
         margin-bottom: 5px;
         font-family: monospace;
       }
-      /* --- Styles for Overlays --- */
       .overlay {
         position: fixed;
         top: 0;
@@ -102,7 +151,7 @@
         width: 100%;
         height: 100%;
         background-color: rgba(0, 0, 0, 0.7);
-        display: none; /* Initially hidden */
+        display: none;
         justify-content: center;
         align-items: center;
         z-index: 1000;
@@ -132,12 +181,11 @@
         margin-top: 10px;
       }
       .pcap-controls {
-        margin-right: auto; /* Pushes the controls to the left */
+        margin-right: auto;
         display: flex;
         align-items: center;
         gap: 10px;
       }
-      /* Config Overlay Specifics */
       .config-content {
         display: flex;
         gap: 20px;
@@ -177,7 +225,6 @@
         padding: 5px;
         border-radius: 4px;
       }
-      /* PCAP Overlay Specifics */
       #pcap-modal {
         width: 95%;
         height: 90%;
@@ -187,16 +234,22 @@
       }
       #pcap-element-container {
         flex-grow: 1;
-        background-color: #fff; /* Give it a background for contrast */
+        background-color: #fff;
         border-radius: 4px;
-        overflow-y: auto; /* Make the pcap view scrollable */
-        color: #333; /* Set a dark text color to override the body style */
+        overflow-y: auto;
+        color: #333;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Docker Web Terminal Control Panel</h1>
+      <div class="header-container">
+        <h1>Docker Web Terminal Control Panel</h1>
+        <div id="health-status-container">
+          <div id="health-status-indicator"></div>
+          <div id="health-tooltip">Checking status...</div>
+        </div>
+      </div>
 
       <fieldset>
         <legend>Session Management</legend>
@@ -252,7 +305,7 @@
             id="cleanup-session-btn"
             style="display: none; background-color: #d9534f"
           >
-            Cleanup Session
+            Cleanup Session 🧹
           </button>
         </div>
         <div id="session-info" style="display: none">
@@ -348,9 +401,9 @@
       term.open(document.getElementById('terminal'));
       term.write('Welcome! Use the controls above to manage sessions.\r\n');
 
-      let ws; // To hold the WebSocket instance
-      let sessionTeams = []; // To hold details for populating dropdowns
-      let createdTeamIds = []; // To hold IDs from session creation
+      let ws;
+      let sessionTeams = [];
+      let createdTeamIds = [];
 
       async function postData(url = '', data = {}) {
         const response = await fetch(url, {
@@ -378,7 +431,6 @@
           term.write('\r\nAttempting to create a new session...\r\n');
           document.getElementById('get-config-btn').style.display = 'none';
           document.getElementById('view-pcap-btn').style.display = 'none';
-          // ## HIDE CLEANUP BUTTON ON NEW CREATION ATTEMPT ##
           document.getElementById('cleanup-session-btn').style.display = 'none';
           const token = document.getElementById('admin-jwt').value;
           if (!token) {
@@ -419,7 +471,6 @@
               teamList.appendChild(listItem);
             });
             sessionInfoDiv.style.display = 'block';
-            // ## SHOW CLEANUP BUTTON ON SUCCESS ##
             document.getElementById('cleanup-session-btn').style.display =
               'inline-block';
           } else {
@@ -578,7 +629,6 @@
         }
       });
 
-      // --- Event Listeners for Config Overlay ---
       const configOverlay = document.getElementById('config-overlay');
       document
         .getElementById('get-config-btn')
@@ -656,13 +706,12 @@ ssh ${data.username}@${data.ipAddress}`;
           URL.revokeObjectURL(url);
         });
 
-      // --- Event Listeners for PCAP Overlay ---
       const pcapOverlay = document.getElementById('pcap-overlay');
       const pcapElement = document.querySelector('pcap-element');
       const pausePcapRefreshCheckbox =
         document.getElementById('pause-pcap-refresh');
-      let pcapBlobUrl = null; // To keep track of the object URL
-      let pcapRefreshInterval = null; // To hold the interval timer
+      let pcapBlobUrl = null;
+      let pcapRefreshInterval = null;
 
       async function fetchPcapData() {
         const teamId = document.getElementById('teamId').value;
@@ -677,7 +726,6 @@ ssh ${data.username}@${data.ipAddress}`;
         term.write(`\r\nRefreshing PCAP for team ${teamId}...\r\n`);
 
         try {
-          // Add a cache-busting query parameter to prevent browser caching
           const response = await fetch(
             `/api/captures/${teamId}/${token}?t=${new Date().getTime()}`,
           );
@@ -707,16 +755,15 @@ ssh ${data.username}@${data.ipAddress}`;
       document
         .getElementById('view-pcap-btn')
         .addEventListener('click', async () => {
-          await fetchPcapData(); // Perform initial fetch
+          await fetchPcapData();
           pcapOverlay.style.display = 'flex';
 
-          // Start auto-refresh interval if not already running
           if (!pcapRefreshInterval) {
             pcapRefreshInterval = setInterval(() => {
               if (!pausePcapRefreshCheckbox.checked) {
                 fetchPcapData();
               }
-            }, 5000); // Refresh every 5 seconds
+            }, 5000);
           }
         });
 
@@ -728,7 +775,6 @@ ssh ${data.username}@${data.ipAddress}`;
         .getElementById('close-pcap-overlay-btn')
         .addEventListener('click', () => {
           pcapOverlay.style.display = 'none';
-          // Stop the refresh interval when the modal is closed
           if (pcapRefreshInterval) {
             clearInterval(pcapRefreshInterval);
             pcapRefreshInterval = null;
@@ -745,7 +791,6 @@ ssh ${data.username}@${data.ipAddress}`;
         }
       });
 
-      // ## NEW EVENT LISTENER FOR CLEANUP BUTTON ##
       document
         .getElementById('cleanup-session-btn')
         .addEventListener('click', async () => {
@@ -759,7 +804,6 @@ ssh ${data.username}@${data.ipAddress}`;
             return;
           }
 
-          // Confirm with the user because this is a destructive action
           const isConfirmed = confirm(
             `Are you sure you want to permanently delete session ${sessionId}? This action cannot be undone.`,
           );
@@ -769,15 +813,16 @@ ssh ${data.username}@${data.ipAddress}`;
             return;
           }
 
-          term.write(`\r\nAttempting to clean up session: ${sessionId}...\r\n`);
+          term.write(
+            `\r\n🧹 Attempting to clean up session: ${sessionId}...\r\n`,
+          );
 
           try {
             const response = await fetch(`/api/cleanup/${sessionId}/${token}`);
-            const responseText = await response.text(); // Cleanup returns plain text
+            const responseText = await response.text();
 
             if (response.ok) {
               term.write(`SUCCESS: ${responseText}\r\n`);
-              // Reset UI elements to a clean state
               document.getElementById('session-id').value = '';
               document.getElementById('team-id-list').innerHTML = '';
               document.getElementById('session-info').style.display = 'none';
@@ -809,6 +854,64 @@ ssh ${data.username}@${data.ipAddress}`;
             );
           }
         });
+
+      // --- HEALTH CHECK LOGIC ---
+      const healthIndicator = document.getElementById(
+        'health-status-indicator',
+      );
+      const healthTooltip = document.getElementById('health-tooltip');
+
+      async function checkHealth() {
+        const token = document.getElementById('admin-jwt').value || 'none';
+        try {
+          const response = await fetch(`/api/health/${token}`);
+
+          if (!response.ok) {
+            throw new Error(`Status ${response.status}`);
+          }
+
+          healthIndicator.className = 'healthy';
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            let tooltipText = `Status: ${data.status}\n`;
+            if (data.docker) {
+              tooltipText += `Docker: ${data.docker.status}\n`;
+              tooltipText += `  Version: ${data.docker.serverVersion}\n`;
+              tooltipText += `  CPU Cores: ${data.docker.cpuCores}\n`;
+              tooltipText += `  Memory: ${(
+                data.docker.memTotal /
+                1024 /
+                1024 /
+                1024
+              ).toFixed(2)} GB\n`;
+              tooltipText += `  Images: ${data.docker.images}\n`;
+              tooltipText += `  Containers: ${data.docker.containers} total\n`;
+              tooltipText += `    - Running: ${data.docker.containersRunning}\n`;
+              tooltipText += `    - Paused:  ${data.docker.containersPaused}\n`;
+              tooltipText += `    - Stopped: ${data.docker.containersStopped}\n`;
+            }
+            // ## ADDED NEW STATS HERE ##
+            if (data.subnetsRemaining !== undefined) {
+              tooltipText += `Subnets Free: ${data.subnetsRemaining}\n`;
+            }
+            if (data.wgPortsRemaining !== undefined) {
+              tooltipText += `WG Ports Free: ${data.wgPortsRemaining}`;
+            }
+            healthTooltip.textContent = tooltipText.trim();
+          } else {
+            const text = await response.text();
+            healthTooltip.textContent = `Status: ${text}`;
+          }
+        } catch (error) {
+          healthIndicator.className = 'unhealthy';
+          healthTooltip.textContent = `Error: Server is unreachable.\n(${error.message})`;
+        }
+      }
+
+      // Initial check and set interval
+      checkHealth();
+      setInterval(checkHealth, 5000);
     </script>
   </body>
 </html>

@@ -8,6 +8,7 @@
   - [`GET /api/config/:sessionId/:teamId/:userId/:token`](#get-apiconfigsessionidteamiduseridtoken)
   - [`WS /terminals/:teamId/:userId/:token`](#ws-apiterminalsteamiduseridtoken)
   - [`GET /api/captures/:teamId/:token`](#get-apicapturesteamidtoken)
+  - [`GET /api/health/:token`](#get-apihealthtoken)
 - [Docker Orchestration Server Testing Guide](#docker-orchestration-server-testing-guide)
   - [Prerequisites](#prerequisites)
   - [1. Backend Setup](#1-backend-setup)
@@ -149,6 +150,43 @@ This endpoint **downloads the network packet capture (`.pcap`) file** for a spec
 - `403 Forbidden`: The user associated with the token is not a member of the specified team.
 - `404 Not Found`: The team does not exist, or the capture file for that team could not be found on the server.
 - `500 Internal Server Error`: The server encountered an error while trying to read and send the file.
+
+## `GET /api/health/:token`
+
+This endpoint provides a **health check of the server** with two levels of detail. Its behavior changes based on whether a valid authentication token is provided.
+
+**URL Parameter (Optional):**
+
+- `token`: `string` - A token string must be provided in the URL. If the token is **valid**, the response will include detailed system information. If the token is **invalid or a placeholder**, a basic "OK" response is returned.
+
+**Responses:**
+
+- `200 OK`: This status code is returned for both successful basic and detailed checks.
+
+  - **If the no token is provided, or the token is invalid**, you'll receive a simple plain text response confirming the server is online: `OK`
+
+  - **If the provided token is valid**, you'll receive a detailed JSON object with the server status and information from the Docker daemon:
+
+    ```JSON
+    {
+      "status": "ok",
+      "docker": {
+        "status": "healthy",
+        "containers": 15,
+        "containersRunning": 12,
+        "containersPaused": 0,
+        "containersStopped": 3,
+        "images": 25,
+        "serverVersion": "24.0.5",
+        "memTotal": 16777216000,
+        "cpuCores": 8
+      },
+      "subnetsRemaining": 224,
+      "wgPortsRemaining": 200,
+    }
+    ```
+
+- `500 Internal Server Error`: This only occurs if a **valid token** is provided but the server fails to retrieve health information from the Docker service. The response body will be `{ "status": "error", "message": "..." }`.
 
 # Docker Orchestration Server Testing Guide
 

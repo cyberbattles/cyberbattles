@@ -87,3 +87,18 @@ export interface StartSessionResult {
   /** A dictionary of teams and their members if the start was successful. */
   teamsAndMembers?: {[key: string]: string[]};
 }
+
+/**
+ * An interface representing the health of the Docker server.
+ */
+export interface DockerHealth {
+  status: 'healthy' | 'unhealthy';
+  containers: number;
+  containersRunning: number;
+  containersPaused: number;
+  containersStopped: number;
+  images: number;
+  serverVersion: string;
+  memTotal: number;
+  cpuCores: number;
+}
