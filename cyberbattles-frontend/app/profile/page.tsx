@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import logo from "../../public/images/logo.png"
 import Navbar from "@/components/Navbar";
-import { auth } from "../../lib/firebase";
+import { auth, db} from "../../lib/firebase";
 import { getAuth, onAuthStateChanged, deleteUser, reauthenticateWithCredential } from "firebase/auth";
 import {
     signInWithEmailAndPassword,
@@ -18,12 +18,16 @@ import {
     ref,
     uploadBytes
 } from "firebase/storage";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, collection, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { FileData } from "firebase/ai";
 import { AuthCredential, EmailAuthCredential } from "firebase/auth/web-extension";
 
 //------------------------------
+
+
+
+//-------------------------------
 
 export default function ProfilePage() {
 
@@ -99,21 +103,22 @@ const handleUpload = async (e:any) => {
     }
 
     if (username) {
-        await updateProfile(currentUser, {displayName: username});
         const uid = currentUser.uid;
         
-        // const docRef = db.collection('your_collection').doc('your_document_id');
+        // Update the login firestore
+        const loginRef = collection(db, "login");
+        const docRef = doc(db, "login", uid)
+        await updateDoc(docRef, {
+            userName:username
+        }).then(() => {
+            console.log("Document successfully updated!");
+        })
+        .catch((error: any) => {
+            console.error("Error updating document: ", error);
+        });
 
-        // docRef.update({
-        //     fieldName1: 'newValue1',
-        //     fieldName2: 'newValue2'
-        // })
-        // .then(() => {
-        //     console.log("Document successfully updated!");
-        // })
-        // .catch((error: any) => {
-        //     console.error("Error updating document: ", error);
-        // });
+        // Update the auth profile
+        await updateProfile(currentUser, {displayName: username});
 
     }
 
