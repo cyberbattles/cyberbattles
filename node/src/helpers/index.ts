@@ -35,6 +35,14 @@ export function releaseWGPort(port: number): void {
 }
 
 /**
+ * Returns the number of remaining available WireGuard ports.
+ * @returns The count of available WireGuard ports.
+ */
+export function wgPortsRemaining(): number {
+  return availableWGPorts.length;
+}
+
+/**
  * Retrieves an available subnet from the pool.
  * @returns A string representing the available subnet, or null if none are available.
  */
@@ -44,6 +52,14 @@ export function getAvailableSubnet(): string | null {
     return null;
   }
   return availableSubnets.pop() || null;
+}
+
+/**
+ * Returns the number of remaining available subnets.
+ * @returns The count of available subnets.
+ */
+export function subnetsRemaining(): number {
+  return availableSubnets.length;
 }
 
 /**

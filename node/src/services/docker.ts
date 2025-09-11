@@ -3,6 +3,8 @@ import {Writable} from 'stream';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
+import {DockerHealth} from '../types';
+
 const SCENARIOS: string[] = [];
 const WIREGUARD_IMAGE = 'lscr.io/linuxserver/wireguard:latest';
 
@@ -419,4 +421,40 @@ export async function createWgRouter(
   }
 
   return wgContainer.id;
+}
+
+/**
+ * Retrieves the health status of the Docker daemon.
+ * @returns A Promise that resolves to a DockerHealth object indicating if Docker is healthy.
+ */
+export async function getDockerHealth(): Promise<DockerHealth> {
+  let result: DockerHealth = {
+    status: 'unhealthy',
+    containers: -1,
+    containersRunning: -1,
+    containersPaused: -1,
+    containersStopped: -1,
+    images: -1,
+    serverVersion: 'unknown',
+    memTotal: -1,
+    cpuCores: -1,
+  };
+
+  try {
+    const info = await docker.info();
+
+    result = {
+      status: 'healthy',
+      containers: info.Containers,
+      containersRunning: info.ContainersRunning,
+      containersPaused: info.ContainersPaused,
+      containersStopped: info.ContainersStopped,
+      images: info.Images,
+      serverVersion: info.ServerVersion || 'unknown',
+      memTotal: info.MemTotal,
+      cpuCores: info.NCPU,
+    };
+  } catch (_) {}
+
+  return result;
 }

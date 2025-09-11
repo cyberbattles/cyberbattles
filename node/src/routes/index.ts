@@ -8,7 +8,7 @@ import {
   startSession,
   cleanupSession,
 } from '../services/sessions';
-import {getWgAddress} from '../helpers';
+import {getDockerHealth} from '../services/docker';
 import {
   CreateSessionResult,
   StartSessionResult,
@@ -16,7 +16,12 @@ import {
   User,
   Session,
 } from '../types';
-import {verifyToken} from '../helpers';
+import {
+  verifyToken,
+  getWgAddress,
+  wgPortsRemaining,
+  subnetsRemaining,
+} from '../helpers';
 
 const router = Router();
 
@@ -314,5 +319,36 @@ router.get(
     }
   },
 );
+
+// Return information about the running server, to any registered user
+router.get('/health/:token', async (req: Request, res: Response) => {
+  const {token} = req.params;
+
+  // Verify the token
+  try {
+    const tokenUid = await verifyToken(token);
+    if (!tokenUid || tokenUid.length === 0) {
+      throw new Error('Invalid token');
+    }
+  } catch (error) {
+    return res.status(200).send('OK');
+  }
+
+  try {
+    const wgPorts = wgPortsRemaining();
+    const subnets = subnetsRemaining();
+    const dockerHealth = await getDockerHealth();
+    return res.status(200).json({
+      status: 'ok',
+      docker: dockerHealth,
+      subnetsRemaining: subnets,
+      wgPortsRemaining: wgPorts,
+    });
+  } catch (error) {
+    const errorMessage = `Error getting health info: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    console.error(errorMessage);
+    return res.status(500).json({status: 'error', message: errorMessage});
+  }
+});
 
 export default router;
