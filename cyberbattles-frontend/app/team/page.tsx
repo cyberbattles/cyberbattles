@@ -10,7 +10,7 @@ const TeamSelection = () => {
   
     const handleCreateTeam = () => {
       try {
-        router.push("/create_team");
+        router.push("/create-team");
       } catch (error) {
         console.error("Navigation failed:", error);
       }
@@ -18,7 +18,7 @@ const TeamSelection = () => {
 
     const handleJoinTeam = () => {
       try {
-        router.push("/join_team");
+        router.push("/join-team");
       } catch (error) {
         console.error("Navigation failed:", error);
       }

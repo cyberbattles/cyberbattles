@@ -6,6 +6,10 @@ SERVER_CONF="/config/wg_confs/wg0.conf"
 echo "Starting..." >> "$LOG_FILE"
 
 sed -i "/\[Interface\]/a PostUp = iptables -t nat -A POSTROUTING -o wg+ -j MASQUERADE" $SERVER_CONF
+sed -i "/\[Interface\]/a PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp --dport 22 -j DROP" $SERVER_CONF
+# For multiple source ips -s 10.12.0.4,10.12.0.5. Only team member can ssh into their own machine
+sed -i "/\[Interface\]/a PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp -s 10.12.0.4 -d 10.12.0.2 --dport 22 -j ACCEPT" $SERVER_CONF
+sed -i "/\[Interface\]/a PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp -s 10.12.0.5 -d 10.12.0.3 --dport 22 -j ACCEPT" $SERVER_CONF
 
 # The first {num_team} peers are for containers and the rest are for the players.
 num_teams=2
