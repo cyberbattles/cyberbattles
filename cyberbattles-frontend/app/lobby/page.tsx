@@ -75,11 +75,37 @@ const Lobby = () => {
       if (docSnap.exists()) {
         ret = docSnap.data().userName;
       }
-
     } catch (error) {
       console.log("Failed", error);
     }
     return ret;
+  }
+
+  async function checkHost() {
+    // If the team hook is not set, do nothing
+    if (!team) {
+      return;
+    }
+
+    // Get the admin uid of the session
+    const sessionId = team.sessionId;
+    let docRef = doc(db, "sessions", sessionId);
+    let docSnap = await getDoc(docRef);
+    let adminUid = ""
+    if (docSnap.exists()) {
+      adminUid = docSnap.data().adminUid;
+    } else {
+      console.log("couldn't find admin");
+      return;
+    }
+
+    console.log(adminUid)
+
+    // Determine if the current user is admin
+    if (currentUser.uid == adminUid){
+      console.log("this user is admin");
+      setIsHost(true);
+    }
   }
 
    async function startSession() {
@@ -108,6 +134,8 @@ const Lobby = () => {
 
   };
 
+  // --------------------------------------
+
   // Get the auth state and set the current user
   try{
       onAuthStateChanged(auth, (user) => {
@@ -127,6 +155,7 @@ const Lobby = () => {
     if (team) {
       getPlayers();
     }
+    checkHost();
   }
 
   return (
