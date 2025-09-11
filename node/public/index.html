@@ -601,7 +601,7 @@
 
               const tutorial = `# Install wireguard if you haven't already
 sudo wg-quick up ~/Downloads/wg1.conf
-ssh ${data.username}@${data.ipAddress}`;
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}@${data.ipAddress}`;
               document.getElementById('tutorial-text').textContent = tutorial;
 
               configOverlay.style.display = 'flex';
