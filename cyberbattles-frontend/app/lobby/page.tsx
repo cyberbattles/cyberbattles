@@ -14,7 +14,7 @@ import ApiClient from "@/components/ApiClient";
 const Lobby = () => {
   const router = useRouter();
   const [teamId, setTeamId] = useState(null);
-  const [players, setPlayers] = useState<string[]>([]);
+  const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState("");
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
@@ -37,7 +37,7 @@ const Lobby = () => {
     }
     try{
       const teamsRef = collection(db, "teams");
-      const q =  query(teamsRef, where("memberIds", "array-contains", uid))
+      const q =  query(teamsRef, where("memberIds", "array-contains", uid));
 
       // Populate the teamId and Players hooks
       const querySnapshot = await getDocs(q);
@@ -54,28 +54,28 @@ const Lobby = () => {
 
   // Populate the players hook with the usernames of players
   async function getPlayers() {
-    if (players.length != 0) {
+    if (players.size != 0) {
       return;
     }
     const teamMembers = team.memberIds;
-    let arr: string[] = []
     teamMembers.forEach((memberId: string, index: number) => {
-      let name = getUsername(memberId);
-      name.then((value: string) => {
-        arr.push(value)
-        setPlayers(arr)
+      let userObj = getUser(memberId);
+      userObj.then((value: any) => {
+        players.set(memberId, value)
+        setPlayers(new Map(players));
+        console.log(players)
       })
     });
   }
 
-  // Get the username associated with given uid
-  async function getUsername(uid: string) {
-    let ret = ""
+  // Get the document object associated with given uid
+  async function getUser(uid: any) {
+    let ret = null;
     try{
       const docRef = doc(db, "login", uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        ret = docSnap.data().userName;
+        ret = docSnap.data();
       }
     } catch (error) {
       console.log("Failed", error);
@@ -112,6 +112,10 @@ const Lobby = () => {
     setIsHost(true);
   }
 
+  const removePlayer = () => {
+    console.log("testin")
+  }
+
    async function startSession() {
         try {
             const response = await ApiClient.post("/start-session");
@@ -138,9 +142,7 @@ const Lobby = () => {
 
   };
 
-  const removePlayer = () => {
-    console.log("testin")
-  }
+
 
   // --------------------------------------
 
@@ -186,7 +188,7 @@ const Lobby = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
-                <div className="font-semibold">{players.length}/5</div>
+                <div className="font-semibold">{players.size}/5</div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
@@ -245,12 +247,13 @@ const Lobby = () => {
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
               <div className="space-y-3">
-                {players.map((player, index) => (
+                {
+                  team && (team.memberIds.map((uid: string) => (
 
-                  <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={index}>
+                  <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
                     {/* Player name */}
                     <div className="flex items-center gap-3">
-                      <span className="font-medium">{player}</span>
+                      <span className="font-medium">{players.get(uid).userName}</span>
                     </div>
                     {/* Remove player button */}
                     {
@@ -260,7 +263,8 @@ const Lobby = () => {
                       </div>
                     }      
                   </div>
-                ))}
+                  )))
+                }
               </div>
             </div>
 
