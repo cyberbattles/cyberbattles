@@ -1,3 +1,5 @@
+import * as admin from 'firebase-admin';
+
 /**
  * An interface representing a user in the session.
  */
@@ -54,8 +56,14 @@ export interface Session {
   networkName: string;
   /** The container ID of the WireGuard router. */
   wgContainerId: string;
+  /** The external port of the WireGuard router for this session. */
+  wgPort: number;
+  /** The allocaed virtual subnet for this session. */
+  subnet: string;
   /** A unique identifier for the session. */
   id: string;
+  /** The timestamp when the session was created. */
+  createdAt: admin.firestore.Timestamp;
 }
 
 /**
@@ -78,4 +86,19 @@ export interface StartSessionResult {
   message: string;
   /** A dictionary of teams and their members if the start was successful. */
   teamsAndMembers?: {[key: string]: string[]};
+}
+
+/**
+ * An interface representing the health of the Docker server.
+ */
+export interface DockerHealth {
+  status: 'healthy' | 'unhealthy';
+  containers: number;
+  containersRunning: number;
+  containersPaused: number;
+  containersStopped: number;
+  images: number;
+  serverVersion: string;
+  memTotal: number;
+  cpuCores: number;
 }
