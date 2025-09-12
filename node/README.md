@@ -2,11 +2,13 @@
 
 - [How to Add New Challenges/Scenarios](#how-to-add-new-challengesscenarios)
 - [ExpressJS API Endpoints](#expressjs-api-endpoints)
-  - [`POST /session`](#post-session)
-  - [`POST /start-session`](#post-start-session)
-  - [`GET /config/:sessionId/:teamId/:userId/:token`](#get-configsessionidteamiduseridtoken)
-  - [`WS /terminals/:teamId/:userId/:token`](#ws-terminalsteamiduseridtoken)
-  - [`GET /captures/:teamId/:token`](#get-capturesteamidtoken)
+  - [`POST /api/session`](#post-apisession)
+  - [`POST /api/start-session`](#post-apistart-session)
+  - [`GET /api/cleanup/:sessionId/:token`](#get-apicleanupsessionidtoken)
+  - [`GET /api/config/:sessionId/:teamId/:userId/:token`](#get-apiconfigsessionidteamiduseridtoken)
+  - [`WS /terminals/:teamId/:userId/:token`](#ws-apiterminalsteamiduseridtoken)
+  - [`GET /api/captures/:teamId/:token`](#get-apicapturesteamidtoken)
+  - [`GET /api/health/:token`](#get-apihealthtoken)
 - [Docker Orchestration Server Testing Guide](#docker-orchestration-server-testing-guide)
   - [Prerequisites](#prerequisites)
   - [1. Backend Setup](#1-backend-setup)
@@ -35,7 +37,7 @@ will be automatically downloaded and built by the backend server on startup.
 
 # ExpressJS API Endpoints
 
-## `POST /session`
+## `POST /api/session`
 
 This endpoint **creates a new session**.
 
@@ -53,7 +55,7 @@ This endpoint **creates a new session**.
 - `401 Unauthorized`: The provided token is invalid.
 - `500 Internal Server Error`: Something went wrong on the server.
 
-## `POST /start-session`
+## `POST /api/start-session`
 
 This endpoint **starts a previously created session**.
 
@@ -69,7 +71,25 @@ This endpoint **starts a previously created session**.
 - `401 Unauthorized`: The provided token is invalid.
 - `500 Internal Server Error`: Something went wrong on the server.
 
-## `GET /config/:sessionId/:teamId/:userId/:token`
+## `GET /api/cleanup/:sessionId/:token`
+
+This endpoint **terminates and cleans up all resources** associated with a given session. This is a destructive action that stops and removes all related Docker containers, networks, and deletes session data from the database. 🧹
+
+**URL Parameters:**
+
+- `sessionId`: `string` - The ID of the session you want to delete.
+- `token`: `string` - The authentication token of the user who created the session.
+
+**Responses:**
+
+- `200 OK`: The session and all its resources were successfully removed. The response body will be a plain text message: `Session cleaned up successfully`.
+- `400 Bad Request`: The `sessionId` parameter is invalid.
+- `401 Unauthorized`: The provided token is invalid.
+- `403 Forbidden`: The user attempting the cleanup is **not the original admin** who created the session.
+- `404 Not Found`: The session with the specified ID does not exist.
+- `500 Internal Server Error`: The server failed during the cleanup process. This can happen if the session document couldn't be deleted after the cleanup actions were performed.
+
+## `GET /api/config/:sessionId/:teamId/:userId/:token`
 
 This endpoint **retrieves a user's WireGuard VPN configuration**.
 
@@ -113,7 +133,7 @@ The server will close the connection with a specific code if an issue occurs:
 - `4002 Not Started`: The session that the team belongs to has not been started yet.
 - `4003 Forbidden`: The specified user is not a member of the requested team.
 
-## `GET /captures/:teamId/:token`
+## `GET /api/captures/:teamId/:token`
 
 This endpoint **downloads the network packet capture (`.pcap`) file** for a specific team's container. A `.pcap` file contains network traffic data that can be analyzed with tools like Wireshark.
 
@@ -130,6 +150,43 @@ This endpoint **downloads the network packet capture (`.pcap`) file** for a spec
 - `403 Forbidden`: The user associated with the token is not a member of the specified team.
 - `404 Not Found`: The team does not exist, or the capture file for that team could not be found on the server.
 - `500 Internal Server Error`: The server encountered an error while trying to read and send the file.
+
+## `GET /api/health/:token`
+
+This endpoint provides a **health check of the server** with two levels of detail. Its behavior changes based on whether a valid authentication token is provided.
+
+**URL Parameter (Optional):**
+
+- `token`: `string` - A token string must be provided in the URL. If the token is **valid**, the response will include detailed system information. If the token is **invalid or a placeholder**, a basic "OK" response is returned.
+
+**Responses:**
+
+- `200 OK`: This status code is returned for both successful basic and detailed checks.
+
+  - **If the no token is provided, or the token is invalid**, you'll receive a simple plain text response confirming the server is online: `OK`
+
+  - **If the provided token is valid**, you'll receive a detailed JSON object with the server status and information from the Docker daemon:
+
+    ```JSON
+    {
+      "status": "ok",
+      "docker": {
+        "status": "healthy",
+        "containers": 15,
+        "containersRunning": 12,
+        "containersPaused": 0,
+        "containersStopped": 3,
+        "images": 25,
+        "serverVersion": "24.0.5",
+        "memTotal": 16777216000,
+        "cpuCores": 8
+      },
+      "subnetsRemaining": 224,
+      "wgPortsRemaining": 200,
+    }
+    ```
+
+- `500 Internal Server Error`: This only occurs if a **valid token** is provided but the server fails to retrieve health information from the Docker service. The response body will be `{ "status": "error", "message": "..." }`.
 
 # Docker Orchestration Server Testing Guide
 
@@ -233,7 +290,7 @@ Follow these steps to test the full user flow.
 
 5. **Connect to the Other User via SSH**
 
-   - Go back to the Docker Terminal admin page at `http://localhost:1337`, and in the `Connect to Terminal` menu, select the other team _and_ other user you created/joined with.
+   - Go back to the Docker Terminal admin page at `http://localhost:1337`, and in the `Connect to Terminal` menu, select the other team _and_ other user you created/joined with. You will also need to change the JWT to that user's JWT.
    - Click the `Get Config` button, that is next to the `Connect to Terminal`
    - Click the `Download .conf` button, and run the suggested command below the QR Code. Copy and paste it directly into your terminal and just run it, you will be prompted for a SSH password (which is the same as your username).
    - Voila! You now have an SSH connection _and_ a Web Terminal connection. You can now communicate with between users, without the other user knowing where the traffic is coming from.
