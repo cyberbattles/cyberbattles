@@ -333,7 +333,7 @@ router.get(
 );
 
 // Return information about the running server, to any registered user
-router.get('/health/:token', async (req: Request, res: Response) => {
+router.get('/health/{:token}', async (req: Request, res: Response) => {
   const {token} = req.params;
 
   // Verify the token
