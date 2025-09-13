@@ -338,7 +338,13 @@ router.get('/health/:token', async (req: Request, res: Response) => {
 
   // Verify the token
   try {
-    const tokenUid = await verifyToken(token);
+    let tokenUid: string;
+    if (typeof token !== 'string' || !token || token.trim().length === 0) {
+      throw new Error('Invalid token');
+    } else {
+      tokenUid = await verifyToken(token);
+    }
+
     if (!tokenUid || tokenUid.length === 0) {
       throw new Error('Invalid token');
     }

@@ -68,6 +68,7 @@ export async function createTeam(
       name,
       numMembers,
       memberIds: [],
+      teamLeaderUid: '',
       containerId,
       id: teamId,
       sessionId,
@@ -191,9 +192,9 @@ export async function createSession(
 
   // Removes session after 4 hours
   setTimeout(
-    () => {
+    async () => {
       console.log(`Auto-cleaning up session ${session.id} after 4 hours.`);
-      cleanupSession(session);
+      await cleanupSession(session);
     },
     4 * 60 * 60 * 1000,
   );
