@@ -19,15 +19,13 @@ const Lobby = () => {
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
 
-  // [teamID, memberIDs]
   const [team, setTeam] = useState<any>(null);
   // Get the current user
   const [currentUser, setCurrentUser] = useState<any | null>(null)
     
   
   // TODO: Setup backend call to get player, scenario and teams information
-  // TODO: Check whether the user is authenticated as an admin or a regular player
-  // and show actions appropriately
+
 
   // Find the team associated with the given user id
   async function findTeam(uid: string) {
@@ -52,7 +50,7 @@ const Lobby = () => {
     }
   }
 
-  // Populate the players hook with the usernames of players
+  // Populate the players hook with map (uid, firestore player doc)
   async function getPlayers() {
     if (players.size != 0) {
       return;
@@ -82,7 +80,8 @@ const Lobby = () => {
     return ret;
   }
 
-  // FUNCTION: check if the currently signed in user is sessions admin (host)
+  // CHeck if the currently signed in user is sessions admin (host)
+  // This will probably get changed to check if the user is the team leader rather than session admin
   async function checkHost() {
     // If the team hook is not set, do nothing
     if (!team) {
