@@ -10,7 +10,7 @@ const TeamSelection = () => {
   
     const handleCreateTeam = () => {
       try {
-        router.push("/create-team");
+        router.push("/create-session");
       } catch (error) {
         console.error("Navigation failed:", error);
       }
