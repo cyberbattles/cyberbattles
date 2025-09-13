@@ -1,9 +1,13 @@
 // app/ctf/create-team/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+
+import { getDocs, updateDoc, arrayUnion, collection, query, onSnapshot } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
 
 import ApiClient from "@/components/ApiClient";
 
@@ -14,16 +18,62 @@ import ApiClient from "@/components/ApiClient";
 
 const CreateSession = () => {
 
-    const router = useRouter();
-    const [scenario, setScenario] = useState(0);
-    const [numTeams, setNumberTeams] = useState(2);
-    const [numMembersPerTeam, setPlayersPerTeam] = useState(0);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [scenarios, setScenarios] = useState<Array<{
+    id: string;
+    scenario_description: any;
+    scenario_difficulty: any;
+    scenario_title: any;
+    timestamp: any;
+    zipData: any;
+  }>>([]);
+  const [numTeams, setNumberTeams] = useState(2);
+  const [numMembersPerTeam, setPlayersPerTeam] = useState(0);
+
+  useEffect(() => {
+    // grab available scenarios when page load
+
+    const getScenarios = async () => {
+      try {
+        setLoading(true);
+        const scenariosRef = collection(db, "scenarios");
+        const querySnapshot = await getDocs(scenariosRef);
+        
+        const data = querySnapshot.docs.map(doc => ({
+          // We don't really need all these fields but it's there if I decide
+          // to update this page to give more info in the creation process.
+          id: doc.id,
+          scenario_description: doc.data().scenario_description,
+          scenario_difficulty: doc.data().scenario_difficulty,
+          scenario_title: doc.data().scenario_title,
+          timestamp: doc.data().timestamp,
+          zipData: doc.data().zipData
+          
+        }));
+        
+        setScenarios(data);
+        console.log(data);
+        setLoading(false);
+      }
+      catch (error) {
+        console.error("Failed to get scenarios",error);
+      }
+
+      
+    };
+
+    getScenarios();
+
+  }, []); 
+
+    
     
 
     async function createSession() { // scenario (hardcode 0 for now), num teams, players per team
         try {
             const response = await ApiClient.post("/session", {
-              "selectedScenario" : scenario,
+              // "selectedScenario" : sc,
               "numTeams" : numTeams,
               "numMembersPerTeam" : numMembersPerTeam,
               "token" : localStorage.getItem("token")
