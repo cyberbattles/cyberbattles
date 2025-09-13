@@ -5,11 +5,25 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
+import Select, { SingleValue } from "react-select";
+
 import { getDocs, updateDoc, arrayUnion, collection, query, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 
 import ApiClient from "@/components/ApiClient";
+
+
+interface Scenario {
+  id: string;
+  scenario_title: string;
+}
+
+interface ScenarioOption {
+  value: string;
+  label: string; 
+}
+
 
 // TODO: Call firebase to get aavailable scenarios
 
@@ -29,7 +43,23 @@ const CreateSession = () => {
     zipData: any;
   }>>([]);
   const [numTeams, setNumberTeams] = useState(2);
-  const [numMembersPerTeam, setPlayersPerTeam] = useState(0);
+  const [numMembersPerTeam, setPlayersPerTeam] = useState(1);
+  const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+
+  const options = scenarios.map(s => ({
+    value: s.id,
+    label: s.scenario_title,
+  }))
+
+  const handleChange = (option: SingleValue<ScenarioOption>) => {
+    if (option) {
+      setSelectedScenario(option.value); 
+      console.log("Selected scenario id:", option.value);
+
+    } else {
+      setSelectedScenario(null);
+    }
+  };
 
   useEffect(() => {
     // grab available scenarios when page load
@@ -51,6 +81,12 @@ const CreateSession = () => {
           zipData: doc.data().zipData
           
         }));
+
+        const scenarioOptions = scenarios.map(s => ({
+          value: s.id,
+          label: s.scenario_title,
+        }));
+
         
         setScenarios(data);
         console.log(data);
@@ -67,13 +103,10 @@ const CreateSession = () => {
 
   }, []); 
 
-    
-    
-
-    async function createSession() { // scenario (hardcode 0 for now), num teams, players per team
+    async function createSession() { 
         try {
             const response = await ApiClient.post("/session", {
-              // "selectedScenario" : sc,
+              "selectedScenario" : selectedScenario,
               "numTeams" : numTeams,
               "numMembersPerTeam" : numMembersPerTeam,
               "token" : localStorage.getItem("token")
@@ -84,9 +117,6 @@ const CreateSession = () => {
         }
     }
 
-   
-
-  
     const handleCreateSession = async () => {
       try {
         await createSession();
@@ -115,7 +145,7 @@ const CreateSession = () => {
           <main className="flex-1 flex flex-col items-center justify-center p-8">
             {/* Header */}
             <header className="text-center mb-12">
-              <h1 className="text-4xl font-bold mb-4">Create Team</h1>
+              <h1 className="text-4xl font-bold mb-4">Create Session</h1>
             </header>
   
             {/* Create Team Form */}
@@ -166,6 +196,14 @@ const CreateSession = () => {
                     <span>5</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="w-80 text-black">
+                <Select<ScenarioOption, false>
+                options={options}
+                onChange={handleChange}
+                placeholder="Select scenario name"
+                />
               </div>
               
               <div className="flex flex-col items-center space-y-4">
