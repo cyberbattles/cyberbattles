@@ -3,14 +3,27 @@ import {getAuth} from 'firebase-admin/auth';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
+import {exec} from 'child_process';
+import IPCIDR from 'ip-cidr';
+
 const availableWGPorts: number[] = [];
-const availableSubnets: string[] = [];
+const potentialSubnets: IPCIDR[] = [];
+let availableSubnets: string[] = [];
 
 // Populate available subnets and WireGuard ports
 for (let i = 24; i < 255; i++) {
-  availableSubnets.push(`172.12.${i}.0/24`);
+  potentialSubnets.push(new IPCIDR(`172.16.${i}.0/24`));
   availableWGPorts.push(51796 + i);
 }
+
+(async () => {
+  availableSubnets = await filterAvailableSubnets(potentialSubnets)
+    .then(subnets => subnets.map(s => s.toString()))
+    .catch(() => {
+      console.error('Failed to filter subnets');
+      return [];
+    });
+})();
 
 /**
  * Retrieves an available WireGuard port from the pool.
@@ -51,7 +64,7 @@ export function getAvailableSubnet(): string | null {
     // No available subnets
     return null;
   }
-  return availableSubnets.pop() || null;
+  return availableSubnets.pop()?.toString() || null;
 }
 
 /**
@@ -69,6 +82,62 @@ export function subnetsRemaining(): number {
 export function releaseSubnet(subnet: string): void {
   if (!availableSubnets.includes(subnet)) {
     availableSubnets.push(subnet);
+  }
+}
+
+/**
+ * Executes the `ip addr` command to get all CIDR blocks configured on the system.
+ * @returns A promise that resolves to an array of existing CIDR strings.
+ */
+function getSystemCIDRs(): Promise<IPCIDR[]> {
+  return new Promise((resolve, reject) => {
+    // Execute the 'ip addr' command, which lists network interfaces and addresses.
+    exec('ip addr', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing 'ip addr': ${stderr}`);
+        return reject(error);
+      }
+
+      // Use a regular expression to find all IPv4 CIDR notations in the output.
+      const cidrRegex = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}\b/g;
+      const foundCIDRs = stdout.match(cidrRegex) || [];
+
+      // Convert to CIDR objects
+      const addresses = foundCIDRs.map(cidr => new IPCIDR(cidr));
+
+      resolve(addresses);
+    });
+  });
+}
+
+/**
+ * Filters a list of potential subnets to find which ones are not already in use.
+ * @param potentialSubnets An array of IPCIDR objects representing potential subnets.
+ * @returns A promise that resolves to an array of available subnets.
+ */
+async function filterAvailableSubnets(
+  potentialSubnets: IPCIDR[],
+): Promise<IPCIDR[]> {
+  try {
+    const existingSubnets = await getSystemCIDRs();
+
+    const availableSubnets = potentialSubnets.filter(potentialSubnet => {
+      const isOverlapping = existingSubnets.some(existingBlock => {
+        const aContainsB =
+          existingBlock.contains(potentialSubnet.start()) ||
+          existingBlock.contains(potentialSubnet.end());
+        const bContainsA =
+          potentialSubnet.contains(existingBlock.start()) ||
+          potentialSubnet.contains(existingBlock.end());
+        return aContainsB || bContainsA;
+      });
+      return !isOverlapping;
+    });
+
+    return availableSubnets;
+  } catch (error) {
+    console.error('Failed to filter subnets:', error);
+    return potentialSubnets;
   }
 }
 

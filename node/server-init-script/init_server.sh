@@ -13,6 +13,10 @@ server_ip=${SERVER_IP}
 wireguard_port=${WIREGUARD_PORT}
 team_ids=${TEAM_IDS}
 
+# Update the ListenPort in the server configuration
+sed -i "s/ListenPort = 51820/ListenPort = ${wireguard_port}/" /config/wg_confs/wg0.conf
+echo "Set server ListenPort to ${wireguard_port}" >>"$LOG_FILE"
+
 # Calculate total number of configurations
 total_confs=$(((num_teams * num_players) + num_teams))
 
@@ -45,7 +49,7 @@ done
 # Remove DNS, and modify ListenPort in each configuration
 for ((i = 1; i <= $total_confs; i++)); do
   sed -i '/^DNS = /d' "/config/peer$i/peer$i.conf"
-  sed -i "/ListenPort = ${wireguard_port}/d" /config/peer$i/peer$i.conf
+  sed -i "/ListenPort = /d" /config/peer$i/peer$i.conf
 done
 
 # Append PersistentKeepalive to the team
@@ -57,7 +61,7 @@ done
 peer_index=$((num_teams + 1))
 for ((j = $peer_index; j <= $total_confs; j++)); do
   echo $j
-  sed -i "s/Endpoint = wg-router:${wireguard_port}/Endpoint = ${server_ip}:${wireguard_port}/" /config/peer$j/peer$j.conf
+  sed -i "s/Endpoint = wg-router:51820/Endpoint = ${server_ip}:${wireguard_port}/" /config/peer$j/peer$j.conf
 done
 
 echo "Renaming configuration folders..." >>"$LOG_FILE"

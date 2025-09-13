@@ -51,7 +51,7 @@ This endpoint **creates a new session**.
 **Responses:**
 
 - `201 Created`: The session was created successfully. The body will be a JSON object like `{ "result": { "sessionId": "...", "teamIds": ["...", "..."] } }`.
-- `400 Bad Request`: The request body is missing data or has the wrong types.
+- `400 Bad Request`: The request body is missing data or has the wrong types. Or the parameters are out of range (e.g., too many teams or players).
 - `401 Unauthorized`: The provided token is invalid.
 - `500 Internal Server Error`: Something went wrong on the server.
 
@@ -225,15 +225,21 @@ This code is only designed and tested on Linux, please use either a Linux comput
 
   - Visit [wireguard.com/install](https://www.wireguard.com/install/) and follow the instructions for your device.
 
+- Sudo Permissions: Either the index.js file will need to be run with `sudo` or you need to add `nsenter` as a passwordless sudo command. To do this, run `sudo visudo` and add the following line to the end of the file, replacing `your-username` with your actual username:
+
+  ```
+  your-username ALL=(ALL) NOPASSWD: /usr/bin/nsenter
+  ```
+
 ### 1. Backend Setup
 
-Then, get the Node.js server running.
+Then, get the Node.js server running (ensuring you're using sudo or have edited your sudoers file).
 
 1. ```
    cd node
    npm i
    npx tsc
-   node build/src/server.js
+   node build/src/index.js
    ```
 
 2. If you haven't run the server before (or have added new Dockerfiles to the `dockerfiles` dir) then this _will_ take a while, as it prebuilds all the provided scenarios. The backend server is now running. You can access the example XtermJS page at `http://localhost:1337`.
