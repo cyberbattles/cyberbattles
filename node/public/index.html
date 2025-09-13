@@ -665,7 +665,7 @@
 
               const tutorial = `# Install wireguard if you haven't already
 sudo wg-quick up ~/Downloads/wg1.conf
-ssh ${data.username}@${data.ipAddress}`;
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}@${data.ipAddress}`;
               document.getElementById('tutorial-text').textContent = tutorial;
 
               configOverlay.style.display = 'flex';
@@ -864,6 +864,12 @@ ssh ${data.username}@${data.ipAddress}`;
       async function checkHealth() {
         const token = document.getElementById('admin-jwt').value || 'none';
         try {
+          if (token === 'none') {
+            healthIndicator.className = '';
+            healthTooltip.textContent =
+              'Provide an Admin JWT to check server health.';
+            return;
+          }
           const response = await fetch(`/api/health/${token}`);
 
           if (!response.ok) {
