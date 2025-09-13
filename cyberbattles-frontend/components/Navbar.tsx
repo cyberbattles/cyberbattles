@@ -9,7 +9,7 @@ function Navbar() {
   const genericItems = ["Home", "Leaderboard", "Lab", ]
   const genericLinks = ["/", "/leaderboard", "/lab", ]
   const userItems = ["Dashboard", "Leaderboard", "Learn", "Traffic", "Shell"]
-  const userLinks = ["/dashboard", "/leaderboard", "/learn", "/network_traffic", "/shell"]
+  const userLinks = ["/dashboard", "/leaderboard", "/learn", "/network-traffic", "/shell"]
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
   const [currentUser, setCurrentUser] = useState<any | null>(null)
