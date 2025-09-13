@@ -862,14 +862,8 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}
       const healthTooltip = document.getElementById('health-tooltip');
 
       async function checkHealth() {
-        const token = document.getElementById('admin-jwt').value || 'none';
+        const token = document.getElementById('admin-jwt').value;
         try {
-          if (token === 'none') {
-            healthIndicator.className = '';
-            healthTooltip.textContent =
-              'Provide an Admin JWT to check server health.';
-            return;
-          }
           const response = await fetch(`/api/health/${token}`);
 
           if (!response.ok) {
