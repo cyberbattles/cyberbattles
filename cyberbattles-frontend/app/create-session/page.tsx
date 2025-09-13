@@ -12,7 +12,7 @@ import ApiClient from "@/components/ApiClient";
 // NOTE: Not implemented modularity for multiple scenarios on the backend yet.
 // For now just only setting up the basic scenario 'ubuntu-latest'
 
-const CreateScenario = () => {
+const CreateSession = () => {
 
     const router = useRouter();
     const [scenario, setScenario] = useState(0);
@@ -170,4 +170,4 @@ const CreateScenario = () => {
     );
   };
   
-  export default CreateScenario;
+  export default CreateSession;
