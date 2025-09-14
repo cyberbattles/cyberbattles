@@ -351,7 +351,7 @@ export default function ModernLearnPage() {
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                     selectedIndex === learnItems.length - 1 || isLocked[selectedIndex + 1]
                       ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-lg hover:scale-105'
+                      : 'bg-blue-600 text-white hover:shadow-lg hover:scale-105'
                   }`}
                 >
                   Next <FaChevronRight className="text-sm" />
