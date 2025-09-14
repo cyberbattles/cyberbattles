@@ -155,8 +155,8 @@ useEffect(() => {
   // WebSocket connection function
   const initWebSocketConnection = async (term: Terminal) => {
     try {
-      const token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImUzZWU3ZTAyOGUzODg1YTM0NWNlMDcwNTVmODQ2ODYyMjU1YTcwNDYiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiQk1XIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2N5YmVyYmF0dGxlcy1kZDMxZiIsImF1ZCI6ImN5YmVyYmF0dGxlcy1kZDMxZiIsImF1dGhfdGltZSI6MTc1NzM5NDE4OSwidXNlcl9pZCI6ImJwMFlPNWY3WnpTYnJZbTVKRUpvWHNuZG03cDEiLCJzdWIiOiJicDBZTzVmN1p6U2JyWW01SkVKb1hzbmRtN3AxIiwiaWF0IjoxNzU3ODQ0NTUyLCJleHAiOjE3NTc4NDgxNTIsImVtYWlsIjoidG9tdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsidG9tdGVzdEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.eVofgd6J66RcaT2egk3_GqzT9bvZzFZ4Tak_8p25kQx8RGhS_bOQMLdYTgY4Pc8ZuzfGwFsuB9M8hSpBprvLn-254fs36qjN3ZITbfzxExSJ_8VxuoOEUqM52WF3L0nflEXKEcl3i2QZftcGzpJu4V9EXWBFkRXa78eYnB8cjhjExJIGj0LC2GkLAOID27Y92OO0HqGvJq6T0e2tkJD8HJtmrf5U3rAqWUYkERCVvgKaZaAqF8MGneYDVcHVFXRNSfeaovk6eL4xJDKV2Qfo7WxViZpC8nCMk55TveOrH3Khe5BWR4U2E_nUFyBVldhBlOTEtwKhH23H0gho0py4Hw";
-      const teamId = "07249a5056678c63";
+      const token = "";
+      const teamId = "";
       const userId = currentUser?.uid || "tomtest";
 
       const teamName = await fetchTeamById(teamId);
