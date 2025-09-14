@@ -1,0 +1,183 @@
+
+"use client";
+import React, { useState, useEffect, useRef } from "react";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
+
+const NetworkTraffic = () => {
+
+  // TODO: Integrate the API  
+
+  const router = useRouter();
+  const [packets, setPackets] = useState([]);
+  const [selectedPacket, setSelectedPacket] = useState(null);
+  const [isCapturing, setIsCapturing] = useState(true);
+  const [filter, setFilter] = useState("");
+  const [protocolFilter, setProtocolFilter] = useState("all");
+  const intervalRef = useRef(null);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+
+  return (
+    <>
+      <Navbar />
+      
+      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+        {/* Sidebar */}
+        <aside className="w-64 bg-[#1e1e1e] shadow-md">
+          <div className="p-6 text-xl font-bold border-b border-gray-700">
+            Network Monitor
+          </div>
+          <nav className="p-6 space-y-4">
+            <div>
+              <div className="text-sm text-gray-400 mb-2">Capture Status</div>
+              <div className={`font-semibold ${isCapturing ? "text-green-400" : "text-red-400"}`}>
+                {isCapturing ? "Capturing" : "Stopped"}
+              </div>
+            </div>
+            
+            <div>
+              <div className="text-sm text-gray-400 mb-2">Total Packets</div>
+            </div>
+
+            <div>
+              <div className="text-sm text-gray-400 mb-2">Filtered</div>
+            </div>
+
+            <div>
+              <div className="text-sm text-gray-400 mb-2">Protocol Filter</div>
+              <select 
+                value={protocolFilter}
+                onChange={(e) => setProtocolFilter(e.target.value)}
+                className="w-full p-2 bg-[#2f2f2f] border border-gray-600 rounded text-white text-sm"
+              >
+                <option value="all">All Protocols</option>
+                <option value="TCP">TCP</option>
+                <option value="UDP">UDP</option>
+                <option value="HTTP">HTTP</option>
+                <option value="HTTPS">HTTPS</option>
+                <option value="DNS">DNS</option>
+                <option value="ICMP">ICMP</option>
+                <option value="ARP">ARP</option>
+                <option value="SSH">SSH</option>
+              </select>
+            </div>
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <header className="flex justify-between items-center p-6 border-b border-gray-700">
+            <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
+            <div className="flex gap-4 items-center">
+              <input
+                type="text"
+                placeholder="Filter packets..."
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="px-3 py-2 bg-[#1e1e1e] border border-gray-600 rounded-lg text-white placeholder-gray-400"
+              />
+              <button
+                onClick={() => setIsCapturing(!isCapturing)}
+                className={`px-4 py-2 rounded-xl font-bold transition ${
+                  isCapturing 
+                    ? "bg-red-600 hover:opacity-90" 
+                    : "bg-green-600 hover:opacity-90"
+                }`}
+              >
+                {isCapturing ? "Stop Capture" : "Start Capture"}
+              </button>
+              <button
+                onClick={() => setPackets([])}
+                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
+              >
+                Clear
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+              >
+                Logout
+              </button>
+            </div>
+          </header>
+
+          <div className="flex-1 flex overflow-hidden">
+            {/* Packet List */}
+            <div className="flex-1 overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[#1e1e1e] sticky top-0">
+                  <tr>
+                    <th className="p-3 text-left border-b border-gray-700">Time</th>
+                    <th className="p-3 text-left border-b border-gray-700">Source</th>
+                    <th className="p-3 text-left border-b border-gray-700">Destination</th>
+                    <th className="p-3 text-left border-b border-gray-700">Protocol</th>
+                    <th className="p-3 text-left border-b border-gray-700">Length</th>
+                    <th className="p-3 text-left border-b border-gray-700">Info</th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+
+            {/* Packet Details */}
+            {selectedPacket ? (
+              <div className="w-96 bg-[#1e1e1e] border-l border-gray-700 overflow-auto">
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-4 text-blue-400">Packet Details</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="bg-[#2f2f2f] p-3 rounded-lg">
+                      <h4 className="font-semibold text-green-400 mb-2">Frame Info</h4>
+                      <div className="text-sm space-y-1">
+                        <div><span className="text-gray-400">Time:</span> 00:00:00</div>
+                        <div><span className="text-gray-400">Length:</span> 10 bytes</div>
+                        <div><span className="text-gray-400">Protocol:</span> UDP</div>
+                        
+                      </div>
+                    </div>
+
+                    <div className="bg-[#2f2f2f] p-3 rounded-lg">
+                      <h4 className="font-semibold text-yellow-400 mb-2">Network Layer</h4>
+                      <div className="text-sm space-y-1">
+                        <div><span className="text-gray-400">Source:</span> 10.0.0.1</div>
+                        <div><span className="text-gray-400">Destination:</span> 10.0.0.2</div>
+                        <div><span className="text-gray-400">Info:</span> Info and yeah</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-[#2f2f2f] p-3 rounded-lg">
+                      <h4 className="font-semibold text-purple-400 mb-2">Raw Data</h4>
+                      <div className="text-xs font-mono bg-black p-2 rounded overflow-x-auto">
+                        <pre className="text-green-400">x012901288398379832979</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="w-96 bg-[#1e1e1e] border-l border-gray-700 flex items-center justify-center">
+                <div className="text-center text-gray-400 p-8">
+                  <div className="text-lg font-semibold mb-2">No Packet Selected</div>
+                  <div className="text-sm">Click on a packet to view detailed information</div>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </>
+  );
+};
+
+export default NetworkTraffic;
