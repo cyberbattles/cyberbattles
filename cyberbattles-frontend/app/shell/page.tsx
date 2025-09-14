@@ -79,84 +79,97 @@ export default function Shell() {
   }, []);
 
   // Initialize terminal and WebSocket connection
-  useEffect(() => {
-    // Only proceed if the ref is available and component is mounted
-    if (!terminalRef.current || !isMountedRef.current || xtermRef.current) return;
+useEffect(() => {
+  // Only proceed if the ref is available and component is mounted
+  if (!terminalRef.current || !isMountedRef.current || xtermRef.current) return;
 
-    // Use a function to handle the async import and initialization
-    const initializeTerminal = async () => {
+  let isCancelled = false;
+  
+  // Use a function to handle the async import and initialization
+  const initializeTerminal = async () => {
+    try {
+      // Dynamically import the browser-only libraries inside the hook
+      const { Terminal } = await import("xterm");
+      const { FitAddon } = await import("xterm-addon-fit");
+
+      if (isCancelled) return;
+
+      const term = new Terminal({
+        cursorBlink: true,
+        fontSize: 14,
+        fontFamily: 'Consolas, "Liberation Mono", Menlo, Courier, monospace',
+        theme: {
+          background: '#1a1a1a',
+          foreground: '#f0f0f0',
+          cursor: '#ffffff',
+        },
+      });
+
+      const fitAddon = new FitAddon();
+
+      term.loadAddon(fitAddon);
+      fitAddonRef.current = fitAddon;
+      
+      if (terminalRef.current) {
+        // Clear any existing content in the terminal container
+        terminalRef.current.innerHTML = '';
+        term.open(terminalRef.current);
+      }
+
+      xtermRef.current = term;
+      
+      // Initialize WebSocket connection
+      initWebSocketConnection(term);
+      
+      if (isMountedRef.current) {
+        setIsTerminalInitialized(true);
+      }
+    } catch (error) {
+      console.error("Terminal initialization error:", error);
+    }
+  };
+
+  initializeTerminal();
+
+  return () => {
+    isCancelled = true;
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    if (xtermRef.current) {
       try {
-        // Dynamically import the browser-only libraries inside the hook
-        const { Terminal } = await import("xterm");
-        const { FitAddon } = await import("xterm-addon-fit");
-
-        const term = new Terminal({
-          cursorBlink: true,
-          fontSize: 14,
-          fontFamily: 'Consolas, "Liberation Mono", Menlo, Courier, monospace',
-          theme: {
-            background: '#1a1a1a',
-            foreground: '#f0f0f0',
-            cursor: '#ffffff',
-          },
-        });
-
-        const fitAddon = new FitAddon();
-
-        term.loadAddon(fitAddon);
-        fitAddonRef.current = fitAddon;
-        
-        if (terminalRef.current) {
-          term.open(terminalRef.current);
-        }
-
-        xtermRef.current = term;
-        
-        // Initialize WebSocket connection
-        initWebSocketConnection(term);
-        
-        if (isMountedRef.current) {
-          setIsTerminalInitialized(true);
-        }
-      } catch (error) {
-        console.error("Terminal initialization error:", error);
+        xtermRef.current.dispose();
+      } catch (e) {
+        console.log("Terminal disposal error:", e);
       }
-    };
-
-    initializeTerminal();
-
-    return () => {
-      if (xtermRef.current) {
-        try {
-          xtermRef.current.dispose();
-        } catch (e) {
-          console.log("Terminal disposal error:", e);
-        }
-        xtermRef.current = null;
-      }
-      fitAddonRef.current = null;
-      setIsTerminalInitialized(false);
-      setIsConnected(false);
-    };
-  }, []);
+      xtermRef.current = null;
+    }
+    fitAddonRef.current = null;
+    setIsTerminalInitialized(false);
+    setIsConnected(false);
+  };
+}, []); // Empty dependency array ensures this runs only once
 
 
   // WebSocket connection function
   const initWebSocketConnection = async (term: Terminal) => {
     try {
-      const token = "";
-      const teamId = "";
-      const userId = currentUser?.uid || "";
+      const token = "***REMOVED***.eyJuYW1lIjoiQk1XIiwiaXNzIjoiaHR0cHM6Ly9zZWN1cmV0b2tlbi5nb29nbGUuY29tL2N5YmVyYmF0dGxlcy1kZDMxZiIsImF1ZCI6ImN5YmVyYmF0dGxlcy1kZDMxZiIsImF1dGhfdGltZSI6MTc1NzM5NDE4OSwidXNlcl9pZCI6ImJwMFlPNWY3WnpTYnJZbTVKRUpvWHNuZG03cDEiLCJzdWIiOiJicDBZTzVmN1p6U2JyWW01SkVKb1hzbmRtN3AxIiwiaWF0IjoxNzU3ODQ0NTUyLCJleHAiOjE3NTc4NDgxNTIsImVtYWlsIjoidG9tdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsidG9tdGVzdEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJwYXNzd29yZCJ9fQ.eVofgd6J66RcaT2egk3_GqzT9bvZzFZ4Tak_8p25kQx8RGhS_bOQMLdYTgY4Pc8ZuzfGwFsuB9M8hSpBprvLn-254fs36qjN3ZITbfzxExSJ_8VxuoOEUqM52WF3L0nflEXKEcl3i2QZftcGzpJu4V9EXWBFkRXa78eYnB8cjhjExJIGj0LC2GkLAOID27Y92OO0HqGvJq6T0e2tkJD8HJtmrf5U3rAqWUYkERCVvgKaZaAqF8MGneYDVcHVFXRNSfeaovk6eL4xJDKV2Qfo7WxViZpC8nCMk55TveOrH3Khe5BWR4U2E_nUFyBVldhBlOTEtwKhH23H0gho0py4Hw";
+      const teamId = "07249a5056678c63";
+      const userId = currentUser?.uid || "tomtest";
 
       const teamName = await fetchTeamById(teamId);
       const userName = await fetchUsernameById(userId);
+
+      console.log(teamName, userName);
       
       term.writeln(`Connecting to terminal...\r\n`);
       term.writeln(`Team Id: ${teamId} Team Name: ${teamName}, User Id: ${userId}, User Name: ${userName}\r\n`);
   
       const host = "localhost:1337"; 
       const ws = new WebSocket(
-      `ws://${host}/terminals/${teamId}/${userId}/${token}`
+      `wss://${host}/terminals/${teamId}/${userId}/${token}`
       );
       
       wsRef.current = ws;
