@@ -30,7 +30,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   };
 
   const handleViewTraffic = () => {
-    router.push("/network_traffic");
+    router.push("/network-traffic");
     onClose();
   };
 
@@ -40,7 +40,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   };
 
   const handleCreateNewGame = () => {
-    router.push("/create_scenario");
+    router.push("/create-scenario");
     onClose();
   };
 
