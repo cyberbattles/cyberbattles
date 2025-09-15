@@ -153,16 +153,16 @@ const CreateSession = () => {
             <section className="flex flex-col items-center space-y-8">
 
                <div className="w-80">
-                <label htmlFor="playerCount" className="block text-sm font-medium text-gray-300 mb-4">
+                <label htmlFor="teamCount" className="block text-sm font-medium text-gray-300 mb-4">
                   Number of teams: {numTeams}
                 </label>
                 <div className="relative">
                   <input
-                    id="playerCount"
+                    id="teamCount"
                     type="range"
                     min="2"
                     max="5"
-                    value={numMembersPerTeam}
+                    value={numTeams}
                     onChange={(e) => setNumberTeams(parseInt(e.target.value))}
                     className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider"
                   />
