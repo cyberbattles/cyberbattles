@@ -285,6 +285,7 @@ export default function LeaderboardPage() {
           ) : (
             games.map((team, index) => (
               <TeamRow
+                key={index}
                 teamName={team}
                 position={index + 1}
                 delay={animationStarted ? index * 150 + 200 : 0}
