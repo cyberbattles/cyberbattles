@@ -212,7 +212,7 @@ const CreateSession = () => {
                   className="w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
                   onClick={handleCreateSession}
                 >
-                  Create Team
+                  Create
                 </button>
                 <button
                   className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
