@@ -106,11 +106,12 @@ const CreateSession = () => {
     async function createSession() { 
         try {
             const response = await ApiClient.post("/session", {
-              "selectedScenario" : selectedScenario,
+              "scenarioId" : selectedScenario,
               "numTeams" : numTeams,
               "numMembersPerTeam" : numMembersPerTeam,
               "token" : localStorage.getItem("token")
             });
+            console.log(response.data);
             return response.data;
         } catch (error) {
             console.error("Error creating session:", error);
