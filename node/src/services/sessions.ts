@@ -1,6 +1,7 @@
 import {machineIdSync} from 'node-machine-id';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as admin from 'firebase-admin';
 import {
   CreateSessionResult,
   Session,
@@ -17,10 +18,16 @@ import {
   createUser,
   docker,
 } from './docker';
-import {generateId} from '../helpers';
+import {
+  generateId,
+  getAvailableWGPort,
+  getAvailableSubnet,
+  releaseWGPort,
+  releaseSubnet,
+} from '../helpers';
 import {startTrafficCap} from './trafficcap';
 
-let nextAvailableWGPort = 51820;
+// Get a unique ID for this server instance
 const serverId = machineIdSync();
 
 /**
@@ -61,6 +68,7 @@ export async function createTeam(
       name,
       numMembers,
       memberIds: [],
+      teamLeaderUid: '',
       containerId,
       id: teamId,
       sessionId,
@@ -102,9 +110,17 @@ export async function createSession(
   // Generate a unique ID for the session
   const sessionId: string = generateId();
 
+  // Get the next available subnet for the session
+  const allocatedSubnet = getAvailableSubnet();
+  if (!allocatedSubnet) {
+    throw new Error('Virtual network space is full. Please try again later.');
+  }
+
   // Create a network for the team
-  const {networkId, networkName, networkSubnet} =
-    await createNetwork(sessionId);
+  const {networkId, networkName, networkSubnet} = await createNetwork(
+    sessionId,
+    allocatedSubnet,
+  );
 
   if (networkSubnet === 'unknown') {
     throw new Error('Failed to determine network subnet.');
@@ -113,10 +129,11 @@ export async function createSession(
   // Work out values for the WireGuard router
   const ipBase = networkSubnet.split('/')[0].replace(/\.0$/, '');
   const wgRouterIp = `${ipBase}.200`;
-  const wireguardPort = nextAvailableWGPort;
+  const wireguardPort = getAvailableWGPort();
 
-  // Increment for next session
-  nextAvailableWGPort += 1;
+  if (wireguardPort === null) {
+    throw new Error('No available WireGuard ports. Please try again later.');
+  }
 
   // Pre-generate teamIds
   const teamIds: string[] = [];
@@ -125,15 +142,22 @@ export async function createSession(
   }
 
   // Create the WireGuard router container
-  const wgContainerId = await createWgRouter(
-    sessionId,
-    networkName,
-    wgRouterIp,
-    wireguardPort,
-    numTeams,
-    numMembersPerTeam,
-    teamIds,
-  );
+  let wgContainerId: string;
+  try {
+    wgContainerId = await createWgRouter(
+      sessionId,
+      networkName,
+      wgRouterIp,
+      wireguardPort,
+      numTeams,
+      numMembersPerTeam,
+      teamIds,
+    );
+  } catch (error) {
+    throw new Error(
+      `WireGuard Router Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
 
   console.log(
     `WireGuard Router created with Container ID: ${wgContainerId} at port: ${wireguardPort}`,
@@ -142,19 +166,38 @@ export async function createSession(
   // Create and store teams
   for (let i = 0; i < numTeams; i++) {
     const teamName = `Team-${i + 1}`;
-    const team: Team = await createTeam(
-      teamName,
-      numMembersPerTeam,
-      scenarioId,
-      sessionId,
-      networkName,
-      teamIds[i],
-    );
+    let team: Team;
 
+    // Create the team
+    try {
+      team = await createTeam(
+        teamName,
+        numMembersPerTeam,
+        scenarioId,
+        sessionId,
+        networkName,
+        teamIds[i],
+      );
+    } catch (error) {
+      throw new Error(
+        `Team Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+
+    // Store the team in Firestore
     const teamRef = db.collection('teams').doc(team.id);
     await teamRef.set(team);
     console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
+
+  // Removes session after 4 hours
+  setTimeout(
+    async () => {
+      console.log(`Auto-cleaning up session ${session.id} after 4 hours.`);
+      await cleanupSession(session);
+    },
+    4 * 60 * 60 * 1000,
+  );
 
   // Create a session object
   const session: Session = {
@@ -168,7 +211,10 @@ export async function createSession(
     networkId,
     networkName,
     wgContainerId,
+    wgPort: wireguardPort,
+    subnet: allocatedSubnet,
     id: sessionId,
+    createdAt: admin.firestore.Timestamp.now(),
   };
 
   // Upload session data to Firestore
@@ -284,6 +330,9 @@ export async function cleanupAllSessions(): Promise<void> {
     .where('serverId', '==', serverId)
     .get();
 
+  // Clean up any old config & pcap directories that don't have an active session
+  await cleanupOldConfigs();
+
   if (sessionsSnapshot.empty) {
     console.log('No active sessions found to clean up.');
     return;
@@ -369,11 +418,64 @@ export async function cleanupSession(session: Session): Promise<void> {
       `Removed network ${session.networkName} for session ${session.id}.`,
     );
   } catch (error) {
-    console.error(error);
     console.error(
       `Cleanup Error: Network not found or already removed for session ${session.id}.`,
     );
   }
 
+  // Release the allocated subnet and WireGuard port
+  releaseSubnet(session.subnet);
+  releaseWGPort(session.wgPort);
+
   console.log(`Session document ${session.id} deleted.`);
+}
+
+/**
+ * Deletes WireGuard configuration and Pcap directories that don't have an active session.
+ * Active is any session that exists in Firestore.
+ */
+async function cleanupOldConfigs(): Promise<void> {
+  // Fetch all active session IDs from Firestore
+  const activeSessionIds = new Set<string>();
+  const sessionsSnapshot = await db.collection('sessions').get();
+  sessionsSnapshot.forEach(doc => {
+    activeSessionIds.add(doc.id);
+  });
+
+  // Read the wg-configs directory
+  const wgBaseDir = path.resolve(__dirname, '../../../wg-configs');
+  try {
+    for (const dirEntry of await fs.readdir(wgBaseDir, {withFileTypes: true})) {
+      if (
+        dirEntry.isDirectory() &&
+        activeSessionIds.has(dirEntry.name) === false
+      ) {
+        await fs.rm(path.join(wgBaseDir, dirEntry.name), {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+  } catch (_) {
+    // We don't care if this fails
+  }
+
+  const pcapBaseDir = path.resolve(__dirname, '../../../captures');
+  try {
+    for (const dirEntry of await fs.readdir(pcapBaseDir, {
+      withFileTypes: true,
+    })) {
+      if (
+        dirEntry.isDirectory() &&
+        activeSessionIds.has(dirEntry.name) === false
+      ) {
+        await fs.rm(path.join(pcapBaseDir, dirEntry.name), {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+  } catch (_) {
+    // We also don't care if this fails
+  }
 }

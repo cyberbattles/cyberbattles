@@ -3,9 +3,10 @@ import {Writable} from 'stream';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
+import {DockerHealth} from '../types';
+
 const SCENARIOS: string[] = [];
 const WIREGUARD_IMAGE = 'lscr.io/linuxserver/wireguard:latest';
-let nextAvailableSubnet = 24;
 
 export const docker = new Docker();
 
@@ -198,26 +199,23 @@ export async function createUser(
  * Creates a Docker network with the given scenario ID.
  * Network names are formatted as `sessionNet-{sessionId}`.
  * @param sessionId The unique ID of the session.
+ * @param allocatedSubnet The subnet to use for the network.
  * @returns A Promise that resolves to an object containing the network ID, name and subnet.
  */
 export async function createNetwork(
   sessionId: string,
+  allocatedSubnet: string,
 ): Promise<{networkId: string; networkName: string; networkSubnet: string}> {
-  // Get the next available subnet
-  const subnet = `172.12.${nextAvailableSubnet}.0/24`;
-
+  // Define IPAM configuration
   const IPAM = {
     Driver: 'default',
     Config: [
       {
-        Subnet: subnet,
-        Gateway: `172.12.${nextAvailableSubnet}.1`,
+        Subnet: allocatedSubnet,
+        Gateway: allocatedSubnet.replace(/0\/24$/, '1'),
       },
     ],
   };
-
-  // Increment for next session
-  nextAvailableSubnet += 1;
 
   // Create the network
   const networkName = `sessionNet-${sessionId}`;
@@ -346,6 +344,9 @@ export async function createWgRouter(
     Image: 'lscr.io/linuxserver/wireguard:latest',
     name: `wg-router-${sessionId}`,
     Tty: false,
+    ExposedPorts: {
+      [`${wireguardPort}/udp`]: {},
+    },
     Env: [
       'PUID=1000',
       'PGID=1000',
@@ -353,11 +354,12 @@ export async function createWgRouter(
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
       `SERVERURL=${wgRouterIp}`,
+      `SERVERPORT=${wireguardPort}`,
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
       `NUM_PLAYERS=${numMembersPerTeam}`,
       `SERVER_IP=${wgRouterIp}`,
-      `SERVER_PORT=${wireguardPort}`,
+      `WIREGUARD_PORT=${wireguardPort}`,
       `TEAM_IDS=${teamIdsStr}`,
     ],
     HostConfig: {
@@ -368,7 +370,7 @@ export async function createWgRouter(
         `${path.resolve(__dirname, '../../../server-init-script')}:/custom-cont-init.d:ro,z`,
       ],
       PortBindings: {
-        [`${wireguardPort}/udp`]: [{HostPort: `${wireguardPort}`}],
+        [`${wireguardPort}/udp`]: [{HostPort: `${wireguardPort}/udp`}],
       },
       Sysctls: {
         'net.ipv4.conf.all.src_valid_mark': '1',
@@ -400,8 +402,8 @@ export async function createWgRouter(
     `../../../wg-configs/${sessionId}/`,
     'init_done',
   );
-  // Loop for a maximum of 30 seconds
-  for (let i = 0; i < 30; i++) {
+  // Loop for a maximum of 60 seconds
+  for (let i = 0; i < 60; i++) {
     try {
       await fs.stat(initDonePath);
 
@@ -423,4 +425,40 @@ export async function createWgRouter(
   }
 
   return wgContainer.id;
+}
+
+/**
+ * Retrieves the health status of the Docker daemon.
+ * @returns A Promise that resolves to a DockerHealth object indicating if Docker is healthy.
+ */
+export async function getDockerHealth(): Promise<DockerHealth> {
+  let result: DockerHealth = {
+    status: 'unhealthy',
+    containers: -1,
+    containersRunning: -1,
+    containersPaused: -1,
+    containersStopped: -1,
+    images: -1,
+    serverVersion: 'unknown',
+    memTotal: -1,
+    cpuCores: -1,
+  };
+
+  try {
+    const info = await docker.info();
+
+    result = {
+      status: 'healthy',
+      containers: info.Containers,
+      containersRunning: info.ContainersRunning,
+      containersPaused: info.ContainersPaused,
+      containersStopped: info.ContainersStopped,
+      images: info.Images,
+      serverVersion: info.ServerVersion || 'unknown',
+      memTotal: info.MemTotal,
+      cpuCores: info.NCPU,
+    };
+  } catch (_) {}
+
+  return result;
 }
