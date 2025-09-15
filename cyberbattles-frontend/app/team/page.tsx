@@ -35,8 +35,7 @@ const TeamSelection = () => {
           <main className="flex-1 flex flex-col items-center justify-center p-8">
             {/* Header */}
             <header className="text-center mb-12">
-              <h1 className="text-4xl font-bold mb-4">CTF Challenge</h1>
-              <p className="text-lg text-gray-300">Choose your path to get started</p>
+              <h1 className="text-4xl font-bold mb-4">Get Started</h1>
             </header>
   
             {/* Team Action Buttons */}
@@ -45,7 +44,7 @@ const TeamSelection = () => {
                 className="w-80 py-6 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
                 onClick={handleCreateTeam}
               >
-                Create Team
+                Create Game
               </button>
               <button
                 className="w-80 py-6 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-green-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
