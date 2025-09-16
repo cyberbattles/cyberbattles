@@ -40,7 +40,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   };
 
   const handleCreateNewGame = () => {
-    router.push("/create-scenario");
+    router.push("/create-session");
     onClose();
   };
 

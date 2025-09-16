@@ -29,6 +29,7 @@ const Dashboard = () => {
       try {
         const token = await auth.currentUser.getIdToken(true);
         setJwt(token);
+        localStorage.setItem("token",jwt);
         setShowJwt(true);
       } catch (error) {
         console.error("Failed to get JWT:", error);
