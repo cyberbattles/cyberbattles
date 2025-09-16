@@ -72,20 +72,24 @@ const Admin = () => {
     teams.forEach(async (team, tid) => {
 
       // Find the player doc and add (pid, player doc) to the map
-      const playerMap = new Map();
-      const playerArr = team.memberIds;
+      let playerMap = new Map();
+      let playerArr = team.memberIds;
       playerArr.forEach((pid: string) => {
         getUser(pid).then((value) => {
           playerMap.set(pid, value);
         }).catch((error) => {
-          console.log("Unable to find player", error)
+          console.log("Unable to find player", error);
         });
       });
 
+      // console.log(tid, playerMap);
+
       // Add the (teamid, playerMap) entry to the players map
 
-      players.set(tid, playerMap);
-      setPlayers(new Map(players));
+      if (!players.has(tid)){
+        players.set(tid, playerMap);
+        setPlayers(new Map(players));
+      }
     });
   }
 
@@ -222,8 +226,10 @@ const Admin = () => {
 
   // Get the team information and players list from firebase
   if (currentUser) {
-      getTeams(currentUser.uid);
+      getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+      // console.log(teams)
       getPlayers();
+      console.log(players)
     // if (team) {
     //   getPlayers();
     // }
@@ -232,6 +238,36 @@ const Admin = () => {
 
   // console.log(teams)
 
+  // return(
+  //   <>
+  //   </>
+  // )
+
+  function showPlayers(tid: string, uid:string) {
+    let playerDoc = null;
+    try{
+      playerDoc = players.get(tid).get(uid);
+    } catch {
+      return;
+    }
+ 
+    let playerName = playerDoc.userName;
+    return(
+      <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
+        {/* Player name */}
+        <div className="flex items-center gap-3">
+          <span className="font-medium">{playerName}</span>
+        </div>
+        {/* Remove player button */}
+        {/* <div className="" onClick={() => removePlayer(uid)}>
+          <Image src={close} alt="close" width={20} className="invert" />
+        </div>   */}
+      </div>
+    )
+  }
+
+  function showPlayer()
+  
   return (
     <>
       {/* Fixed Navbar */}
@@ -248,7 +284,7 @@ const Admin = () => {
             <ul className="space-y-4">
               <li>
                 <div className="text-sm text-gray-400">Teams:</div>
-                <div className="font-semibold text-blue-400">{teamId && team.name}</div>
+                {/* <div className="font-semibold text-blue-400">{teamId && team.name}</div> */}
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
@@ -312,22 +348,6 @@ const Admin = () => {
               <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
               <div className="space-y-3">
                 {
-                  (players.size != 0) && (team.memberIds.map((uid: string) => (
-
-                  <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
-                    {/* Player name */}
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium">{players.get(uid) && players.get(uid).userName}</span>
-                    </div>
-                    {/* Remove player button */}
-                    {
-                      isHost &&
-                      <div className="" onClick={() => removePlayer(uid)}>
-                        <Image src={close} alt="close" width={20} className="invert" />
-                      </div>
-                    }      
-                  </div>
-                  )))
                 }
               </div>
             </div>
