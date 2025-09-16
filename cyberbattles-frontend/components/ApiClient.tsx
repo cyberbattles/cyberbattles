@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 const ApiClient = axios.create({
-  baseURL: 'http://localhost:1337/api',
+  baseURL: 'https://cyberbattl.es/api',
   headers: {
     'Content-Type': 'application/json',
   },
