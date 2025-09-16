@@ -20,7 +20,6 @@ const Lobby = () => {
   const [isHost, setIsHost] = useState(false);
 
   const [team, setTeam] = useState<any>(null);
-  // Get the current user
   const [currentUser, setCurrentUser] = useState<any | null>(null)
     
   
@@ -178,8 +177,6 @@ const Lobby = () => {
   const handleStartGame = () => {
 
   };
-
-
 
   // --------------------------------------
 
