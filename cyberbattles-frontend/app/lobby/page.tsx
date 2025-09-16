@@ -107,7 +107,7 @@ const Lobby = () => {
       console.log("this user is admin");
       setIsHost(true);
     }
-    setIsHost(true);
+    // setIsHost(true);
   }
 
   const removePlayer = async (uid: string) => {
