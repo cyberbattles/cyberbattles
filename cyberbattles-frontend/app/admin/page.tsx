@@ -234,9 +234,9 @@ const Admin = () => {
       console.log("No current admin user or session")
       return;
     }
-    setGameStatus("ending")
-    cleanupSession();
-    setGameStatus("waiting")
+    // setGameStatus("ending")
+    // cleanupSession();
+    // setGameStatus("waiting")
   };
 
   // --------------------------------------
