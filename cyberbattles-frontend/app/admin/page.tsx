@@ -204,6 +204,10 @@ const Admin = () => {
 
   };
 
+  const handleEndGame = () => {
+
+  };
+
   // --------------------------------------
 
   // Get the auth state and set the current user
@@ -361,19 +365,19 @@ const Admin = () => {
               ))
             }
             
-            {/* Teams */}
+            {/* Game Controls */}
             <div className="p-6 rounded-2xl  lg:col-span-2">
               <h2 className="text-2xl font-semibold mb-4">Game Controls</h2>
             </div>
 
 
-            {/* Game Controls */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              
-              {isHost && (
+              <h2 className="text-xl font-semibold mb-4 text-green-400">Host Controls</h2>
+              <div className="space-y-3 gap-5">
+                {isHost && (
                 <div className="space-y-4">
                   <div className="p-3 bg-[#2f2f2f] rounded-lg">
-                    <div className="text-sm text-gray-400 mb-1">Host Controls</div>
+                    <div className="text-sm text-gray-400 mb-5">Begin Session</div>
                     <button
                       onClick={handleStartGame}
                       disabled={gameStatus === "starting"}
@@ -385,17 +389,44 @@ const Admin = () => {
                     >
                       {gameStatus === "starting" ? "Starting Game..." : "Start Game"}
                     </button>
+                    
+                   
+                  </div>
+                  <div className="p-3 bg-[#2f2f2f] rounded-lg">
+                    <div className="text-sm text-gray-400 mb-5">Cleanup Session</div>
+                    <button
+                      onClick={handleEndGame}
+                      disabled={gameStatus === "ending"}
+                      className={`w-full px-4 py-3 rounded-xl font-bold transition ${
+                        gameStatus !== "ending"
+                          ? "bg-red-600 hover:opacity-90"
+                          : "bg-gray-600 cursor-not-allowed opacity-50"
+                      }`}
+                    >
+                      {gameStatus === "ending" ? "Cleaning up..." : "Cleanup Session"}
+                    </button>
+                    
                    
                   </div>
                 </div>
               )}
+              </div>
+            </div>
 
-              <div className="mt-4 p-3 bg-[#2f2f2f] rounded-lg">
-                <div className="text-sm text-gray-400 mb-2">Scenario Info</div>
-                <div className="text-sm space-y-1">
-                  <div>Name: ubuntu - basic</div>
-                  <div>Challenges: 5</div>
-                  <div>Difficulty: Beginner</div>
+
+
+            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
+              <h2 className="text-xl font-semibold mb-4 text-green-400">Session Info</h2>
+              <div className="space-y-3 gap-5">
+                <div className="space-y-4">
+                  <div className="mt-4 p-3 bg-[#2f2f2f] rounded-lg">
+                    <div className="text-sm text-gray-400 mb-2">Scenario Info</div>
+                    <div className="text-sm space-y-1">
+                      <div>Name: ubuntu - basic</div>
+                      <div>Challenges: 5</div>
+                      <div>Difficulty: Beginner</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
