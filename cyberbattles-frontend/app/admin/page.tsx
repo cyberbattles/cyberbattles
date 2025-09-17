@@ -13,6 +13,7 @@ import ApiClient from "@/components/ApiClient";
 
 const Admin = () => {
   const router = useRouter();
+  const [sessionId, setSessionId] = useState(null);
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState("");
@@ -40,6 +41,7 @@ const Admin = () => {
       let teamIds: string[] = [];
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
+        setSessionId(doc.data().id);
         teamIds = doc.data().teamIds;
       });
 
@@ -84,8 +86,6 @@ const Admin = () => {
       });
 
       // console.log(tid, playerMap);
-
-      // Add the (teamid, playerMap) entry to the players map
 
     });
   }
@@ -135,6 +135,7 @@ const Admin = () => {
     setIsHost(true);
   }
 
+  // FUNC: Remove a player
   const removePlayer = async (uid: string) => {
 
     if(!teamId){
@@ -179,13 +180,28 @@ const Admin = () => {
   }
 
    async function startSession() {
-        try {
-            const response = await ApiClient.post("/start-session");
-            return response.data;
-        } catch (error) {
-            console.error("Error starting session:", error);
-        }
+    // Send the api request
+    try {
+      const response = await ApiClient.post("/start-session");
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error cleaning session:", error);
     }
+  };
+
+  async function cleanupSession() {
+
+    // Create the api request url
+    const token = await currentUser.getIdToken(true);
+    let request = "/cleanup/" + sessionId + "/" + token;
+    console.log(request)
+    try {
+      const response = await ApiClient.post(request);
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error cleaning session:", error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -201,11 +217,26 @@ const Admin = () => {
   };
 
   const handleStartGame = () => {
+    // If not currently admin of a session, do nothing
 
+    // if (!sessionId || !currentUser) {
+    //   console.log("No current admin user or session")
+    //   return;
+    // }
+    // setGameStatus("starting")
+    // startSession();
+    // setGameStatus("waiting")
   };
 
   const handleEndGame = () => {
-
+    // If not currently admin of a session, do nothing
+    if (!sessionId || !currentUser) {
+      console.log("No current admin user or session")
+      return;
+    }
+    setGameStatus("ending")
+    cleanupSession();
+    setGameStatus("waiting")
   };
 
   // --------------------------------------
@@ -226,6 +257,7 @@ const Admin = () => {
   // Get the team information and players list from firebase
   if (currentUser) {
       getTeams(currentUser.uid);
+      // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
       // console.log(teams)
       getPlayers();
     // if (team) {
@@ -372,7 +404,7 @@ const Admin = () => {
 
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-green-400">Host Controls</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Host Controls</h2>
               <div className="space-y-3 gap-5">
                 {isHost && (
                 <div className="space-y-4">
@@ -416,7 +448,7 @@ const Admin = () => {
 
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-green-400">Session Info</h2>
+              <h2 className="text-xl font-semibold mb-4 text-white">Session Info</h2>
               <div className="space-y-3 gap-5">
                 <div className="space-y-4">
                   <div className="mt-4 p-3 bg-[#2f2f2f] rounded-lg">
