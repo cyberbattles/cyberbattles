@@ -17,7 +17,7 @@ const Admin = () => {
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState("");
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
-  const [isHost, setIsHost] = useState(false);
+  const [isHost, setIsHost] = useState(true);
 
   const [teams, setTeams] = useState(new Map());
   // Get the current user
@@ -204,8 +204,6 @@ const Admin = () => {
 
   };
 
-
-
   // --------------------------------------
 
   // Get the auth state and set the current user
@@ -223,10 +221,9 @@ const Admin = () => {
 
   // Get the team information and players list from firebase
   if (currentUser) {
-      getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+      getTeams(currentUser.uid);
       // console.log(teams)
       getPlayers();
-      console.log(players)
     // if (team) {
     //   getPlayers();
     // }
@@ -332,29 +329,46 @@ const Admin = () => {
               )}
             </div>
 
-            {/* Players List */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
-              <div className="space-y-3 gap-5">
-                {
-                  teams.values().map((value) => (
-                    <div className=" bg-[#000000] ">
-                      Team ID: {value.id}
-                      {
-                        value.memberIds.map((pid: string) => (
-                          <div>{players && players.get(pid) && players.get(pid).userName}</div>
-                        ))
-                      }
-                    </div>
-                  ))
-                }
-              </div>
+            {/* Teams */}
+            <div className="p-6 rounded-2xl  lg:col-span-2">
+              <h2 className="text-2xl font-semibold mb-4">Teams</h2>
             </div>
+
+            {/* Teams List */}
+            {
+              teams.values().map((value) => (
+                <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md" key={value.id}>
+                  <h2 className="text-xl font-semibold mb-4 text-green-400">{value.name}</h2>
+                  <div className="space-y-3 gap-5">
+                    {
+                      value.memberIds.map((uid: string) => (
+                        <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
+                          {/* Player name */}
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium">{players && players.get(uid) && players.get(uid).userName}</span>
+                          </div>
+                          {
+                            isHost &&
+                            <div className="" onClick={() => removePlayer(uid)}>
+                              <Image src={close} alt="close" width={20} className="invert" />
+                            </div>
+                          }   
+                        </div>            
+                      ))
+                    }
+                  </div>
+                </div>
+              ))
+            }
+            
+            {/* Teams */}
+            <div className="p-6 rounded-2xl  lg:col-span-2">
+              <h2 className="text-2xl font-semibold mb-4">Game Controls</h2>
+            </div>
+
 
             {/* Game Controls */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-
-              Game Controls
               
               {isHost && (
                 <div className="space-y-4">
