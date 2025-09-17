@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image"
 import close from "@/public/images/close_icon.png"
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { collection, query, where, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
@@ -67,16 +67,17 @@ const Admin = () => {
 
   }
 
-  // Populate the players hook with map (tid, map: (uid, player doc))
+  // Populate the players hook with map (uid, player doc)
   async function getPlayers() {
     teams.forEach(async (team, tid) => {
 
-      // Find the player doc and add (pid, player doc) to the map
-      let playerMap = new Map();
+      // Find the player doc and add (pid, player doc) to the players map
       let playerArr = team.memberIds;
       playerArr.forEach((pid: string) => {
         getUser(pid).then((value) => {
-          playerMap.set(pid, value);
+          if (!players.has(pid)){
+            players.set(pid, value);
+            setPlayers(new Map(players));          }
         }).catch((error) => {
           console.log("Unable to find player", error);
         });
@@ -86,10 +87,6 @@ const Admin = () => {
 
       // Add the (teamid, playerMap) entry to the players map
 
-      if (!players.has(tid)){
-        players.set(tid, playerMap);
-        setPlayers(new Map(players));
-      }
     });
   }
 
@@ -236,24 +233,17 @@ const Admin = () => {
     // checkHost();
   }
 
-  // console.log(teams)
 
-  // return(
-  //   <>
-  //   </>
-  // )
-
-  function showPlayers(tid: string, uid:string) {
-    let playerDoc = null;
+  function showPlayer(pid: string) : ReactNode {
+    
+    let playerName = "";
     try{
-      playerDoc = players.get(tid).get(uid);
+      playerName = players.get(pid);
     } catch {
       return;
     }
- 
-    let playerName = playerDoc.userName;
     return(
-      <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
+      <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={pid}>
         {/* Player name */}
         <div className="flex items-center gap-3">
           <span className="font-medium">{playerName}</span>
@@ -266,7 +256,6 @@ const Admin = () => {
     )
   }
 
-  function showPlayer()
   
   return (
     <>
@@ -346,8 +335,18 @@ const Admin = () => {
             {/* Players List */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
-              <div className="space-y-3">
+              <div className="space-y-3 gap-5">
                 {
+                  teams.values().map((value) => (
+                    <div className=" bg-[#000000] ">
+                      Team ID: {value.id}
+                      {
+                        value.memberIds.map((pid: string) => (
+                          <div>{players && players.get(pid) && players.get(pid).userName}</div>
+                        ))
+                      }
+                    </div>
+                  ))
                 }
               </div>
             </div>
