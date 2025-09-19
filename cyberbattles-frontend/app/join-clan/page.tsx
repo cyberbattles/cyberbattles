@@ -60,7 +60,7 @@ const JoinClan = () => {
                         text: "You are already a member of this team.",
                     });
                     setIsLoading(false);
-                    router.push("/lobby");
+                    router.push("/dashboard");
 
                     return;
                 }
@@ -76,8 +76,8 @@ const JoinClan = () => {
                 });
                 setClanId("");
                 
-                // Redirects to lobby page after join team
-                router.push("/lobby");
+                // Redirects to dashboard page after join team
+                router.push("/dashboard");
                 
                 
             } else {
