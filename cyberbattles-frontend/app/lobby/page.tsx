@@ -222,7 +222,7 @@ const Lobby = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
-                <div className="font-semibold">{players.size}/5</div>
+                <div className="font-semibold">{0 || players.size}</div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
