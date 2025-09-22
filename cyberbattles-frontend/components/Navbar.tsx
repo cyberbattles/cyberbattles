@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import logo from "../public/images/logo.png";
-import close from "../public/images/close_icon.png";
 import hamburger from "../public/images/hamburger_icon.png";
 import React, { useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
