@@ -213,7 +213,7 @@ useEffect(() => {
         if (!isMountedRef.current) return;
         setIsConnected(false);
         console.log("WebSocket closed:", event.code, event.reason);
-        term.writeln(`\r\n\x1b[31mConnection closed: ${event.code} - ${event.reason || 'Make sure backend is running.'}\x1b[0m`);
+        term.writeln(`\r\n\x1b[31mDEV MESSAGE: Connection closed: ${event.code} - ${event.reason || 'Make sure backend is running.'}\x1b[0m`);
       };
   
       ws.onerror = (error) => {
