@@ -64,24 +64,30 @@ function Navbar() {
     <nav className="fixed w-full h-40 shadow-xl bg-black z-50">
       <div className="flex flex-basis items-center h-full w-full ">
         <div className="flex w-2/3 items-center pl-5">
-          <div onClick={handleClick} className="flex lg:hidden">
+          <div className="flex lg:hidden relative">
+            {/* Hamburger icon always visible */}
             <Image
               src={hamburger}
               alt="hamburger"
               width={50}
-              className="invert ml-10"
+              className="invert ml-10 cursor-pointer"
+              onClick={handleClick}
             />
+
+            {/* Dropdown menu */}
             <div
-              className={` absolute w-50 h-80 pt-2 top-5 left-5 bg-black rounded-xl opacity-0 transition-opacity duration-700 ease-in-out ${isOpen ? "opacity-100" : "opacity-0"}`}
+              className={`absolute w-50 h-80 pt-2 top-16 left-0 bg-black rounded-xl transition-opacity duration-700 ease-in-out ${
+                isOpen ? "opacity-100 flex flex-col" : "opacity-0 hidden"
+              }`}
             >
-              <div className="absolute top-5 right-5" onClick={handleClick}>
-                <Image src={close} alt="close" width={20} className="invert" />
-              </div>
-              <ul
-                className={`flex flex-col justify-between items-center w-full h-full py-10 ${isOpen ? "" : "hidden"}`}
-              >
-                {items.map((item, index) => (
-                  <Link key={item} href={links[index]}>
+              {/* Menu items */}
+              <ul className="flex flex-col justify-between w-full h-full py-10 pl-4">
+                {["Home", ...items].map((item, index) => (
+                  <Link
+                    key={item}
+                    href={index === 0 ? "/" : links[index - 1]}
+                    onClick={index === 0 ? handleHomeClick : undefined}
+                  >
                     <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
                       {item}
                     </li>
@@ -91,8 +97,11 @@ function Navbar() {
             </div>
           </div>
 
+          {/* Logo */}
           <Link href="/" onClick={handleHomeClick}>
-            <div className="flex-shrink-0 flex items-center">
+            <div
+              className={`flex-shrink-0 flex items-center ${isOpen ? "hidden" : ""}`}
+            >
               <Image
                 src={logo}
                 alt="logo"
@@ -144,4 +153,3 @@ function Navbar() {
 }
 
 export default Navbar;
-
