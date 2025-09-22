@@ -70,7 +70,7 @@ const MatrixBackground = () => {
     <canvas
       ref={canvasRef}
       className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"
-      style={{ background: "black" }}
+      style={{ background: "black", filter: "blur(5px)" }}
     />
   );
 };
