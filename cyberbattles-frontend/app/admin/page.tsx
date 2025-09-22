@@ -147,7 +147,7 @@ const Admin = () => {
       const response = await ApiClient.post("/start-session");
       console.log(response.data);
     } catch (error) {
-      console.error("Error cleaning session:", error);
+      console.error("Error starting session:", error);
     }
   };
 
@@ -243,7 +243,7 @@ const Admin = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
-                <div className="font-semibold">{players.size}/5</div>
+                <div className="font-semibold">{0 || players.size}</div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
