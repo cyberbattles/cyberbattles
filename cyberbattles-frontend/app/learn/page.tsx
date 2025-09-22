@@ -134,6 +134,14 @@ export default function ModernLearnPage() {
 
   const progressPercentage = (completedModules.filter(Boolean).length / learnItems.length) * 100;
 
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [selectedIndex]);
+
   return (
     <div className="min-h-screen relative overflow-hidden">
 
@@ -259,7 +267,7 @@ export default function ModernLearnPage() {
                     </div>
 
                     {/* Enhanced Content Body */}
-                    <div className="p-8 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <div className="p-8 max-h-[500px] overflow-y-auto custom-scrollbar"  ref={selectedIndex === index ? contentRef : null}>
                       <div className="space-y-6">
                         {item.segments.map((seg, i) =>
                           seg.type === "text" ? (
