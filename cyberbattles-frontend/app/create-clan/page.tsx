@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { doc, setDoc, collection } from "firebase/firestore";
+import { doc, setDoc, collection, getDocs, where, query } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { updateDoc } from "firebase/firestore";
 import { onAuthStateChanged, User } from "firebase/auth";
 
 // https://claude.ai/chat/905473d6-1bea-4927-9c12-e2b8fb49674e
@@ -17,16 +18,51 @@ const CreateClan = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
+    const [isInClan, setIsInClan] = useState(false);
+    const [uid, setUid] = useState<string | null>(null);
+    const [clanLoading, setClanLoading] = useState(true);
 
     // Monitor auth state changes
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          if (currentUser) {
             setUser(currentUser);
-            setAuthLoading(false);
+            setUid(currentUser.uid);
+            localStorage.setItem("currentuid", currentUser.uid);
+          } else {
+            setUser(null);
+            setUid(null);
+            localStorage.removeItem("currentuid");
+          }
         });
-
         return () => unsubscribe();
-    }, []);
+      }, []);
+
+    useEffect(() => {
+    const checkUserClan = async () => {
+        if (!uid) {
+        setIsInClan(false);
+        setClanLoading(false);
+        return;
+        }
+    
+        try {
+        const clansRef = collection(db, "clans");
+        const q = query(clansRef, where("memberIds", "array-contains", uid));
+        const querySnapshot = await getDocs(q);
+    
+        // Simply set a boolean
+        setIsInClan(!querySnapshot.empty);
+        } catch (error) {
+        console.error("Error checking user clan:", error);
+        setIsInClan(false);
+        } finally {
+        setClanLoading(false);
+        }
+    };
+    
+    checkUserClan();
+    }, [uid]);
 
     const generateClanId = () => {
         // Generate a random 8-character ID
@@ -45,6 +81,14 @@ const CreateClan = () => {
         // Basic validation
         if (!clanTag.trim()) {
             setCreateMessage({ type: "error", text: "Please enter a Clan Tag." });
+            return;
+        }
+
+        if (isInClan) {
+            setCreateMessage({
+                type: "error",
+                text: `You are already in a clan. Leave it before joining another.`,
+            });
             return;
         }
 
@@ -86,6 +130,11 @@ const CreateClan = () => {
 
             // Write the clan document to Firestore
             await setDoc(clanRef, clanData);
+
+            const userRef = doc(db, "login", user.uid);
+            await updateDoc(userRef, {
+                inClan: true,
+            });
             
             setCreateMessage({
                 type: "success",
@@ -119,18 +168,6 @@ const CreateClan = () => {
             console.error("Navigation failed:", error);
         }
     };
-
-    // Show loading state while checking auth
-    if (authLoading) {
-        return (
-            <>
-                <Navbar />
-                <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white items-center justify-center">
-                    <div className="text-xl">Loading...</div>
-                </div>
-            </>
-        );
-    }
 
     return (
         <>

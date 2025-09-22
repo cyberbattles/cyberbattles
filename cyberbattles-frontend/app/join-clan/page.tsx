@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc, arrayUnion, collection, where, query, getDocs } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 
@@ -14,16 +14,51 @@ const JoinClan = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
+    const [isInClan, setIsInClan] = useState(false);
+    const [uid, setUid] = useState<string | null>(null);
+    const [clanLoading, setClanLoading] = useState(true);
 
     // Monitor auth state changes
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+          if (currentUser) {
             setUser(currentUser);
-            setAuthLoading(false);
+            setUid(currentUser.uid);
+            localStorage.setItem("currentuid", currentUser.uid);
+          } else {
+            setUser(null);
+            setUid(null);
+            localStorage.removeItem("currentuid");
+          }
         });
-
         return () => unsubscribe();
-    }, []);
+      }, []);
+
+      useEffect(() => {
+        const checkUserClan = async () => {
+          if (!uid) {
+            setIsInClan(false);
+            setClanLoading(false);
+            return;
+          }
+      
+          try {
+            const clansRef = collection(db, "clans");
+            const q = query(clansRef, where("memberIds", "array-contains", uid));
+            const querySnapshot = await getDocs(q);
+      
+            // Simply set a boolean
+            setIsInClan(!querySnapshot.empty);
+          } catch (error) {
+            console.error("Error checking user clan:", error);
+            setIsInClan(false);
+          } finally {
+            setClanLoading(false);
+          }
+        };
+      
+        checkUserClan();
+      }, [uid]);
 
     const handleJoinTeam = async () => {
         // Prevent multiple submissions
@@ -39,6 +74,14 @@ const JoinClan = () => {
             setJoinMessage({
                 type: "error",
                 text: "You must be logged in to join a team.",
+            });
+            return;
+        }
+
+        if (isInClan) {
+            setJoinMessage({
+                type: "error",
+                text: `You are already in a clan. Leave it before joining another.`,
             });
             return;
         }
@@ -75,6 +118,11 @@ const JoinClan = () => {
                     text: `Successfully joined clan: ${clanData.name}!`,
                 });
                 setClanId("");
+
+                const userRef = doc(db, "login", user.uid);
+                await updateDoc(userRef, {
+                    inClan: true,
+                });
                 
                 // Redirects to lobby page after join team
                 router.push("/lobby");
@@ -104,18 +152,6 @@ const JoinClan = () => {
             console.error("Navigation failed:", error);
         }
     };
-
-    // Show loading state while checking auth
-    if (authLoading) {
-        return (
-            <>
-                <Navbar />
-                <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white items-center justify-center">
-                    <div className="text-xl">Loading...</div>
-                </div>
-            </>
-        );
-    }
 
     return (
         <>
@@ -183,3 +219,4 @@ const JoinClan = () => {
 };
 
 export default JoinClan;
+
