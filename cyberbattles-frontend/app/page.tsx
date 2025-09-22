@@ -34,7 +34,12 @@ const MatrixBackground = () => {
 
     // Matrix rain effect
     const columns = Math.floor(canvas.width / 20);
-    const drops = Array(columns).fill(0);
+
+    // Initialize each drop with a random negative value so they start staggered
+    const drops = Array.from(
+      { length: columns },
+      () => Math.floor(Math.random() * -50), // random delay before appearing
+    );
 
     const draw = () => {
       if (!ctx) return;
@@ -48,8 +53,10 @@ const MatrixBackground = () => {
       ctx.font = "16px monospace";
 
       for (let i = 0; i < drops.length; i++) {
-        const text = Math.random() > 0.8 ? "1" : "0";
-        ctx.fillText(text, i * 20, drops[i] * 20);
+        if (drops[i] > 0) {
+          const text = Math.random() > 0.8 ? "1" : "0";
+          ctx.fillText(text, i * 20, drops[i] * 20);
+        }
 
         if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
