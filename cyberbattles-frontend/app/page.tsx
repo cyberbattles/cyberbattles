@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 
 import cyberbattles from "../public/images/cyberbattles.png";
 
-
 // https://claude.ai/chat/5a4af02b-ce13-4936-86fc-e3fbc403427a
 
 const MatrixBackground = () => {
@@ -76,26 +75,19 @@ const MatrixBackground = () => {
   );
 };
 
-
 export default function HomePage() {
-  let navItems = ["Home", "lab", "learn"];
-  let navLinks = ["/", "/test", "/learn"];
-
   return (
-    <div className="relative">
-      <Navbar/>
+    <div className="relative h-screen overflow-hidden">
+      <Navbar />
       <MatrixBackground />
-      
-      {/* Your existing content */}
+
       <div className="relative z-10">
-        {/* Navbar would go here */}
-        <div className="p-10"></div>
-        <div className="p-10">
-          <section className="min-h-screen flex flex-col items-center justify-center text-center pb-100">
-            <h1 className="text-5xl font-extrabold text-white mb-2 drop-shadow-lg">
-              CyberBattles.
+        <div className="">
+          <section className="h-screen flex flex-col items-center justify-center text-center">
+            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold text-white mb-2 drop-shadow-lg">
+              CyberBattl.es
             </h1>
-            <p className="text-lg text-white-500 drop-shadow-lg italic font-bold">
+            <p className="text-md sm:text-lg md:text-xl text-white-500 drop-shadow-lg italic font-bold p-4">
               An educational attack and defence CTF platform.
             </p>
           </section>
@@ -103,4 +95,4 @@ export default function HomePage() {
       </div>
     </div>
   );
-};
+}
