@@ -105,48 +105,12 @@ const Admin = () => {
     return ret;
   }
 
-  // CHeck if the currently signed in user is sessions admin (host)
-  // This will probably get changed to check if the user is the team leader rather than session admin
-  async function checkHost() {
-    // If the team hook is not set, do nothing
-    if (!team) {
-      return;
-    }
-
-    // Get the admin uid of the session
-    const sessionId = team.sessionId;
-    let docRef = doc(db, "sessions", sessionId);
-    let docSnap = await getDoc(docRef);
-    let adminUid = ""
-    if (docSnap.exists()) {
-      adminUid = docSnap.data().adminUid;
-    } else {
-      console.log("couldn't find admin");
-      return;
-    }
-
-    console.log(adminUid)
-
-    // Determine if the current user is admin
-    if (currentUser.uid == adminUid){
-      console.log("this user is admin");
-      setIsHost(true);
-    }
-    setIsHost(true);
-  }
-
   // FUNC: Remove a player
-  const removePlayer = async (uid: string) => {
-
-    if(!teamId){
-      return;
-    }
-    console.log(uid);
+  const removePlayer = async (tid: string, uid: string) => {
 
     // Create a new members array without the given uid
-
     let newMembers: string[] = [];
-    team.memberIds.forEach((value: string) => {
+    teams.get(tid).memberIds.forEach((value: string) => {
       if (value != uid){
         newMembers.push(value);
       }
@@ -155,7 +119,8 @@ const Admin = () => {
     // Update the memberids field in the team document on firestore
 
     // Get the team document
-    let docRef = doc(db, "teams", teamId);
+    const docRef = doc(db, "teams", tid);
+
     // Update the team document
     await updateDoc(docRef, {
       memberIds:newMembers
@@ -165,18 +130,15 @@ const Admin = () => {
       console.error("Error updating document: ", error)
     })
 
-    // Update the use state hooks to remove member
+    // Reinitialise the use state hooks to remove member
 
-    players.delete(uid);
-    setPlayers(new Map(players));
+    setTeams(new Map());
+    setPlayers(new Map());
 
-    docRef = doc(db, "teams", teamId);
-    // Populate the teamId and Players hooks
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()){
-      setTeamId(docSnap.data().teamId);
-      setTeam(docSnap.data());
-    }
+    getTeams(currentUser.uid);
+    // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+    getPlayers();
+
   }
 
    async function startSession() {
@@ -218,14 +180,13 @@ const Admin = () => {
 
   const handleStartGame = () => {
     // If not currently admin of a session, do nothing
-
-    // if (!sessionId || !currentUser) {
-    //   console.log("No current admin user or session")
-    //   return;
-    // }
-    // setGameStatus("starting")
-    // startSession();
-    // setGameStatus("waiting")
+    if (!sessionId || !currentUser) {
+      console.log("No current admin user or session")
+      return;
+    }
+    setGameStatus("starting")
+    startSession();
+    setGameStatus("waiting")
   };
 
   const handleEndGame = () => {
@@ -234,9 +195,9 @@ const Admin = () => {
       console.log("No current admin user or session")
       return;
     }
-    // setGameStatus("ending")
-    // cleanupSession();
-    // setGameStatus("waiting")
+    setGameStatus("ending")
+    cleanupSession();
+    setGameStatus("waiting")
   };
 
   // --------------------------------------
@@ -258,35 +219,7 @@ const Admin = () => {
   if (currentUser) {
       getTeams(currentUser.uid);
       // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
-      // console.log(teams)
       getPlayers();
-    // if (team) {
-    //   getPlayers();
-    // }
-    // checkHost();
-  }
-
-
-  function showPlayer(pid: string) : ReactNode {
-    
-    let playerName = "";
-    try{
-      playerName = players.get(pid);
-    } catch {
-      return;
-    }
-    return(
-      <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={pid}>
-        {/* Player name */}
-        <div className="flex items-center gap-3">
-          <span className="font-medium">{playerName}</span>
-        </div>
-        {/* Remove player button */}
-        {/* <div className="" onClick={() => removePlayer(uid)}>
-          <Image src={close} alt="close" width={20} className="invert" />
-        </div>   */}
-      </div>
-    )
   }
 
   
@@ -385,7 +318,7 @@ const Admin = () => {
                           </div>
                           {
                             isHost &&
-                            <div className="" onClick={() => removePlayer(uid)}>
+                            <div className="" onClick={() => removePlayer(value.id, uid)}>
                               <Image src={close} alt="close" width={20} className="invert" />
                             </div>
                           }   
