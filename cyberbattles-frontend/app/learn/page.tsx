@@ -64,7 +64,7 @@ export default function ModernLearnPage() {
         { type: "text", content: "Unlike malicious attackers, red team professionals operate with explicit permission and focus on improving security rather than causing damage. They use the same sophisticated tools and techniques as cybercriminals, but their mission is protection through controlled testing." },
         { type: "text", content: "Red teams often engage in adversarial exercises with blue teams (system defenders), creating realistic scenarios that test an organization's entire security posture—from technical controls to human factors." },
         { type: "text", content: "Common Targets:\n• AI systems and machine learning models\n• Critical databases and data repositories\n• Network firewalls and perimeter defenses\n• Cryptographic implementations\n• Endpoint security solutions\n• Intrusion detection systems\n• Web applications and APIs\n• Server infrastructure" },
-        { type: "text", content: "⚔️ **Arsenal of Techniques:**\n• Social engineering and phishing campaigns\n• Physical security assessments\n• Network reconnaissance and sniffing\n• Credential attacks and password spraying\n• Privilege escalation and lateral movement" }
+        { type: "text", content: "⚔️ Arsenal of Techniques:\n• Social engineering and phishing campaigns\n• Physical security assessments\n• Network reconnaissance and sniffing\n• Credential attacks and password spraying\n• Privilege escalation and lateral movement" }
       ],
       resources: ["https://www.ibm.com/think/topics/red-teaming"]
     },
