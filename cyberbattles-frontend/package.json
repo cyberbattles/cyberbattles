@@ -6,12 +6,11 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "gts lint",
-    "clean": "gts clean",
-    "compile": "tsc",
-    "fix": "gts fix",
-    "prepare": "npm run compile",
-    "pretest": "npm run compile",
+    "format": "prettier -w components/*.tsx app/*.tsx app/*/*.tsx",
+    "lint": "eslint components/*.tsx app/*.tsx app/*/*.tsx",
+    "fix": "eslint --fix components/*.tsx app/*.tsx app/*/*.tsx",
+    "prepare": "next build",
+    "pretest": "next build",
     "posttest": "npm run lint"
   },
   "dependencies": {
