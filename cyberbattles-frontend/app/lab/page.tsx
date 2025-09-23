@@ -1,17 +1,13 @@
-"use client";
-import React, { useState } from "react";
-import Image from "next/image";
-import Navbar from "@/components/Navbar";
-import { useRouter } from "next/navigation";
-
+'use client';
+import React, {useState} from 'react';
+import Image from 'next/image';
+import {useRouter} from 'next/navigation';
 
 export default function LabPage() {
-    const router = useRouter();
-
+  const router = useRouter();
 
   return (
     <>
-      <Navbar />
       <div className="p-10"></div>
       <div className="p-10">
         <section className="min-h-screen flex items-center justify-start pl-150">
