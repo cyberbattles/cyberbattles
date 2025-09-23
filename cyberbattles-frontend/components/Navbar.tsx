@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import logo from "../public/images/logo.png";
 import { IoMenu } from "react-icons/io5";
 import avatarPlaceholder from "../public/images/avatar_placeholder.png";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -36,20 +36,22 @@ function Navbar() {
   {
     /* Check if the user auth state has changed. If so update the currentUser .*/
   }
-  try {
-    onAuthStateChanged(auth, (user) => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-        if (user.photoURL) {
-          setPhotoURL(user.photoURL);
+  useEffect(() => {
+    try {
+      onAuthStateChanged(auth, (user) => {
+        if (user && !currentUser) {
+          setCurrentUser(user);
+          if (user.photoURL) {
+            setPhotoURL(user.photoURL);
+          }
+          setItems([userItems, userLinks]);
         }
-        setItems([userItems, userLinks]);
-      }
-    });
-  } catch (error) {
-    setCurrentUser(null);
-    console.error("Failed:", error);
-  }
+      });
+    } catch (error) {
+      setCurrentUser(null);
+      console.error("Failed:", error);
+    }
+  }, [auth]);
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -62,9 +64,21 @@ function Navbar() {
 
   return (
     <nav className="fixed w-full h-25 sm:h-40 shadow-xl bg-black z-50">
-      <div className="flex flex-basis items-center h-full w-full ">
-        <div className="flex w-2/3 items-center pl-5">
-          <div className="flex lg:hidden relative">
+      <div className="flex justify-between flex-basis items-center h-full w-full ">
+        <div className="flex items-center pl-5">
+          {/* Logo */}
+          <Link href="/" onClick={handleHomeClick}>
+            <div
+              className={`flex-shrink-0 flex items-center ${isOpen ? "hidden" : ""}`}
+            >
+              <Image
+                src={logo}
+                alt="logo"
+                className="xl:flex hidden max-w-[150px] flex-shrink-0"
+              />
+            </div>
+          </Link>
+          <div className="flex md:hidden relative">
             {/* Hamburger icon */}
             <IoMenu
               className="ml-5 cursor-pointer w-15 h-15"
@@ -94,19 +108,7 @@ function Navbar() {
             </div>
           </div>
 
-          {/* Logo */}
-          <Link href="/" onClick={handleHomeClick}>
-            <div
-              className={`flex-shrink-0 flex items-center ${isOpen ? "hidden" : ""}`}
-            >
-              <Image
-                src={logo}
-                alt="logo"
-                className="xl:flex hidden max-w-[150px] flex-shrink-0"
-              />
-            </div>
-          </Link>
-          <ul className="justify-between w-full gap-5 mr-60 ml-10 hidden lg:flex ">
+          <ul className="ml-5 gap-5 hidden md:flex">
             {items.map((item, index) => (
               <Link key={item} href={links[index]}>
                 <li className="capitalize text-2xl hover:scale-110 duration-300 font-bold cursor-pointer">
@@ -116,7 +118,7 @@ function Navbar() {
             ))}
           </ul>
         </div>
-        <div className="flex justify-end items-center w-full lg:w-1/3 pr-5 gap-5">
+        <div className="flex items-center pr-10 gap-5">
           <div className="">
             {currentUser && (
               <Link href="/dashboard">
