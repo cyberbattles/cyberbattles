@@ -1,26 +1,35 @@
-'use client';
-import Navbar from "../../components/Navbar"
+"use client";
+import Navbar from "../../components/Navbar";
 import React, { useEffect, useRef, useState } from "react";
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { FaLock, FaUnlock, FaPlay, FaBook, FaGraduationCap, FaShieldAlt, FaTerminal, FaServer, FaChevronRight, FaCheck } from "react-icons/fa";
+import {
+  FaLock,
+  FaUnlock,
+  FaPlay,
+  FaBook,
+  FaGraduationCap,
+  FaShieldAlt,
+  FaTerminal,
+  FaServer,
+  FaChevronRight,
+  FaCheck,
+} from "react-icons/fa";
 
 // REF: Used claude to update how it looks
 // https://claude.ai/chat/275e0248-c0a1-4fbf-a503-7293669bd103
 
-type ContentSegment = 
+type ContentSegment =
   | { type: "text"; content: string }
-  | { type: "code"; content: string }
+  | { type: "code"; content: string };
 
-  type LearnItem = {
-    title: string
-    segments: ContentSegment[]
-    resources?: string[]
-    icon: React.ReactNode
-    difficulty: 'Beginner' | 'Intermediate' | 'Advanced'
-    estimatedTime: string
-  }
-  // Code Highlighter Component
+type LearnItem = {
+  title: string;
+  segments: ContentSegment[];
+  resources?: string[];
+  icon: React.ReactNode;
+  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  estimatedTime: string;
+};
+// Code Highlighter Component
 const CodeBlock = ({ content }: { content: string }) => {
   return (
     <div className="relative group">
@@ -47,83 +56,186 @@ export default function ModernLearnPage() {
     {
       title: "Getting Started",
       icon: <FaPlay className="text-lg" />,
-      difficulty: 'Beginner',
-      estimatedTime: '1 min',
+      difficulty: "Beginner",
+      estimatedTime: "1 min",
       segments: [
-        { type: "text", content: "Welcome to your cybersecurity journey! Before diving into the exciting world of CyberBattles, it's crucial to build a solid foundation of key cybersecurity concepts. These fundamentals are not just academic—they're the same principles used by professionals in the industry every day." },
-        { type: "text", content: "Each module below is carefully crafted to give you practical knowledge and hands-on experience. Complete them in order to unlock your full potential in this high-stakes digital battlefield." }
-      ]
+        {
+          type: "text",
+          content:
+            "Welcome to your cybersecurity journey! Before diving into the exciting world of CyberBattles, it's crucial to build a solid foundation of key cybersecurity concepts. These fundamentals are not just academic—they're the same principles used by professionals in the industry every day.",
+        },
+        {
+          type: "text",
+          content:
+            "Each module below is carefully crafted to give you practical knowledge and hands-on experience. Complete them in order to unlock your full potential in this high-stakes digital battlefield.",
+        },
+      ],
     },
     {
       title: "Red Teaming",
       icon: <FaShieldAlt className="text-lg" />,
-      difficulty: 'Intermediate',
-      estimatedTime: '5 min',
+      difficulty: "Intermediate",
+      estimatedTime: "5 min",
       segments: [
-        { type: "text", content: "Red teaming represents the offensive side of cybersecurity—ethical hackers who simulate real-world cyberattacks to help organizations identify and fix vulnerabilities before malicious actors can exploit them." },
-        { type: "text", content: "Unlike malicious attackers, red team professionals operate with explicit permission and focus on improving security rather than causing damage. They use the same sophisticated tools and techniques as cybercriminals, but their mission is protection through controlled testing." },
-        { type: "text", content: "Red teams often engage in adversarial exercises with blue teams (system defenders), creating realistic scenarios that test an organization's entire security posture—from technical controls to human factors." },
-        { type: "text", content: "Common Targets:\n• AI systems and machine learning models\n• Critical databases and data repositories\n• Network firewalls and perimeter defenses\n• Cryptographic implementations\n• Endpoint security solutions\n• Intrusion detection systems\n• Web applications and APIs\n• Server infrastructure" },
-        { type: "text", content: "⚔️ **Arsenal of Techniques:**\n• Social engineering and phishing campaigns\n• Physical security assessments\n• Network reconnaissance and sniffing\n• Credential attacks and password spraying\n• Privilege escalation and lateral movement" }
+        {
+          type: "text",
+          content:
+            "Red teaming represents the offensive side of cybersecurity—ethical hackers who simulate real-world cyberattacks to help organizations identify and fix vulnerabilities before malicious actors can exploit them.",
+        },
+        {
+          type: "text",
+          content:
+            "Unlike malicious attackers, red team professionals operate with explicit permission and focus on improving security rather than causing damage. They use the same sophisticated tools and techniques as cybercriminals, but their mission is protection through controlled testing.",
+        },
+        {
+          type: "text",
+          content:
+            "Red teams often engage in adversarial exercises with blue teams (system defenders), creating realistic scenarios that test an organization's entire security posture—from technical controls to human factors.",
+        },
+        {
+          type: "text",
+          content:
+            "Common Targets:\n• AI systems and machine learning models\n• Critical databases and data repositories\n• Network firewalls and perimeter defenses\n• Cryptographic implementations\n• Endpoint security solutions\n• Intrusion detection systems\n• Web applications and APIs\n• Server infrastructure",
+        },
+        {
+          type: "text",
+          content:
+            "⚔️ **Arsenal of Techniques:**\n• Social engineering and phishing campaigns\n• Physical security assessments\n• Network reconnaissance and sniffing\n• Credential attacks and password spraying\n• Privilege escalation and lateral movement",
+        },
       ],
-      resources: ["https://www.ibm.com/think/topics/red-teaming"]
+      resources: ["https://www.ibm.com/think/topics/red-teaming"],
     },
     {
       title: "Blue Teaming",
       icon: <FaShieldAlt className="text-lg" />,
-      difficulty: 'Intermediate',
-      estimatedTime: '5 min',
+      difficulty: "Intermediate",
+      estimatedTime: "5 min",
       segments: [
-        { type: "text", content: "Blue teaming is the defensive backbone of cybersecurity—the vigilant guardians who protect organizational assets from both external threats and internal vulnerabilities. They're the digital first responders who detect, analyze, and neutralize security incidents." },
-        { type: "text", content: "Unlike red teams who simulate attacks, blue teams have comprehensive access to an organization's entire infrastructure. This 'white box' perspective allows them to create detailed risk assessments and implement proactive security measures." },
-        { type: "text", content: "The Black Box Advantage: While red teams often work with limited information (black box testing), blue teams leverage their internal knowledge to anticipate attack vectors and strengthen defenses before threats materialize." },
-        { type: "text", content: "Core Responsibilities:\n• Continuous security monitoring and threat hunting\n• Incident response and forensic analysis\n• Security awareness training and education\n• Infrastructure hardening and patch management\n• Risk assessment and compliance reporting\n• Security tool deployment and management" },
-        { type: "text", content: "Blue team professionals must possess deep technical expertise, exceptional analytical skills, and the ability to think like both defenders and attackers. They're often the unsung heroes who prevent breaches that never make headlines." }
+        {
+          type: "text",
+          content:
+            "Blue teaming is the defensive backbone of cybersecurity—the vigilant guardians who protect organizational assets from both external threats and internal vulnerabilities. They're the digital first responders who detect, analyze, and neutralize security incidents.",
+        },
+        {
+          type: "text",
+          content:
+            "Unlike red teams who simulate attacks, blue teams have comprehensive access to an organization's entire infrastructure. This 'white box' perspective allows them to create detailed risk assessments and implement proactive security measures.",
+        },
+        {
+          type: "text",
+          content:
+            "The Black Box Advantage: While red teams often work with limited information (black box testing), blue teams leverage their internal knowledge to anticipate attack vectors and strengthen defenses before threats materialize.",
+        },
+        {
+          type: "text",
+          content:
+            "Core Responsibilities:\n• Continuous security monitoring and threat hunting\n• Incident response and forensic analysis\n• Security awareness training and education\n• Infrastructure hardening and patch management\n• Risk assessment and compliance reporting\n• Security tool deployment and management",
+        },
+        {
+          type: "text",
+          content:
+            "Blue team professionals must possess deep technical expertise, exceptional analytical skills, and the ability to think like both defenders and attackers. They're often the unsung heroes who prevent breaches that never make headlines.",
+        },
       ],
-      resources: ["https://www.ibm.com/think/topics/blue-team", "https://en.wikipedia.org/wiki/Black_box"]
+      resources: [
+        "https://www.ibm.com/think/topics/blue-team",
+        "https://en.wikipedia.org/wiki/Black_box",
+      ],
     },
     {
       title: "Basics of SSH",
       icon: <FaTerminal className="text-lg" />,
-      difficulty: 'Intermediate',
-      estimatedTime: '15 min',
+      difficulty: "Intermediate",
+      estimatedTime: "15 min",
       segments: [
-        { type: "text", content: "Secure Shell Protocol (SSH) is the cornerstone of secure remote administration. Built on top of the reliable TCP/IP protocol suite, SSH enables encrypted communication channels for managing servers, transferring files, and accessing remote services safely across untrusted networks." },
-        { type: "text", content: "Why SSH is Secure: SSH employs public key cryptography, creating an unbreakable authentication system. Each user generates a mathematically linked key pair—a private key (kept secret) and a public key (shared freely). Only when these keys match can identity be verified and secure communication established." },
-        { type: "text", content: "Mutual Authentication: In SSH connections, both client and server authenticate each other using their respective key pairs, ensuring you're connecting to the legitimate server and the server can verify your identity." },
-        { type: "text", content: "Let's explore the essential SSH commands that form the foundation of secure remote operations:" },
+        {
+          type: "text",
+          content:
+            "Secure Shell Protocol (SSH) is the cornerstone of secure remote administration. Built on top of the reliable TCP/IP protocol suite, SSH enables encrypted communication channels for managing servers, transferring files, and accessing remote services safely across untrusted networks.",
+        },
+        {
+          type: "text",
+          content:
+            "Why SSH is Secure: SSH employs public key cryptography, creating an unbreakable authentication system. Each user generates a mathematically linked key pair—a private key (kept secret) and a public key (shared freely). Only when these keys match can identity be verified and secure communication established.",
+        },
+        {
+          type: "text",
+          content:
+            "Mutual Authentication: In SSH connections, both client and server authenticate each other using their respective key pairs, ensuring you're connecting to the legitimate server and the server can verify your identity.",
+        },
+        {
+          type: "text",
+          content:
+            "Let's explore the essential SSH commands that form the foundation of secure remote operations:",
+        },
         { type: "code", content: "ssh username@hostname" },
-        { type: "text", content: "The fundamental SSH connection command. Replace 'username' with your account name on the remote system and 'hostname' with the server's IP address or domain name. You'll be prompted for your password unless key-based authentication is configured." },
+        {
+          type: "text",
+          content:
+            "The fundamental SSH connection command. Replace 'username' with your account name on the remote system and 'hostname' with the server's IP address or domain name. You'll be prompted for your password unless key-based authentication is configured.",
+        },
         { type: "code", content: "ssh-keygen\nssh-copy-id username@hostname" },
-        { type: "text", content: "Generate your security credentials with ssh-keygen, creating your personal key pair. Then use ssh-copy-id to securely install your public key on the remote server's authorized_keys file. This enables password-free authentication using your private key." },
-        { type: "code", content: 'ssh username@host "ls -la"'},
-        { type: "text", content: "Execute commands remotely without maintaining an interactive session. This example runs 'ls -la' on the remote server, displaying detailed file information including permissions, ownership, and modification dates, then returns you to your local terminal." },
-        { type: "code", content: "scp localfile.txt username@hostname:/remote/path"},
-        { type: "text", content: "Securely transfer files using SSH's built-in copy protocol. This command uploads 'localfile.txt' to the specified remote path. Reverse the source and destination to download files from the remote server to your local machine." }
+        {
+          type: "text",
+          content:
+            "Generate your security credentials with ssh-keygen, creating your personal key pair. Then use ssh-copy-id to securely install your public key on the remote server's authorized_keys file. This enables password-free authentication using your private key.",
+        },
+        { type: "code", content: 'ssh username@host "ls -la"' },
+        {
+          type: "text",
+          content:
+            "Execute commands remotely without maintaining an interactive session. This example runs 'ls -la' on the remote server, displaying detailed file information including permissions, ownership, and modification dates, then returns you to your local terminal.",
+        },
+        {
+          type: "code",
+          content: "scp localfile.txt username@hostname:/remote/path",
+        },
+        {
+          type: "text",
+          content:
+            "Securely transfer files using SSH's built-in copy protocol. This command uploads 'localfile.txt' to the specified remote path. Reverse the source and destination to download files from the remote server to your local machine.",
+        },
       ],
-      resources: ["https://www.ssh.com/academy/ssh/command#ssh-command-in-linux", "https://www.cloudflare.com/learning/access-management/what-is-ssh/"]
+      resources: [
+        "https://www.ssh.com/academy/ssh/command#ssh-command-in-linux",
+        "https://www.cloudflare.com/learning/access-management/what-is-ssh/",
+      ],
     },
     {
       title: "Importance of Uptime",
       icon: <FaServer className="text-lg" />,
-      difficulty: 'Beginner',
-      estimatedTime: '10 min',
+      difficulty: "Beginner",
+      estimatedTime: "10 min",
       segments: [
-        { type: "text", content: "System uptime is the foundation of digital trust and business continuity. In our interconnected world, even seconds of downtime can result in significant financial losses, damaged reputation, and compromised user experience." },
-        { type: "text", content: "Business Impact: For mission-critical systems, 99.9% uptime means 8.76 hours of downtime per year, while 99.99% allows only 52.56 minutes. Understanding these metrics helps organizations balance reliability investments with business requirements." }
-      ]
-    }
+        {
+          type: "text",
+          content:
+            "System uptime is the foundation of digital trust and business continuity. In our interconnected world, even seconds of downtime can result in significant financial losses, damaged reputation, and compromised user experience.",
+        },
+        {
+          type: "text",
+          content:
+            "Business Impact: For mission-critical systems, 99.9% uptime means 8.76 hours of downtime per year, while 99.99% allows only 52.56 minutes. Understanding these metrics helps organizations balance reliability investments with business requirements.",
+        },
+      ],
+    },
   ];
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [completedModules, setCompletedModules] = useState([false, false, false, false, false]);
+  const [completedModules, setCompletedModules] = useState([
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
   const [isLocked, setIsLocked] = useState([false, true, true, true, true]);
 
   const handleModuleComplete = () => {
     const newCompleted = [...completedModules];
     newCompleted[selectedIndex] = true;
     setCompletedModules(newCompleted);
-    
+
     // Unlock next module
     if (selectedIndex + 1 < isLocked.length) {
       const newLocked = [...isLocked];
@@ -132,27 +244,27 @@ export default function ModernLearnPage() {
     }
   };
 
-  const progressPercentage = (completedModules.filter(Boolean).length / learnItems.length) * 100;
+  const progressPercentage =
+    (completedModules.filter(Boolean).length / learnItems.length) * 100;
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-
-      <Navbar/>
+      <Navbar />
 
       <div className="relative pt-24 pb-12">
         <div className="container mx-auto px-6">
           {/* Header Section */}
           <div className="text-center mb-12">
-     
             <h1 className="text-6xl font-black mb-5 pt-20">
               <span className="bg-white bg-clip-text text-transparent">
                 Learn
               </span>
             </h1>
-            
+
             <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-              Master cybersecurity fundamentals through hands-on modules designed by industry experts. 
-              Build the skills that matter in real-world scenarios.
+              Master cybersecurity fundamentals through hands-on modules
+              designed by industry experts. Build the skills that matter in
+              real-world scenarios.
             </p>
 
             {/* Progress Bar */}
@@ -162,7 +274,7 @@ export default function ModernLearnPage() {
                 <span>{Math.round(progressPercentage)}%</span>
               </div>
               <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-green-400 to-green-900 rounded-full transition-all duration-700 ease-out"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
@@ -177,44 +289,63 @@ export default function ModernLearnPage() {
               <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 sticky top-28 shadow-2xl">
                 <div className="flex items-center gap-3 mb-6">
                   <FaBook className="text-white-400 text-xl" />
-                  <h3 className="text-xl font-bold text-white">Learning Path</h3>
+                  <h3 className="text-xl font-bold text-white">
+                    Learning Path
+                  </h3>
                 </div>
-                
+
                 <div className="space-y-3">
                   {learnItems.map((item, index) => (
                     <button
                       key={index}
-                      onClick={() => !isLocked[index] && setSelectedIndex(index)}
+                      onClick={() =>
+                        !isLocked[index] && setSelectedIndex(index)
+                      }
                       className={`w-full text-left p-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${
                         selectedIndex === index
-                          ? 'bg-gradient-to-r from-blue-800/20 to-blue-500/20 border border-cyan-50/30 shadow-lg scale-105'
+                          ? "bg-gradient-to-r from-blue-800/20 to-blue-500/20 border border-cyan-50/30 shadow-lg scale-105"
                           : isLocked[index]
-                          ? 'bg-gray-800/30 border border-gray-700/30 cursor-not-allowed opacity-50'
-                          : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 hover:scale-102 cursor-pointer'
+                            ? "bg-gray-800/30 border border-gray-700/30 cursor-not-allowed opacity-50"
+                            : "bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 hover:scale-102 cursor-pointer"
                       }`}
                       disabled={isLocked[index]}
                     >
                       {!isLocked[index] && selectedIndex === index && (
                         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent animate-pulse"></div>
                       )}
-                      
+
                       <div className="relative flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            selectedIndex === index ? 'bg-cyan-200/20 text-white-300' : 
-                            isLocked[index] ? 'bg-gray-700 text-gray-500' : 'bg-white/10 text-white/70'
-                          }`}>
+                          <div
+                            className={`p-2 rounded-lg ${
+                              selectedIndex === index
+                                ? "bg-cyan-200/20 text-white-300"
+                                : isLocked[index]
+                                  ? "bg-gray-700 text-gray-500"
+                                  : "bg-white/10 text-white/70"
+                            }`}
+                          >
                             {item.icon}
                           </div>
                           <div>
-                            <div className="font-semibold text-white text-sm">{item.title}</div>
-                            <div className="text-xs text-white/50">{item.estimatedTime}</div>
+                            <div className="font-semibold text-white text-sm">
+                              {item.title}
+                            </div>
+                            <div className="text-xs text-white/50">
+                              {item.estimatedTime}
+                            </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center gap-2">
-                          {completedModules[index] && <FaCheck className="text-green-400 text-sm" />}
-                          {isLocked[index] ? <FaLock className="text-gray-400 text-sm" /> : <FaUnlock className="text-blue-400 text-sm" />}
+                          {completedModules[index] && (
+                            <FaCheck className="text-green-400 text-sm" />
+                          )}
+                          {isLocked[index] ? (
+                            <FaLock className="text-gray-400 text-sm" />
+                          ) : (
+                            <FaUnlock className="text-blue-400 text-sm" />
+                          )}
                         </div>
                       </div>
                     </button>
@@ -229,7 +360,7 @@ export default function ModernLearnPage() {
                 {learnItems.map((item, index) => (
                   <div
                     key={index}
-                    className={`transition-all duration-500 ${selectedIndex === index ? 'block' : 'hidden'}`}
+                    className={`transition-all duration-500 ${selectedIndex === index ? "block" : "hidden"}`}
                   >
                     {/* Enhanced Header */}
                     <div className="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm p-8 border-b border-white/10">
@@ -240,16 +371,24 @@ export default function ModernLearnPage() {
                               {item.icon}
                             </div>
                             <div>
-                              <h2 className="text-3xl font-bold text-white mb-1">{item.title}</h2>
+                              <h2 className="text-3xl font-bold text-white mb-1">
+                                {item.title}
+                              </h2>
                               <div className="flex items-center gap-4 text-sm">
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  item.difficulty === 'Beginner' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
-                                  item.difficulty === 'Intermediate' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
-                                  'bg-red-500/20 text-red-300 border border-red-500/30'
-                                }`}>
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    item.difficulty === "Beginner"
+                                      ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                                      : item.difficulty === "Intermediate"
+                                        ? "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30"
+                                        : "bg-red-500/20 text-red-300 border border-red-500/30"
+                                  }`}
+                                >
                                   {item.difficulty}
                                 </span>
-                                <span className="text-white/60">⏱️ {item.estimatedTime}</span>
+                                <span className="text-white/60">
+                                  ⏱️ {item.estimatedTime}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -263,14 +402,17 @@ export default function ModernLearnPage() {
                       <div className="space-y-6">
                         {item.segments.map((seg, i) =>
                           seg.type === "text" ? (
-                            <div key={i} className="text-white/80 leading-relaxed whitespace-pre-line text-lg">
+                            <div
+                              key={i}
+                              className="text-white/80 leading-relaxed whitespace-pre-line text-lg"
+                            >
                               {seg.content}
                             </div>
                           ) : (
                             <div key={i} className="my-6">
                               <CodeBlock content={String(seg.content)} />
                             </div>
-                          )
+                          ),
                         )}
 
                         {item.resources && (
@@ -306,8 +448,11 @@ export default function ModernLearnPage() {
                               <div
                                 key={i}
                                 className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                  i === selectedIndex ? 'bg-cyan-900 scale-125' :
-                                  completedModules[i] ? 'bg-green-400' : 'bg-white/20'
+                                  i === selectedIndex
+                                    ? "bg-cyan-900 scale-125"
+                                    : completedModules[i]
+                                      ? "bg-green-400"
+                                      : "bg-white/20"
                                 }`}
                               />
                             ))}
@@ -322,12 +467,14 @@ export default function ModernLearnPage() {
               {/* Enhanced Navigation */}
               <div className="flex justify-between items-center mt-6">
                 <button
-                  onClick={() => setSelectedIndex(Math.max(0, selectedIndex - 1))}
+                  onClick={() =>
+                    setSelectedIndex(Math.max(0, selectedIndex - 1))
+                  }
                   disabled={selectedIndex === 0}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                     selectedIndex === 0
-                      ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
-                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 backdrop-blur-sm border border-white/20'
+                      ? "bg-gray-700/30 text-gray-500 cursor-not-allowed"
+                      : "bg-white/10 text-white hover:bg-white/20 hover:scale-105 backdrop-blur-sm border border-white/20"
                   }`}
                 >
                   ← Previous
@@ -342,16 +489,23 @@ export default function ModernLearnPage() {
 
                 <button
                   onClick={() => {
-                    const newIndex = Math.min(learnItems.length - 1, selectedIndex + 1);
+                    const newIndex = Math.min(
+                      learnItems.length - 1,
+                      selectedIndex + 1,
+                    );
                     if (!isLocked[newIndex]) {
                       setSelectedIndex(newIndex);
                     }
                   }}
-                  disabled={selectedIndex === learnItems.length - 1 || isLocked[selectedIndex + 1]}
+                  disabled={
+                    selectedIndex === learnItems.length - 1 ||
+                    isLocked[selectedIndex + 1]
+                  }
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-                    selectedIndex === learnItems.length - 1 || isLocked[selectedIndex + 1]
-                      ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:shadow-lg hover:scale-105'
+                    selectedIndex === learnItems.length - 1 ||
+                    isLocked[selectedIndex + 1]
+                      ? "bg-gray-700/30 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:shadow-lg hover:scale-105"
                   }`}
                 >
                   Next <FaChevronRight className="text-sm" />
@@ -381,3 +535,4 @@ export default function ModernLearnPage() {
     </div>
   );
 }
+
