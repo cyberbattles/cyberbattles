@@ -169,6 +169,7 @@ const handleCancel = (e: React.FormEvent) => {
 
 return (
     <>
+    <Navbar/>
 
     <div className="p-10">
     

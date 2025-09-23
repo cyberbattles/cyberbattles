@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -33,25 +35,21 @@ function Navbar() {
     setIsOpen(!isOpen);
   };
 
-  {
-    /* Check if the user auth state has changed. If so update the currentUser .*/
-  }
   useEffect(() => {
-    try {
-      onAuthStateChanged(auth, (user) => {
-        if (user && !currentUser) {
-          setCurrentUser(user);
-          if (user.photoURL) {
-            setPhotoURL(user.photoURL);
-          }
-          setItems([userItems, userLinks]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && !currentUser) {
+        setCurrentUser(user);
+        if (user.photoURL) {
+          setPhotoURL(user.photoURL);
         }
-      });
-    } catch (error) {
-      setCurrentUser(null);
-      console.error("Failed:", error);
-    }
-  }, [auth]);
+        setItems([userItems, userLinks]);
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {

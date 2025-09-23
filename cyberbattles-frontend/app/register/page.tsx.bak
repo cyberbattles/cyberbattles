@@ -7,6 +7,7 @@ export default function CreateAccountPage() {
 
   return (
     <>
+    <Navbar/>
 
     <div className="p-10"></div>
     <div className="p-10">
