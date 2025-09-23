@@ -8,8 +8,6 @@ import {
 } from 'firebase/auth';
 import {useRouter} from 'next/navigation';
 
-import cyberbattles from '../public/images/cyberbattles.png';
-
 // https://claude.ai/chat/5a4af02b-ce13-4936-86fc-e3fbc403427a
 // https://chatgpt.com/s/t_68d0c7af94bc819199a17e1c7a2da6c4
 
