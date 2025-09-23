@@ -25,11 +25,13 @@ type LearnItem = {
   segments: ContentSegment[];
   resources?: string[];
   icon: React.ReactNode;
+
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   estimatedTime: string;
 };
 // Code Highlighter Component
 const CodeBlock = ({content}: {content: string}) => {
+
   return (
     <div className="relative group">
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
@@ -55,8 +57,8 @@ export default function ModernLearnPage() {
     {
       title: 'Getting Started',
       icon: <FaPlay className="text-lg" />,
-      difficulty: 'Beginner',
-      estimatedTime: '1 min',
+      difficulty: "Beginner",
+      estimatedTime: "1 min",
       segments: [
         {
           type: 'text',
@@ -73,8 +75,8 @@ export default function ModernLearnPage() {
     {
       title: 'Red Teaming',
       icon: <FaShieldAlt className="text-lg" />,
-      difficulty: 'Intermediate',
-      estimatedTime: '5 min',
+      difficulty: "Intermediate",
+      estimatedTime: "5 min",
       segments: [
         {
           type: 'text',
@@ -107,8 +109,8 @@ export default function ModernLearnPage() {
     {
       title: 'Blue Teaming',
       icon: <FaShieldAlt className="text-lg" />,
-      difficulty: 'Intermediate',
-      estimatedTime: '5 min',
+      difficulty: "Intermediate",
+      estimatedTime: "5 min",
       segments: [
         {
           type: 'text',
@@ -144,8 +146,8 @@ export default function ModernLearnPage() {
     {
       title: 'Basics of SSH',
       icon: <FaTerminal className="text-lg" />,
-      difficulty: 'Intermediate',
-      estimatedTime: '15 min',
+      difficulty: "Intermediate",
+      estimatedTime: "15 min",
       segments: [
         {
           type: 'text',
@@ -203,8 +205,8 @@ export default function ModernLearnPage() {
     {
       title: 'Importance of Uptime',
       icon: <FaServer className="text-lg" />,
-      difficulty: 'Beginner',
-      estimatedTime: '10 min',
+      difficulty: "Beginner",
+      estimatedTime: "10 min",
       segments: [
         {
           type: 'text',
@@ -245,7 +247,6 @@ export default function ModernLearnPage() {
 
   const progressPercentage =
     (completedModules.filter(Boolean).length / learnItems.length) * 100;
-
   return (
     <div className="min-h-screen relative overflow-hidden">
       <div className="relative pt-24 pb-12">
@@ -300,7 +301,7 @@ export default function ModernLearnPage() {
                       }
                       className={`w-full text-left p-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${
                         selectedIndex === index
-                          ? 'bg-gradient-to-r from-blue-800/20 to-blue-500/20 border border-cyan-50/30 shadow-lg scale-105'
+                          ? "bg-gradient-to-r from-blue-800/20 to-blue-500/20 border border-cyan-50/30 shadow-lg scale-105"
                           : isLocked[index]
                             ? 'bg-gray-800/30 border border-gray-700/30 cursor-not-allowed opacity-50'
                             : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 hover:scale-102 cursor-pointer'
@@ -357,7 +358,7 @@ export default function ModernLearnPage() {
                 {learnItems.map((item, index) => (
                   <div
                     key={index}
-                    className={`transition-all duration-500 ${selectedIndex === index ? 'block' : 'hidden'}`}
+                    className={`transition-all duration-500 ${selectedIndex === index ? "block" : "hidden"}`}
                   >
                     {/* Enhanced Header */}
                     <div className="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm p-8 border-b border-white/10">
@@ -395,7 +396,10 @@ export default function ModernLearnPage() {
                     </div>
 
                     {/* Enhanced Content Body */}
-                    <div className="p-8 max-h-[500px] overflow-y-auto custom-scrollbar">
+                    <div
+                      className="p-8 max-h-[500px] overflow-y-auto custom-scrollbar"
+                      ref={selectedIndex === index ? contentRef : null}
+                    >
                       <div className="space-y-6">
                         {item.segments.map((seg, i) =>
                           seg.type === 'text' ? (
@@ -470,8 +474,8 @@ export default function ModernLearnPage() {
                   disabled={selectedIndex === 0}
                   className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                     selectedIndex === 0
-                      ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
-                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 backdrop-blur-sm border border-white/20'
+                      ? "bg-gray-700/30 text-gray-500 cursor-not-allowed"
+                      : "bg-white/10 text-white hover:bg-white/20 hover:scale-105 backdrop-blur-sm border border-white/20"
                   }`}
                 >
                   ← Previous
