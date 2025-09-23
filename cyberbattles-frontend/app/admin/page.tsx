@@ -156,10 +156,9 @@ const Admin = () => {
     // Create the api request url
     const token = await currentUser.getIdToken(true);
     let request = "/cleanup/" + sessionId + "/" + token;
-    console.log(request)
     try {
-      const response = await ApiClient.post(request);
-      console.log(response.data);
+      const response = await ApiClient.get(request);
+      // console.log(response.data);
     } catch (error) {
       console.error("Error cleaning session:", error);
     }
@@ -187,17 +186,19 @@ const Admin = () => {
     setGameStatus("starting")
     startSession();
     setGameStatus("waiting")
+    
   };
 
-  const handleEndGame = () => {
+   const handleEndGame = async () => {
     // If not currently admin of a session, do nothing
     if (!sessionId || !currentUser) {
       console.log("No current admin user or session")
       return;
     }
-    setGameStatus("ending")
-    cleanupSession();
-    setGameStatus("waiting")
+    setGameStatus("ending");
+    await cleanupSession();
+    setGameStatus("waiting");
+    window.location.reload()
   };
 
   // --------------------------------------
