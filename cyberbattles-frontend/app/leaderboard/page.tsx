@@ -1,13 +1,12 @@
-'use client'
+'use client';
 
 // Used Claude to generate a basic leaderboard scheme.
 // https://claude.ai/chat/820c7826-c91b-47ec-9b1f-1d3b3b97f486
 // https://claude.ai/chat/83ddbe23-b0f8-4653-bee8-c46642876119
 
-import Navbar from "../../components/Navbar"
-import React, { useEffect, useRef, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import React, {useEffect, useRef, useState} from 'react';
+import {collection, getDocs} from 'firebase/firestore';
+import {db} from '../../lib/firebase';
 
 // Explicitly define the types for the props.
 interface Team {
@@ -16,7 +15,7 @@ interface Team {
   country: string;
   points: number;
   playedMatches: number;
-  countryFlag?: string; 
+  countryFlag?: string;
 }
 
 interface Game {
@@ -38,30 +37,30 @@ interface GameRowProps {
 }
 
 const getRankStyle = (position: any) => {
-  switch(position) {
+  switch (position) {
     case 1:
-      return "from-yellow-400/20 to-amber-600/20 border-yellow-400/30 shadow-yellow-400/10";
+      return 'from-yellow-400/20 to-amber-600/20 border-yellow-400/30 shadow-yellow-400/10';
     case 2:
-      return "from-gray-300/20 to-gray-500/20 border-gray-300/30 shadow-gray-300/10";
+      return 'from-gray-300/20 to-gray-500/20 border-gray-300/30 shadow-gray-300/10';
     case 3:
-      return "from-amber-600/20 to-orange-600/20 border-amber-600/30 shadow-amber-600/10";
+      return 'from-amber-600/20 to-orange-600/20 border-amber-600/30 shadow-amber-600/10';
     default:
-      return "from-gray-800/50 to-gray-900/50 border-gray-700/30 hover:border-cyan-500/30";
+      return 'from-gray-800/50 to-gray-900/50 border-gray-700/30 hover:border-cyan-500/30';
   }
 };
 
 const getTeamColorStyle = (teamColor: 'red' | 'blue') => {
-  switch(teamColor) {
+  switch (teamColor) {
     case 'red':
-      return "from-red-500/20 to-red-700/20 border-red-400/30 shadow-red-400/10";
+      return 'from-red-500/20 to-red-700/20 border-red-400/30 shadow-red-400/10';
     case 'blue':
-      return "from-blue-500/20 to-blue-700/20 border-blue-400/30 shadow-blue-400/10";
+      return 'from-blue-500/20 to-blue-700/20 border-blue-400/30 shadow-blue-400/10';
     default:
-      return "from-gray-800/50 to-gray-900/50 border-gray-700/30 hover:border-cyan-500/30";
+      return 'from-gray-800/50 to-gray-900/50 border-gray-700/30 hover:border-cyan-500/30';
   }
 };
 
-const LeaderboardRow = ({ team, position, delay }: LeaderboardRowProps) => {
+const LeaderboardRow = ({team, position, delay}: LeaderboardRowProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -72,7 +71,7 @@ const LeaderboardRow = ({ team, position, delay }: LeaderboardRowProps) => {
   return (
     <div
       className={`transform transition-all duration-700 ease-out ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
       }`}
     >
       <div
@@ -95,9 +94,11 @@ const LeaderboardRow = ({ team, position, delay }: LeaderboardRowProps) => {
             {/* Team Info */}
             <div className="flex items-center space-x-4">
               {/* Optional flag */}
-              <div className="text-2xl">{team.countryFlag || "🌍"}</div>
+              <div className="text-2xl">{team.countryFlag || '🌍'}</div>
               <div>
-                <h3 className="text-xl font-bold text-white">{team.teamName}</h3>
+                <h3 className="text-xl font-bold text-white">
+                  {team.teamName}
+                </h3>
                 <p className="text-sm text-gray-300">{team.country}</p>
               </div>
             </div>
@@ -116,7 +117,7 @@ const LeaderboardRow = ({ team, position, delay }: LeaderboardRowProps) => {
   );
 };
 
-const TeamRow = ({ teamName, position, delay }: GameRowProps) => {
+const TeamRow = ({teamName, position, delay}: GameRowProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -127,7 +128,7 @@ const TeamRow = ({ teamName, position, delay }: GameRowProps) => {
   return (
     <div
       className={`transform transition-all duration-700 ease-out ${
-        isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
       }`}
     >
       <div
@@ -150,9 +151,13 @@ const TeamRow = ({ teamName, position, delay }: GameRowProps) => {
             {/* Player Info */}
             <div className="flex items-center space-x-4">
               {/* Team Color Indicator */}
-              <div className={`w-6 h-6 rounded-full ${teamName.teamColor === 'red' ? 'bg-red-500' : 'bg-blue-500'} shadow-lg`}></div>
+              <div
+                className={`w-6 h-6 rounded-full ${teamName.teamColor === 'red' ? 'bg-red-500' : 'bg-blue-500'} shadow-lg`}
+              ></div>
               <div>
-                <h3 className="text-xl font-bold text-white">{teamName.teamName}</h3>
+                <h3 className="text-xl font-bold text-white">
+                  {teamName.teamName}
+                </h3>
               </div>
             </div>
           </div>
@@ -178,8 +183,8 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const snapshot = await getDocs(collection(db, "leaderboard"));
-      const data = snapshot.docs.map((doc) => {
+      const snapshot = await getDocs(collection(db, 'leaderboard'));
+      const data = snapshot.docs.map(doc => {
         const d = doc.data();
         return {
           id: doc.id,
@@ -196,15 +201,18 @@ export default function LeaderboardPage() {
     };
 
     const fetchTeamData = async () => {
-        // Fallback: create mock data based on teams for demonstration
-        const mockGame: Game[] = teams.slice(0, 2).flatMap((team, teamIndex) => 
+      // Fallback: create mock data based on teams for demonstration
+      const mockGame: Game[] = teams
+        .slice(0, 2)
+        .flatMap((team, teamIndex) =>
           Array.from({length: 1}, (_, playerIndex) => ({
             teamName: team.teamName,
             points: Math.floor(Math.random() * 1000) + 500,
-            teamColor: teamIndex % 2 === 0 ? 'red' : 'blue' as 'red' | 'blue'
-          }))
-        ).sort((a, b) => b.points - a.points);
-        setGame(mockGame);
+            teamColor: teamIndex % 2 === 0 ? 'red' : ('blue' as 'red' | 'blue'),
+          })),
+        )
+        .sort((a, b) => b.points - a.points);
+      setGame(mockGame);
     };
 
     fetchLeaderboard();
@@ -220,15 +228,13 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
-
       {/* Header */}
       <section className="flex flex-col items-center justify-center pt-50 pb-12">
         <div
           className={`transform transition-all duration-1000 ease-out ${
             animationStarted
-              ? "translate-y-0 opacity-100"
-              : "translate-y-12 opacity-0"
+              ? 'translate-y-0 opacity-100'
+              : 'translate-y-12 opacity-0'
           }`}
         >
           <h1 className="text-6xl font-extrabold text-white mb-4 drop-shadow-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
@@ -273,25 +279,23 @@ export default function LeaderboardPage() {
       {/* Leaderboard */}
       <section className="max-w-4xl mx-auto px-6 pb-20">
         <div className="space-y-0">
-          {viewMode === 'teams' ? (
-            teams.map((team, index) => (
-              <LeaderboardRow
-                key={team.id}
-                team={team}
-                position={index + 1}
-                delay={animationStarted ? index * 150 + 200 : 0}
-              />
-            ))
-          ) : (
-            games.map((team, index) => (
-              <TeamRow
-                key={index}
-                teamName={team}
-                position={index + 1}
-                delay={animationStarted ? index * 150 + 200 : 0}
-              />
-            ))
-          )}
+          {viewMode === 'teams'
+            ? teams.map((team, index) => (
+                <LeaderboardRow
+                  key={team.id}
+                  team={team}
+                  position={index + 1}
+                  delay={animationStarted ? index * 150 + 200 : 0}
+                />
+              ))
+            : games.map((team, index) => (
+                <TeamRow
+                  key={index}
+                  teamName={team}
+                  position={index + 1}
+                  delay={animationStarted ? index * 150 + 200 : 0}
+                />
+              ))}
         </div>
 
         {/* Stats Footer */}
@@ -299,8 +303,8 @@ export default function LeaderboardPage() {
           <div
             className={`transform transition-all duration-1000 delay-1000 ease-out ${
               animationStarted
-                ? "translate-y-0 opacity-100"
-                : "translate-y-8 opacity-0"
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-8 opacity-0'
             }`}
           >
             <div className="mt-12 text-center">
