@@ -1,33 +1,33 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import logo from "../public/images/logo.png";
-import { IoMenu } from "react-icons/io5";
-import avatarPlaceholder from "../public/images/avatar_placeholder.png";
-import React, { useEffect, useState } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import Image from 'next/image';
+import Link from 'next/link';
+import {useRouter} from 'next/navigation';
+import logo from '../public/images/logo.png';
+import {IoMenu} from 'react-icons/io5';
+import avatarPlaceholder from '../public/images/avatar_placeholder.png';
+import React, {useEffect, useState} from 'react';
+import {onAuthStateChanged} from 'firebase/auth';
+import {auth} from '@/lib/firebase';
 
-import type { User } from "firebase/auth";
+import type {User} from 'firebase/auth';
 
 function Navbar() {
   const router = useRouter();
-  const genericItems = ["Home", "Leaderboard", "Lab"];
-  const genericLinks = ["/", "/leaderboard", "/lab"];
-  const userItems = ["Dashboard", "Leaderboard", "Learn", "Traffic", "Shell"];
+  const genericItems = ['Home', 'Leaderboard', 'Lab'];
+  const genericLinks = ['/', '/leaderboard', '/lab'];
+  const userItems = ['Dashboard', 'Leaderboard', 'Learn', 'Traffic', 'Shell'];
   const userLinks = [
-    "/dashboard",
-    "/leaderboard",
-    "/learn",
-    "/network-traffic",
-    "/shell",
+    '/dashboard',
+    '/leaderboard',
+    '/learn',
+    '/network-traffic',
+    '/shell',
   ];
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [photoURL, setPhotoURL] = useState("");
+  const [photoURL, setPhotoURL] = useState('');
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -36,7 +36,7 @@ function Navbar() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (user && !currentUser) {
         setCurrentUser(user);
         if (user.photoURL) {
@@ -53,9 +53,9 @@ function Navbar() {
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (window.location.pathname === "/") {
+    if (window.location.pathname === '/') {
       e.preventDefault();
-      router.replace("/");
+      router.replace('/');
       window.location.reload();
     }
   };
@@ -67,7 +67,7 @@ function Navbar() {
           {/* Logo */}
           <Link href="/" onClick={handleHomeClick}>
             <div
-              className={`flex-shrink-0 flex items-center ${isOpen ? "hidden" : ""}`}
+              className={`flex-shrink-0 flex items-center ${isOpen ? 'hidden' : ''}`}
             >
               <Image
                 src={logo}
@@ -86,15 +86,15 @@ function Navbar() {
             {/* Dropdown menu */}
             <div
               className={`absolute w-50 h-80 pt-2 top-16 left-0 bg-black rounded-xl transition-opacity duration-700 ease-in-out ${
-                isOpen ? "opacity-100 flex flex-col" : "opacity-0 hidden"
+                isOpen ? 'opacity-100 flex flex-col' : 'opacity-0 hidden'
               }`}
             >
               {/* Menu items */}
               <ul className="flex flex-col justify-between w-full h-full py-10 pl-4">
-                {["Home", ...items].map((item, index) => (
+                {['Home', ...items].map((item, index) => (
                   <Link
                     key={index}
-                    href={index === 0 ? "/" : links[index - 1]}
+                    href={index === 0 ? '/' : links[index - 1]}
                     onClick={index === 0 ? handleHomeClick : undefined}
                   >
                     <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
