@@ -1,11 +1,7 @@
 {
-  "extends": ["gts/ts"],
-  "settings": {
-    "import/resolver": {
-      "typescript": {
-        "project": "./tsconfig.json"
-      }
-    }
-  },
-  "rules": {}
+  "extends": "./node_modules/gts/",
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unused-vars": "warn"
+  }
 }

@@ -1,36 +1,46 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { auth, db } from "@/lib/firebase";
-import { User, onAuthStateChanged, signOut } from "firebase/auth";
-import { doc, getDoc, updateDoc, arrayUnion, collection, where, query, getDocs, arrayRemove } from "firebase/firestore";
-import { useRouter } from "next/navigation";
+'use client';
+import React, {useEffect, useState} from 'react';
+import {auth, db} from '@/lib/firebase';
+import {User, onAuthStateChanged, signOut} from 'firebase/auth';
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  arrayUnion,
+  collection,
+  where,
+  query,
+  getDocs,
+  arrayRemove,
+} from 'firebase/firestore';
+import {useRouter} from 'next/navigation';
 
 const Dashboard = () => {
   const router = useRouter();
-  const [jwt, setJwt] = useState("");
+  const [jwt, setJwt] = useState('');
   const [showJwt, setShowJwt] = useState(false);
 
   // For clan
   const [user, setUser] = useState<User | null>(null);
   const [userClan, setUserClan] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
-  const [leaveMessage, setLeaveMessage] = useState({ type: "", text: "" });
+  const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
 
   // New state for the team join feature
-  const [teamId, setTeamId] = useState("");
-  const [joinMessage, setJoinMessage] = useState({ type: "", text: "" });
+  const [teamId, setTeamId] = useState('');
+  const [joinMessage, setJoinMessage] = useState({type: '', text: ''});
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
       if (currentUser) {
         setUser(currentUser);
         setUid(currentUser.uid);
-        localStorage.setItem("currentuid", currentUser.uid);
+        localStorage.setItem('currentuid', currentUser.uid);
       } else {
         setUser(null);
         setUid(null);
-        localStorage.removeItem("currentuid");
+        localStorage.removeItem('currentuid');
       }
     });
     return () => unsubscribe();
@@ -42,72 +52,69 @@ const Dashboard = () => {
         setClanLoading(false);
         return;
       }
-  
+
       try {
-        const teamsRef = collection(db, "clans");
-        const q = query(teamsRef, where("memberIds", "array-contains", uid));
+        const teamsRef = collection(db, 'clans');
+        const q = query(teamsRef, where('memberIds', 'array-contains', uid));
         const querySnapshot = await getDocs(q);
-  
+
         if (!querySnapshot.empty) {
           const clanDoc = querySnapshot.docs[0];
           setUserClan({
             id: clanDoc.id,
-            ...clanDoc.data()
+            ...clanDoc.data(),
           });
         } else {
           setUserClan(null);
         }
       } catch (error) {
-        console.error("Error checking user clan:", error);
+        console.error('Error checking user clan:', error);
         setUserClan(null);
       } finally {
         setClanLoading(false);
       }
     };
-  
+
     checkUserClan();
   }, [uid]);
-  
 
   const handleLeaveClan = async () => {
     if (!user || !userClan) return;
-  
+
     try {
-      const clanRef = doc(db, "clans", userClan.id);
-      
+      const clanRef = doc(db, 'clans', userClan.id);
+
       // Remove user from memberIds array
       await updateDoc(clanRef, {
-        memberIds: arrayRemove(uid)
+        memberIds: arrayRemove(uid),
       });
-  
+
       // Update local state
       setUserClan(null);
       setLeaveMessage({
-        type: "success",
-        text: "Successfully left the clan!"
+        type: 'success',
+        text: 'Successfully left the clan!',
       });
-  
+
       // Clear message after 3 seconds
       setTimeout(() => {
-        setLeaveMessage({ type: "", text: "" });
+        setLeaveMessage({type: '', text: ''});
       }, 3000);
-  
     } catch (error) {
-      console.error("Error leaving clan:", error);
+      console.error('Error leaving clan:', error);
       setLeaveMessage({
-        type: "error",
-        text: "Failed to leave clan. Please try again."
+        type: 'error',
+        text: 'Failed to leave clan. Please try again.',
       });
     }
   };
-  
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push("/login");
+      router.push('/login');
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error('Logout failed:', error);
     }
   };
 
@@ -116,33 +123,33 @@ const Dashboard = () => {
       try {
         const token = await auth.currentUser.getIdToken(true);
         setJwt(token);
-        localStorage.setItem("token",jwt);
+        localStorage.setItem('token', jwt);
         setShowJwt(true);
       } catch (error) {
-        console.error("Failed to get JWT:", error);
-        setJwt("Could not retrieve token.");
+        console.error('Failed to get JWT:', error);
+        setJwt('Could not retrieve token.');
         setShowJwt(true);
       }
     } else {
-      console.error("No user is signed in.");
+      console.error('No user is signed in.');
     }
   };
 
   const handleGoToTeam = () => {
-      try {
-        router.push("/team");
-      } catch (error) {
-        console.error("Navigation failed:", error);
-      }
-    };
+    try {
+      router.push('/team');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
 
-    const handleGoToClan = () => {
-      try {
-        router.push("/clan");
-      } catch (error) {
-        console.error("Navigation failed:", error);
-      }
-    };
+  const handleGoToClan = () => {
+    try {
+      router.push('/clan');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
 
   /**
    * Handles the logic for a user to join a team.
@@ -150,21 +157,21 @@ const Dashboard = () => {
   const handleJoinTeam = async () => {
     // Basic validation
     if (!teamId) {
-      setJoinMessage({ type: "error", text: "Please enter a Team ID." });
+      setJoinMessage({type: 'error', text: 'Please enter a Team ID.'});
       return;
     }
     if (!auth.currentUser) {
       setJoinMessage({
-        type: "error",
-        text: "You must be logged in to join a team.",
+        type: 'error',
+        text: 'You must be logged in to join a team.',
       });
       return;
     }
 
     // Clear previous messages and get user UID
-    setJoinMessage({ type: "", text: "" });
+    setJoinMessage({type: '', text: ''});
     const uid = auth.currentUser.uid;
-    const teamRef = doc(db, "teams", teamId);
+    const teamRef = doc(db, 'teams', teamId);
 
     // Try to find and update the team document
     try {
@@ -176,22 +183,22 @@ const Dashboard = () => {
           memberIds: arrayUnion(uid),
         });
         setJoinMessage({
-          type: "success",
+          type: 'success',
           text: `Successfully joined team: ${docSnap.data().name}!`,
         });
-        setTeamId("");
+        setTeamId('');
       } else {
         // Team with the given ID was not found
         setJoinMessage({
-          type: "error",
-          text: "Team not found. Please check the ID and try again.",
+          type: 'error',
+          text: 'Team not found. Please check the ID and try again.',
         });
       }
     } catch (error) {
-      console.error("Error joining team:", error);
+      console.error('Error joining team:', error);
       setJoinMessage({
-        type: "error",
-        text: "Could not join team. Please try again later.",
+        type: 'error',
+        text: 'Could not join team. Please try again later.',
       });
     }
   };
@@ -264,7 +271,9 @@ const Dashboard = () => {
             </div>
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
-              <h3 className="text-lg font-semibold mb-2">Want to get started and get a team going?</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Want to get started and get a team going?
+              </h3>
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleGoToTeam}
@@ -276,9 +285,9 @@ const Dashboard = () => {
               {joinMessage.text && (
                 <p
                   className={`mt-3 text-sm ${
-                    joinMessage.type === "success"
-                      ? "text-green-400"
-                      : "text-red-400"
+                    joinMessage.type === 'success'
+                      ? 'text-green-400'
+                      : 'text-red-400'
                   }`}
                 >
                   {joinMessage.text}
@@ -320,19 +329,27 @@ const Dashboard = () => {
                   <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                      <h4 className="text-xl font-bold text-blue-400">
-                        [{userClan.clanTag}]
-                      </h4>
-                        <p className="text-sm text-gray-400">Clan ID: {userClan.clanId}</p>
+                        <h4 className="text-xl font-bold text-blue-400">
+                          [{userClan.clanTag}]
+                        </h4>
+                        <p className="text-sm text-gray-400">
+                          Clan ID: {userClan.clanId}
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-400">Members</p>
-                        <p className="text-lg font-semibold">{userClan.memberIds?.length || 0}/{userClan.numMembers}</p>
+                        <p className="text-lg font-semibold">
+                          {userClan.memberIds?.length || 0}/
+                          {userClan.numMembers}
+                        </p>
                       </div>
                     </div>
                     {userClan.createdAt && (
                       <p className="text-xs text-gray-500">
-                        Created: {new Date(userClan.createdAt.toDate()).toLocaleDateString()}
+                        Created:{' '}
+                        {new Date(
+                          userClan.createdAt.toDate(),
+                        ).toLocaleDateString()}
                       </p>
                     )}
                   </div>
@@ -345,9 +362,9 @@ const Dashboard = () => {
                   {leaveMessage.text && (
                     <p
                       className={`mt-3 text-sm ${
-                        leaveMessage.type === "success"
-                          ? "text-green-400"
-                          : "text-red-400"
+                        leaveMessage.type === 'success'
+                          ? 'text-green-400'
+                          : 'text-red-400'
                       }`}
                     >
                       {leaveMessage.text}
@@ -369,9 +386,9 @@ const Dashboard = () => {
                   {joinMessage.text && (
                     <p
                       className={`mt-3 text-sm ${
-                        joinMessage.type === "success"
-                          ? "text-green-400"
-                          : "text-red-400"
+                        joinMessage.type === 'success'
+                          ? 'text-green-400'
+                          : 'text-red-400'
                       }`}
                     >
                       {joinMessage.text}
@@ -380,7 +397,6 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-
           </section>
         </main>
       </div>

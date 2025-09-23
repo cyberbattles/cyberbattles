@@ -1,24 +1,22 @@
-import ApiClient from "./ApiClient";
+import ApiClient from './ApiClient';
 
 export const createSession = async (): Promise<any> => {
-    try {
-        const response = await ApiClient.post("/session");
-        return response.data;
-    } catch (error) {
-        console.error("Error creating session:", error);
-    }
-}
+  try {
+    const response = await ApiClient.post('/session');
+    return response.data;
+  } catch (error) {
+    console.error('Error creating session:', error);
+  }
+};
 
 export const startSession = async (): Promise<any> => {
-    try {
-        const response = await ApiClient.post("/start-session");
-        return response.data;
-    } catch (error) {
-        console.error("Error starting session:", error);
-    }
-}
-
-
+  try {
+    const response = await ApiClient.post('/start-session');
+    return response.data;
+  } catch (error) {
+    console.error('Error starting session:', error);
+  }
+};
 
 // export const fetchClients = async (): Promise<any> => {
 //     try {

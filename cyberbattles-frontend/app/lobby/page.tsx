@@ -1,29 +1,34 @@
-"use client";
-import Image from "next/image"
-import close from "@/public/images/close_icon.png"
-import React, { useState, useEffect } from "react";
-import { auth, db } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { collection, query, where, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import ApiClient from "@/components/ApiClient";
-
+'use client';
+import Image from 'next/image';
+import close from '@/public/images/close_icon.png';
+import React, {useState, useEffect} from 'react';
+import {auth, db} from '@/lib/firebase';
+import {signOut} from 'firebase/auth';
+import {
+  collection,
+  query,
+  where,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+} from 'firebase/firestore';
+import {getAuth, onAuthStateChanged} from 'firebase/auth';
+import {useRouter} from 'next/navigation';
+import ApiClient from '@/components/ApiClient';
 
 const Lobby = () => {
   const router = useRouter();
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
-  const [currentScenario, setCurrentScenario] = useState("");
-  const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
+  const [currentScenario, setCurrentScenario] = useState('');
+  const [gameStatus, setGameStatus] = useState('waiting'); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
 
   const [team, setTeam] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any | null>(null)
-    
-  
-  // TODO: Setup backend call to get player, scenario and teams information
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
 
+  // TODO: Setup backend call to get player, scenario and teams information
 
   // Find the team associated with the given user id
   async function findTeam(uid: string) {
@@ -31,20 +36,19 @@ const Lobby = () => {
     if (teamId) {
       return;
     }
-    try{
-      const teamsRef = collection(db, "teams");
-      const q =  query(teamsRef, where("memberIds", "array-contains", uid));
+    try {
+      const teamsRef = collection(db, 'teams');
+      const q = query(teamsRef, where('memberIds', 'array-contains', uid));
 
       // Populate the teamId and Players hooks
       const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach(doc => {
         const teamID = doc.data().id;
         setTeamId(teamID);
         setTeam(doc.data());
-      })
-
+      });
     } catch (error) {
-      console.log("Failed", error);
+      console.log('Failed', error);
     }
   }
 
@@ -55,25 +59,25 @@ const Lobby = () => {
     }
     const teamMembers = team.memberIds;
     teamMembers.forEach((memberId: string, index: number) => {
-      let userObj = getUser(memberId);
+      const userObj = getUser(memberId);
       userObj.then((value: any) => {
-        players.set(memberId, value)
+        players.set(memberId, value);
         setPlayers(new Map(players));
-      })
+      });
     });
   }
 
   // Get the document object associated with given uid
   async function getUser(uid: any) {
     let ret = null;
-    try{
-      const docRef = doc(db, "login", uid);
+    try {
+      const docRef = doc(db, 'login', uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         ret = docSnap.data();
       }
     } catch (error) {
-      console.log("Failed", error);
+      console.log('Failed', error);
     }
     return ret;
   }
@@ -88,9 +92,9 @@ const Lobby = () => {
 
     // Get the admin uid of the session
     const sessionId = team.sessionId;
-    let docRef = doc(db, "sessions", sessionId);
-    let docSnap = await getDoc(docRef);
-    let adminUid = ""
+    const docRef = doc(db, 'sessions', sessionId);
+    const docSnap = await getDoc(docRef);
+    let adminUid = '';
     if (docSnap.exists()) {
       adminUid = docSnap.data().adminUid;
     } else {
@@ -98,103 +102,101 @@ const Lobby = () => {
       return;
     }
 
-    console.log(adminUid)
+    console.log(adminUid);
 
     // Determine if the current user is admin
-    if (currentUser.uid == adminUid){
-      console.log("this user is admin");
+    if (currentUser.uid == adminUid) {
+      console.log('this user is admin');
       setIsHost(true);
     }
     // setIsHost(true);
   }
 
   const removePlayer = async (uid: string) => {
-
-    if(!teamId){
+    if (!teamId) {
       return;
     }
     console.log(uid);
 
     // Create a new members array without the given uid
 
-    let newMembers: string[] = [];
+    const newMembers: string[] = [];
     team.memberIds.forEach((value: string) => {
-      if (value != uid){
+      if (value != uid) {
         newMembers.push(value);
       }
-    })
+    });
 
     // Update the memberids field in the team document on firestore
 
     // Get the team document
-    let docRef = doc(db, "teams", teamId);
+    let docRef = doc(db, 'teams', teamId);
     // Update the team document
     await updateDoc(docRef, {
-      memberIds:newMembers
-    }).then(() => {
-      console.log("Team doc successfully updated");
-    }).catch((error: any) => {
-      console.error("Error updating document: ", error)
+      memberIds: newMembers,
     })
+      .then(() => {
+        console.log('Team doc successfully updated');
+      })
+      .catch((error: any) => {
+        console.error('Error updating document: ', error);
+      });
 
     // Update the use state hooks to remove member
 
     players.delete(uid);
     setPlayers(new Map(players));
 
-    docRef = doc(db, "teams", teamId);
+    docRef = doc(db, 'teams', teamId);
     // Populate the teamId and Players hooks
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()){
+    if (docSnap.exists()) {
       setTeamId(docSnap.data().teamId);
       setTeam(docSnap.data());
     }
-  }
+  };
 
-   async function startSession() {
-        try {
-            const response = await ApiClient.post("/start-session");
-            return response.data;
-        } catch (error) {
-            console.error("Error starting session:", error);
-        }
+  async function startSession() {
+    try {
+      const response = await ApiClient.post('/start-session');
+      return response.data;
+    } catch (error) {
+      console.error('Error starting session:', error);
     }
+  }
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push("/login");
+      router.push('/login');
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error('Logout failed:', error);
     }
   };
 
   const handleLeaveLobby = () => {
-    router.push("/dashboard");
+    router.push('/dashboard');
   };
 
-  const handleStartGame = () => {
-
-  };
+  const handleStartGame = () => {};
 
   // --------------------------------------
 
   // Get the auth state and set the current user
-  try{
-      onAuthStateChanged(auth, (user) => {
-          if (user && !currentUser){
-            setCurrentUser(user);
-          }
-      })
-      
-    }  catch (error) {
-      setCurrentUser(null);
-      console.error("Failed:", error);
-    }
+  try {
+    onAuthStateChanged(auth, user => {
+      if (user && !currentUser) {
+        setCurrentUser(user);
+      }
+    });
+  } catch (error) {
+    setCurrentUser(null);
+    console.error('Failed:', error);
+  }
 
   // Get the team information and players list from firebase
   if (currentUser) {
-      findTeam(currentUser.uid);
+    findTeam(currentUser.uid);
     if (team) {
       getPlayers();
     }
@@ -216,7 +218,9 @@ const Lobby = () => {
             <ul className="space-y-4">
               <li>
                 <div className="text-sm text-gray-400">Team:</div>
-                <div className="font-semibold text-blue-400">{teamId && team.name}</div>
+                <div className="font-semibold text-blue-400">
+                  {teamId && team.name}
+                </div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
@@ -224,12 +228,16 @@ const Lobby = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
-                <div className={`font-semibold capitalize ${
-                  gameStatus === "waiting" ? "text-yellow-400" :
-                  gameStatus === "starting" ? "text-blue-400" :
-                  "text-green-400"
-                }`}>
-                  {gameStatus === "starting" ? "Starting..." : gameStatus}
+                <div
+                  className={`font-semibold capitalize ${
+                    gameStatus === 'waiting'
+                      ? 'text-yellow-400'
+                      : gameStatus === 'starting'
+                        ? 'text-blue-400'
+                        : 'text-green-400'
+                  }`}
+                >
+                  {gameStatus === 'starting' ? 'Starting...' : gameStatus}
                 </div>
               </li>
             </ul>
@@ -261,15 +269,17 @@ const Lobby = () => {
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-2">
-              <h2 className="text-xl font-semibold mb-4 text-blue-400">Current Scenario</h2>
-              <p className="text-gray-300 leading-relaxed">
-                {currentScenario}
-              </p>
-              {gameStatus === "starting" && (
+              <h2 className="text-xl font-semibold mb-4 text-blue-400">
+                Current Scenario
+              </h2>
+              <p className="text-gray-300 leading-relaxed">{currentScenario}</p>
+              {gameStatus === 'starting' && (
                 <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                    <span className="text-blue-400 font-semibold">Game starting in 3 seconds...</span>
+                    <span className="text-blue-400 font-semibold">
+                      Game starting in 3 seconds...
+                    </span>
                   </div>
                 </div>
               )}
@@ -277,54 +287,63 @@ const Lobby = () => {
 
             {/* Players List */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-green-400">Players</h2>
+              <h2 className="text-xl font-semibold mb-4 text-green-400">
+                Players
+              </h2>
               <div className="space-y-3">
-                {
-                  (players.size != 0) && (team.memberIds.map((uid: string) => (
-
-                  <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
-                    {/* Player name */}
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium">{players.get(uid) && players.get(uid).userName}</span>
-                    </div>
-                    {/* Remove player button */}
-                    {
-                      isHost &&
-                      <div className="" onClick={() => removePlayer(uid)}>
-                        <Image src={close} alt="close" width={20} className="invert" />
+                {players.size != 0 &&
+                  team.memberIds.map((uid: string) => (
+                    <div
+                      className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
+                      key={uid}
+                    >
+                      {/* Player name */}
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">
+                          {players.get(uid) && players.get(uid).userName}
+                        </span>
                       </div>
-                    }      
-                  </div>
-                  )))
-                }
+                      {/* Remove player button */}
+                      {isHost && (
+                        <div className="" onClick={() => removePlayer(uid)}>
+                          <Image
+                            src={close}
+                            alt="close"
+                            width={20}
+                            className="invert"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
 
             {/* Game Controls */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-
               Game Controls
-              
               {isHost && (
                 <div className="space-y-4">
                   <div className="p-3 bg-[#2f2f2f] rounded-lg">
-                    <div className="text-sm text-gray-400 mb-1">Host Controls</div>
+                    <div className="text-sm text-gray-400 mb-1">
+                      Host Controls
+                    </div>
                     <button
                       onClick={handleStartGame}
-                      disabled={gameStatus === "starting"}
+                      disabled={gameStatus === 'starting'}
                       className={`w-full px-4 py-3 rounded-xl font-bold transition ${
-                        gameStatus !== "starting"
-                          ? "bg-green-600 hover:opacity-90"
-                          : "bg-gray-600 cursor-not-allowed opacity-50"
+                        gameStatus !== 'starting'
+                          ? 'bg-green-600 hover:opacity-90'
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'
                       }`}
                     >
-                      {gameStatus === "starting" ? "Starting Game..." : "Start Game"}
+                      {gameStatus === 'starting'
+                        ? 'Starting Game...'
+                        : 'Start Game'}
                     </button>
-                   
                   </div>
                 </div>
               )}
-
               <div className="mt-4 p-3 bg-[#2f2f2f] rounded-lg">
                 <div className="text-sm text-gray-400 mb-2">Scenario Info</div>
                 <div className="text-sm space-y-1">

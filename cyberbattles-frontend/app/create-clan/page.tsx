@@ -1,278 +1,292 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { doc, setDoc, collection, getDocs, where, query } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
-import { updateDoc } from "firebase/firestore";
-import { onAuthStateChanged, User } from "firebase/auth";
+import React, {useState, useEffect} from 'react';
+import {useRouter} from 'next/navigation';
+import {
+  doc,
+  setDoc,
+  collection,
+  getDocs,
+  where,
+  query,
+} from 'firebase/firestore';
+import {auth, db} from '@/lib/firebase';
+import {updateDoc} from 'firebase/firestore';
+import {onAuthStateChanged, User} from 'firebase/auth';
 
 // https://claude.ai/chat/905473d6-1bea-4927-9c12-e2b8fb49674e
 
 const CreateClan = () => {
-    const router = useRouter();
-    const [clanTag, setClanTag] = useState("");
-    const [numMembers, setNumMembers] = useState(10);
-    const [createMessage, setCreateMessage] = useState({ type: "", text: "" });
-    const [isLoading, setIsLoading] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
-    const [authLoading, setAuthLoading] = useState(true);
-    const [isInClan, setIsInClan] = useState(false);
-    const [uid, setUid] = useState<string | null>(null);
-    const [clanLoading, setClanLoading] = useState(true);
+  const router = useRouter();
+  const [clanTag, setClanTag] = useState('');
+  const [numMembers, setNumMembers] = useState(10);
+  const [createMessage, setCreateMessage] = useState({type: '', text: ''});
+  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isInClan, setIsInClan] = useState(false);
+  const [uid, setUid] = useState<string | null>(null);
+  const [clanLoading, setClanLoading] = useState(true);
 
-    // Monitor auth state changes
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-          if (currentUser) {
-            setUser(currentUser);
-            setUid(currentUser.uid);
-            localStorage.setItem("currentuid", currentUser.uid);
-          } else {
-            setUser(null);
-            setUid(null);
-            localStorage.removeItem("currentuid");
-          }
-        });
-        return () => unsubscribe();
-      }, []);
+  // Monitor auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      if (currentUser) {
+        setUser(currentUser);
+        setUid(currentUser.uid);
+        localStorage.setItem('currentuid', currentUser.uid);
+      } else {
+        setUser(null);
+        setUid(null);
+        localStorage.removeItem('currentuid');
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
-    useEffect(() => {
+  useEffect(() => {
     const checkUserClan = async () => {
-        if (!uid) {
+      if (!uid) {
         setIsInClan(false);
         setClanLoading(false);
         return;
-        }
-    
-        try {
-        const clansRef = collection(db, "clans");
-        const q = query(clansRef, where("memberIds", "array-contains", uid));
+      }
+
+      try {
+        const clansRef = collection(db, 'clans');
+        const q = query(clansRef, where('memberIds', 'array-contains', uid));
         const querySnapshot = await getDocs(q);
-    
+
         // Simply set a boolean
         setIsInClan(!querySnapshot.empty);
-        } catch (error) {
-        console.error("Error checking user clan:", error);
+      } catch (error) {
+        console.error('Error checking user clan:', error);
         setIsInClan(false);
-        } finally {
+      } finally {
         setClanLoading(false);
-        }
+      }
     };
-    
+
     checkUserClan();
-    }, [uid]);
+  }, [uid]);
 
-    const generateClanId = () => {
-        // Generate a random 8-character ID
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = '';
-        for (let i = 0; i < 8; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return result;
-    };
+  const generateClanId = () => {
+    // Generate a random 8-character ID
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
 
-    const handleCreateClan = async () => {
-        // Prevent multiple submissions
-        if (isLoading) return;
-        
-        // Basic validation
-        if (!clanTag.trim()) {
-            setCreateMessage({ type: "error", text: "Please enter a Clan Tag." });
-            return;
-        }
+  const handleCreateClan = async () => {
+    // Prevent multiple submissions
+    if (isLoading) return;
 
-        if (isInClan) {
-            setCreateMessage({
-                type: "error",
-                text: `You are already in a clan. Leave it before joining another.`,
-            });
-            return;
-        }
+    // Basic validation
+    if (!clanTag.trim()) {
+      setCreateMessage({type: 'error', text: 'Please enter a Clan Tag.'});
+      return;
+    }
 
-        if (clanTag.trim().length < 3 || clanTag.trim().length > 20) {
-            setCreateMessage({ 
-                type: "error", 
-                text: "Clan Tag must be between 3 and 20 characters." 
-            });
-            return;
-        }
-        
-        if (!user) {
-            setCreateMessage({
-                type: "error",
-                text: "You must be logged in to create a clan.",
-            });
-            return;
-        }
+    if (isInClan) {
+      setCreateMessage({
+        type: 'error',
+        text: `You are already in a clan. Leave it before joining another.`,
+      });
+      return;
+    }
 
-        setIsLoading(true);
-        setCreateMessage({ type: "", text: "" });
+    if (clanTag.trim().length < 3 || clanTag.trim().length > 20) {
+      setCreateMessage({
+        type: 'error',
+        text: 'Clan Tag must be between 3 and 20 characters.',
+      });
+      return;
+    }
 
-        try {
-            // Generate a unique clan ID
-            const clanId = generateClanId();
-            
-            // Create the clan document reference
-            const clanRef = doc(db, "clans", clanId);
-            
-            // Create the clan data
-            const clanData = {
-                clanTag: clanTag.trim(),
-                numMembers: numMembers,
-                clanId: clanId,
-                memberIds: [user.uid], // Creator is automatically a member
-                createdAt: new Date(),
-                createdBy: user.uid
-            };
+    if (!user) {
+      setCreateMessage({
+        type: 'error',
+        text: 'You must be logged in to create a clan.',
+      });
+      return;
+    }
 
-            // Write the clan document to Firestore
-            await setDoc(clanRef, clanData);
+    setIsLoading(true);
+    setCreateMessage({type: '', text: ''});
 
-            const userRef = doc(db, "login", user.uid);
-            await updateDoc(userRef, {
-                inClan: true,
-            });
-            
-            setCreateMessage({
-                type: "success",
-                text: `Successfully created clan: ${clanTag.trim()}! Clan ID: ${clanId}`,
-            });
-            
-            // Clear form
-            setClanTag("");
-            setNumMembers(10);
-            
-            // Redirect to lobby after successful creation
-            setTimeout(() => {
-                router.push("/dashboard");
-            }, 2000);
-            
-        } catch (error) {
-            console.error("Error creating clan:", error);
-            setCreateMessage({
-                type: "error",
-                text: "Could not create clan. Please try again later.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    try {
+      // Generate a unique clan ID
+      const clanId = generateClanId();
 
-    const handleBackToSelection = () => {
-        try {
-            router.push("/clan");
-        } catch (error) {
-            console.error("Navigation failed:", error);
-        }
-    };
+      // Create the clan document reference
+      const clanRef = doc(db, 'clans', clanId);
 
-    return (
-        <>
-            <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
-                <main className="flex-1 flex flex-col items-center justify-center p-8">
-                    <header className="text-center mb-12">
-                        <h1 className="text-4xl font-bold mb-4">Create Clan</h1>
-                        <p className="text-lg text-gray-300">Create your own clan and invite members.</p>
-                    </header>
+      // Create the clan data
+      const clanData = {
+        clanTag: clanTag.trim(),
+        numMembers: numMembers,
+        clanId: clanId,
+        memberIds: [user.uid], // Creator is automatically a member
+        createdAt: new Date(),
+        createdBy: user.uid,
+      };
 
-                    <section className="flex flex-col items-center space-y-8">
-                        <div className="w-80">
-                            <label htmlFor="clanTag" className="block text-sm font-medium text-gray-300 mb-2">
-                                Clan Tag
-                            </label>
-                            <input
-                                id="clanTag"
-                                type="text"
-                                value={clanTag}
-                                onChange={(e) => setClanTag(e.target.value)}
-                                placeholder="Enter Clan Tag"
-                                disabled={isLoading}
-                                maxLength={20}
-                                className="w-full px-4 py-3 bg-[#1e1e1e] border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            />
-                            <p className="text-xs text-gray-400 mt-1">3-20 characters</p>
-                        </div>
+      // Write the clan document to Firestore
+      await setDoc(clanRef, clanData);
 
-                        <div className="w-80">
-                            <label htmlFor="numMembers" className="block text-sm font-medium text-gray-300 mb-2">
-                                Maximum Members: {numMembers}
-                            </label>
-                            <input
-                                id="numMembers"
-                                type="range"
-                                min="5"
-                                max="50"
-                                step="5"
-                                value={numMembers}
-                                onChange={(e) => setNumMembers(parseInt(e.target.value))}
-                                disabled={isLoading}
-                                className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider disabled:opacity-50 disabled:cursor-not-allowed"
-                            />
-                            <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                <span>5</span>
-                                <span>50</span>
-                            </div>
-                        </div>
+      const userRef = doc(db, 'login', user.uid);
+      await updateDoc(userRef, {
+        inClan: true,
+      });
 
-                        <div className="flex flex-col items-center space-y-4">
-                            <button
-                                className="w-80 py-4 px-8 bg-blue-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                                onClick={handleCreateClan}
-                                disabled={isLoading || !user}
-                            >
-                                {isLoading ? "Creating..." : "Create Clan"}
-                            </button>
-                            <button
-                                className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md disabled:opacity-50"
-                                onClick={handleBackToSelection}
-                                disabled={isLoading}
-                            >
-                                Back to Selection
-                            </button>
-                            {createMessage.text && (
-                                <p
-                                    className={`mt-3 text-sm text-center max-w-80 ${
-                                        createMessage.type === "success"
-                                            ? "text-green-400"
-                                            : "text-red-400"
-                                    }`}
-                                >
-                                    {createMessage.text}
-                                </p>
-                            )}
-                            {!user && !authLoading && (
-                                <p className="mt-3 text-sm text-yellow-400">
-                                    Please log in to create a clan.
-                                </p>
-                            )}
-                        </div>
-                    </section>
-                </main>
+      setCreateMessage({
+        type: 'success',
+        text: `Successfully created clan: ${clanTag.trim()}! Clan ID: ${clanId}`,
+      });
+
+      // Clear form
+      setClanTag('');
+      setNumMembers(10);
+
+      // Redirect to lobby after successful creation
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
+    } catch (error) {
+      console.error('Error creating clan:', error);
+      setCreateMessage({
+        type: 'error',
+        text: 'Could not create clan. Please try again later.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToSelection = () => {
+    try {
+      router.push('/clan');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+        <main className="flex-1 flex flex-col items-center justify-center p-8">
+          <header className="text-center mb-12">
+            <h1 className="text-4xl font-bold mb-4">Create Clan</h1>
+            <p className="text-lg text-gray-300">
+              Create your own clan and invite members.
+            </p>
+          </header>
+
+          <section className="flex flex-col items-center space-y-8">
+            <div className="w-80">
+              <label
+                htmlFor="clanTag"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
+                Clan Tag
+              </label>
+              <input
+                id="clanTag"
+                type="text"
+                value={clanTag}
+                onChange={e => setClanTag(e.target.value)}
+                placeholder="Enter Clan Tag"
+                disabled={isLoading}
+                maxLength={20}
+                className="w-full px-4 py-3 bg-[#1e1e1e] border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-400 mt-1">3-20 characters</p>
             </div>
 
-            <style jsx>{`
-                .slider::-webkit-slider-thumb {
-                    appearance: none;
-                    height: 20px;
-                    width: 20px;
-                    border-radius: 50%;
-                    background: #3b82f6;
-                    cursor: pointer;
-                }
-                
-                .slider::-moz-range-thumb {
-                    height: 20px;
-                    width: 20px;
-                    border-radius: 50%;
-                    background: #3b82f6;
-                    cursor: pointer;
-                    border: none;
-                }
-            `}</style>
-        </>
-    );
+            <div className="w-80">
+              <label
+                htmlFor="numMembers"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
+                Maximum Members: {numMembers}
+              </label>
+              <input
+                id="numMembers"
+                type="range"
+                min="5"
+                max="50"
+                step="5"
+                value={numMembers}
+                onChange={e => setNumMembers(parseInt(e.target.value))}
+                disabled={isLoading}
+                className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <div className="flex justify-between text-xs text-gray-400 mt-1">
+                <span>5</span>
+                <span>50</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center space-y-4">
+              <button
+                className="w-80 py-4 px-8 bg-blue-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleCreateClan}
+                disabled={isLoading || !user}
+              >
+                {isLoading ? 'Creating...' : 'Create Clan'}
+              </button>
+              <button
+                className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md disabled:opacity-50"
+                onClick={handleBackToSelection}
+                disabled={isLoading}
+              >
+                Back to Selection
+              </button>
+              {createMessage.text && (
+                <p
+                  className={`mt-3 text-sm text-center max-w-80 ${
+                    createMessage.type === 'success'
+                      ? 'text-green-400'
+                      : 'text-red-400'
+                  }`}
+                >
+                  {createMessage.text}
+                </p>
+              )}
+              {!user && !authLoading && (
+                <p className="mt-3 text-sm text-yellow-400">
+                  Please log in to create a clan.
+                </p>
+              )}
+            </div>
+          </section>
+        </main>
+      </div>
+
+      <style jsx>{`
+        .slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+          height: 20px;
+          width: 20px;
+          border-radius: 50%;
+          background: #3b82f6;
+          cursor: pointer;
+          border: none;
+        }
+      `}</style>
+    </>
+  );
 };
 
 export default CreateClan;

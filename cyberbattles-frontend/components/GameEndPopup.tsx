@@ -1,6 +1,6 @@
-"use client";
-import React from "react";
-import { useRouter } from "next/navigation";
+'use client';
+import React from 'react';
+import {useRouter} from 'next/navigation';
 
 interface GameEndPopupProps {
   isVisible: boolean;
@@ -8,8 +8,8 @@ interface GameEndPopupProps {
   winningTeam: string;
   isAdmin?: boolean;
   gameScore?: {
-    team1: { name: string; score: number };
-    team2: { name: string; score: number };
+    team1: {name: string; score: number};
+    team2: {name: string; score: number};
   };
 }
 
@@ -18,51 +18,53 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   onClose,
   winningTeam,
   isAdmin,
-  gameScore
+  gameScore,
 }) => {
   const router = useRouter();
 
   if (!isVisible) return null;
 
   const handleViewLeaderboard = () => {
-    router.push("/leaderboard");
+    router.push('/leaderboard');
     onClose();
   };
 
   const handleViewTraffic = () => {
-    router.push("/network-traffic");
+    router.push('/network-traffic');
     onClose();
   };
 
   const handleViewMaterials = () => {
-    router.push("/learn");
+    router.push('/learn');
     onClose();
   };
 
   const handleCreateNewGame = () => {
-    router.push("/create-session");
+    router.push('/create-session');
     onClose();
   };
 
   const handleBackToDashboard = () => {
-    router.push("/dashboard");
+    router.push('/dashboard');
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-51 flex items-center justify-center">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       {/* Popup Content */}
       <div className="relative bg-[#1e1e1e] border border-gray-600 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
         {/* Header with celebration effect */}
         <div className="relative bg-gradient-to-r from-red-700 to-blue-700 p-6 text-center">
           <div className="relative">
-            <h1 className="text-3xl font-bold text-white mb-2">Game Finished</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Game Finished
+            </h1>
             <div className="text-xl text-yellow-200 font-semibold">
               Winner: <span className="text-yellow-100">{winningTeam}</span>
             </div>
@@ -72,29 +74,47 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
         {/* Game Results */}
         {gameScore && (
           <div className="p-6 border-b border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 text-center text-blue-400">Final Scores</h3>
+            <h3 className="text-lg font-semibold mb-4 text-center text-blue-400">
+              Final Scores
+            </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div className={`p-4 rounded-xl text-center ${
-                gameScore.team1.name === winningTeam 
-                  ? "bg-green-900/30 border border-green-500" 
-                  : "bg-[#2f2f2f]"
-              }`}>
-                <div className="text-lg font-semibold text-white">{gameScore.team1.name}</div>
-                <div className={`text-2xl font-bold ${
-                  gameScore.team1.name === winningTeam ? "text-green-400" : "text-gray-400"
-                }`}>
+              <div
+                className={`p-4 rounded-xl text-center ${
+                  gameScore.team1.name === winningTeam
+                    ? 'bg-green-900/30 border border-green-500'
+                    : 'bg-[#2f2f2f]'
+                }`}
+              >
+                <div className="text-lg font-semibold text-white">
+                  {gameScore.team1.name}
+                </div>
+                <div
+                  className={`text-2xl font-bold ${
+                    gameScore.team1.name === winningTeam
+                      ? 'text-green-400'
+                      : 'text-gray-400'
+                  }`}
+                >
                   {gameScore.team1.score}
                 </div>
               </div>
-              <div className={`p-4 rounded-xl text-center ${
-                gameScore.team2.name === winningTeam 
-                  ? "bg-green-900/30 border border-green-500" 
-                  : "bg-[#2f2f2f]"
-              }`}>
-                <div className="text-lg font-semibold text-white">{gameScore.team2.name}</div>
-                <div className={`text-2xl font-bold ${
-                  gameScore.team2.name === winningTeam ? "text-green-400" : "text-gray-400"
-                }`}>
+              <div
+                className={`p-4 rounded-xl text-center ${
+                  gameScore.team2.name === winningTeam
+                    ? 'bg-green-900/30 border border-green-500'
+                    : 'bg-[#2f2f2f]'
+                }`}
+              >
+                <div className="text-lg font-semibold text-white">
+                  {gameScore.team2.name}
+                </div>
+                <div
+                  className={`text-2xl font-bold ${
+                    gameScore.team2.name === winningTeam
+                      ? 'text-green-400'
+                      : 'text-gray-400'
+                  }`}
+                >
                   {gameScore.team2.score}
                 </div>
               </div>
