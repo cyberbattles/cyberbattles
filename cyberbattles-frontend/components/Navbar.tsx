@@ -136,7 +136,7 @@ function Navbar() {
           {currentUser && (
             <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
               {currentUser.photoURL ? (
-                <Image src={photoURL} alt="avatar" className="rounded-full" />
+                <Image src={photoURL} width="100" height="100" alt="avatar" className="rounded-full" />
               ) : (
                 <Image
                   src={avatarPlaceholder}
