@@ -2,10 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import logo from "../public/images/logo.png";
-import hamburger from "../public/images/hamburger_icon.png";
+import { IoMenu } from "react-icons/io5";
+import avatarPlaceholder from "../public/images/avatar_placeholder.png";
 import React, { useState } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+
+import type { User } from "firebase/auth";
 
 function Navbar() {
   const router = useRouter();
@@ -21,10 +24,8 @@ function Navbar() {
   ];
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
-  const [photoURL, setPhotoURL] = useState(
-    "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png",
-  );
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [photoURL, setPhotoURL] = useState("");
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -60,16 +61,13 @@ function Navbar() {
   };
 
   return (
-    <nav className="fixed w-full h-40 shadow-xl bg-black z-50">
+    <nav className="fixed w-full h-25 sm:h-40 shadow-xl bg-black z-50">
       <div className="flex flex-basis items-center h-full w-full ">
         <div className="flex w-2/3 items-center pl-5">
           <div className="flex lg:hidden relative">
-            {/* Hamburger icon always visible */}
-            <Image
-              src={hamburger}
-              alt="hamburger"
-              width={50}
-              className="invert ml-10 cursor-pointer"
+            {/* Hamburger icon */}
+            <IoMenu
+              className="ml-5 cursor-pointer w-15 h-15"
               onClick={handleClick}
             />
 
@@ -83,7 +81,7 @@ function Navbar() {
               <ul className="flex flex-col justify-between w-full h-full py-10 pl-4">
                 {["Home", ...items].map((item, index) => (
                   <Link
-                    key={item}
+                    key={index}
                     href={index === 0 ? "/" : links[index - 1]}
                     onClick={index === 0 ? handleHomeClick : undefined}
                   >
@@ -136,13 +134,16 @@ function Navbar() {
             )}
           </div>
           {currentUser && (
-            <Link href="/profile">
-              <img
-                src={photoURL}
-                alt="avatar"
-                width={100}
-                className="rounded-full"
-              />
+            <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
+              {currentUser.photoURL ? (
+                <Image src={photoURL} alt="avatar" className="rounded-full" />
+              ) : (
+                <Image
+                  src={avatarPlaceholder}
+                  alt="avatar"
+                  className="rounded-full"
+                />
+              )}
             </Link>
           )}
         </div>
