@@ -119,8 +119,8 @@ function Navbar() {
         <div className="flex items-center pr-10 gap-5">
           <div className="">
             {currentUser && (
-              <Link href="/dashboard">
-                <p className="flex text-2xl hover:scale-110 duration-300">
+              <Link href="/profile">
+                <p className="flex text-2xl">
                   {currentUser.displayName}
                 </p>
               </Link>
