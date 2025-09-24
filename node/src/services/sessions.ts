@@ -291,8 +291,19 @@ export async function startSession(
 
       console.log(`Creating user ${userData.userName} with ID ${userData.UID}`);
 
-      await createUser(team.containerId, userData.userName);
+      // Skip the admin user here
+      if (userId === sessionData.adminUid) {
+        continue;
+      } else {
+        await createUser(team.containerId, userData.userName);
+      }
     }
+
+    // Create a user account for the admin in every container
+    const userRef = db.collection('login').doc(sessionData.adminUid);
+    const userDoc = await userRef.get();
+    const userData = userDoc.data() as User;
+    await createUser(team.containerId, userData.userName);
 
     // Start capturing traffic inside the team container
     try {
