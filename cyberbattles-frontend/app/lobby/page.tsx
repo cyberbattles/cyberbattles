@@ -182,26 +182,50 @@ const Lobby = () => {
 
   // --------------------------------------
 
-  // Get the auth state and set the current user
-  try {
-    onAuthStateChanged(auth, user => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-      }
-    });
-  } catch (error) {
-    setCurrentUser(null);
-    console.error('Failed:', error);
-  }
+  // // Get the auth state and set the current user
+  // try {
+  //   onAuthStateChanged(auth, user => {
+  //     if (user && !currentUser) {
+  //       setCurrentUser(user);
+  //     }
+  //   });
+  // } catch (error) {
+  //   setCurrentUser(null);
+  //   console.error('Failed:', error);
+  // }
 
-  // Get the team information and players list from firebase
-  if (currentUser) {
-    findTeam(currentUser.uid);
-    if (team) {
-      getPlayers();
-    }
-    checkHost();
-  }
+  // // Get the team information and players list from firebase
+  // if (currentUser) {
+  //   findTeam(currentUser.uid);
+  //   if (team) {
+  //     getPlayers();
+  //   }
+  //   checkHost();
+  // }
+
+  useEffect(() => {
+
+      // Get the currentUser
+      const unsubscribe = onAuthStateChanged(auth, user => {
+        if (user && !currentUser) {
+          setCurrentUser(user);
+        }
+      });
+
+      // Populate the team hook and check if user is host
+      if (currentUser) {
+        findTeam(currentUser.uid);
+        if (team) {
+          getPlayers();
+        }
+        checkHost();
+      }
+  
+      return () => {
+        unsubscribe;
+      };
+    },[currentUser, team]);
+
 
   return (
     <>
