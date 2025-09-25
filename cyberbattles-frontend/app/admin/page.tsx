@@ -145,7 +145,13 @@ const Admin = () => {
   async function startSession() {
     // Send the api request
     try {
-      const response = await ApiClient.post("/start-session");
+      const token = await currentUser.getIdToken(true);
+      const response = await ApiClient.post("/start-session", {
+        headers: {
+          'sessionId': sessionId,
+          'token': token,
+        }
+      });
       console.log(response.data);
     } catch (error) {
       console.error("Error starting session:", error);
@@ -253,8 +259,8 @@ const Admin = () => {
           <nav className="p-6">
             <ul className="space-y-4">
               <li>
-                <div className="text-sm text-gray-400">Teams:</div>
-                <div className="font-semibold text-green-400">
+                <div className="text-sm text-gray-400 mb-1">Teams:</div>
+                <div className="font-semibold text-white">
                   {
                     teams.values().map((value) => (
                       <h1 key={value.id}>{value.name}</h1>
@@ -349,7 +355,7 @@ const Admin = () => {
                   </div>
 
                   <div className="flex h-full align-bottom items-end">
-                    <div className="flex flex-row px-2 w-full justify-between">
+                    <div className="flex flex-row px-2 pt-3 w-full justify-between border-t">
                       <h2 className="text-l font-semibold text-white">Team ID: {value.id}</h2>
                       {/* <h2 className="text-l font-semibold text-white">Team Members: {value.numMembers}</h2> */}
                     </div>
