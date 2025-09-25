@@ -135,8 +135,8 @@ const Admin = () => {
     setTeams(new Map());
     setPlayers(new Map());
 
-    // getTeams(currentUser.uid);
-    getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+    getTeams(currentUser.uid);
+    // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
     getPlayers();
 
   }
@@ -229,8 +229,8 @@ const Admin = () => {
 
       // Populate the team hook and check if user is host
       if (currentUser) {
-        // getTeams(currentUser.uid);
-        getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+        getTeams(currentUser.uid);
+        // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
         getPlayers();
       }
 
@@ -254,7 +254,13 @@ const Admin = () => {
             <ul className="space-y-4">
               <li>
                 <div className="text-sm text-gray-400">Teams:</div>
-                {/* <div className="font-semibold text-blue-400">{teamId && team.name}</div> */}
+                <div className="font-semibold text-green-400">
+                  {
+                    teams.values().map((value) => (
+                      <h1 key={value.id}>{value.name}</h1>
+                    ))
+                  }
+                </div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
