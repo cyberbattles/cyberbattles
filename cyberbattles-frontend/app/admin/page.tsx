@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image"
-import close from "@/public/images/close_icon.png"
+import { IoIosClose } from "react-icons/io";
 import React, { useState, useEffect, ReactNode } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -18,7 +18,6 @@ const Admin = () => {
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState("");
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
-  const [isHost, setIsHost] = useState(true);
 
   const [teams, setTeams] = useState(new Map());
   // Get the current user
@@ -54,6 +53,7 @@ const Admin = () => {
     }
   }
 
+  // Helper function for adding teams to the teams state
   async function addTeam(tid: string) {
     try {
       const docRef = doc(db, "teams", tid);
@@ -130,18 +130,19 @@ const Admin = () => {
       console.error("Error updating document: ", error)
     })
 
-    // Reinitialise the use state hooks to remove member
+    // Reinitialise the use state hooks to remove member *** CHANGE THIS ***
 
     setTeams(new Map());
     setPlayers(new Map());
 
-    getTeams(currentUser.uid);
-    // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+    // getTeams(currentUser.uid);
+    getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
     getPlayers();
 
   }
 
-   async function startSession() {
+  // Start the session
+  async function startSession() {
     // Send the api request
     try {
       const response = await ApiClient.post("/start-session");
@@ -151,6 +152,7 @@ const Admin = () => {
     }
   };
 
+  // Cleanup the session
   async function cleanupSession() {
 
     // Create the api request url
@@ -163,6 +165,8 @@ const Admin = () => {
       console.error("Error cleaning session:", error);
     }
   };
+
+// ---- Handlers ---- //
 
   const handleLogout = async () => {
     try {
@@ -185,7 +189,7 @@ const Admin = () => {
     }
     setGameStatus("starting")
     startSession();
-    setGameStatus("waiting")
+    setGameStatus("started")
     
   };
 
@@ -201,28 +205,38 @@ const Admin = () => {
     window.location.reload()
   };
 
-  // --------------------------------------
+  // ---- End Handlers ---- //
 
-  // Get the auth state and set the current user
-  try{
-      onAuthStateChanged(auth, (user) => {
-          if (user && !currentUser){
-            setCurrentUser(user);
-          }
-      })
-      
-    }  catch (error) {
-      setCurrentUser(null);
-      console.error("Failed:", error);
-    }
+  // ---- useEffects ---- //
 
-  // Get the team information and players list from firebase
-  if (currentUser) {
-      getTeams(currentUser.uid);
-      // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
-      getPlayers();
-  }
+  // Set the current logged in user on initial render
+  useEffect(() => {
 
+      // Get the currentUser
+      const unsubscribe = onAuthStateChanged(auth, user => {
+        if (user && !currentUser) {
+          setCurrentUser(user);
+        }
+      });
+
+      return () => {
+        unsubscribe;
+      };
+    },[]);
+
+  // Set the teams and players hooks
+  useEffect(() => {
+
+      // Populate the team hook and check if user is host
+      if (currentUser) {
+        // getTeams(currentUser.uid);
+        getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
+        getPlayers();
+      }
+
+  }, [currentUser, teams])
+
+  // ---- End useEffects ---- //
   
   return (
     <>
@@ -300,32 +314,39 @@ const Admin = () => {
             </div>
 
             {/* Teams */}
-            <div className="p-6 rounded-2xl  lg:col-span-2">
-              <h2 className="text-2xl font-semibold mb-4">Teams</h2>
+            <div className="p-6 rounded-2xl lg:col-span-2 ">
+              <h2 className="text-2xl font-semibold">Teams</h2>
             </div>
+            
 
             {/* Teams List */}
             {
               teams.values().map((value) => (
-                <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md" key={value.id}>
-                  <h2 className="text-xl font-semibold mb-4 text-green-400">{value.name}</h2>
-                  <div className="space-y-3 gap-5">
+
+                <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md">
+
+                  <div className="flex flex-row justify-between items-center">
+                    <h2 className="text-xl font-semibold text-green-400">{value.name}</h2>
+                  </div>
+
+                  <div className="flex flex-col gap-5">
                     {
                       value.memberIds.map((uid: string) => (
                         <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
-                          {/* Player name */}
-                          <div className="flex items-center gap-3">
-                            <span className="font-medium">{players && players.get(uid) && players.get(uid).userName}</span>
-                          </div>
-                          {
-                            isHost &&
-                            <div className="" onClick={() => removePlayer(value.id, uid)}>
-                              <Image src={close} alt="close" width={20} className="invert" />
-                            </div>
-                          }   
-                        </div>            
+                          <div>{players && players.get(uid) && players.get(uid).userName}</div>
+                          <div className="" onClick={() => removePlayer(value.id, uid)}>
+                             <IoIosClose size={30}/>
+                           </div>
+                        </div>
                       ))
                     }
+                  </div>
+
+                  <div className="flex h-full align-bottom items-end">
+                    <div className="flex flex-row px-2 w-full justify-between">
+                      <h2 className="text-l font-semibold text-white">Team ID: {value.id}</h2>
+                      {/* <h2 className="text-l font-semibold text-white">Team Members: {value.numMembers}</h2> */}
+                    </div>
                   </div>
                 </div>
               ))
@@ -333,14 +354,14 @@ const Admin = () => {
             
             {/* Game Controls */}
             <div className="p-6 rounded-2xl  lg:col-span-2">
-              <h2 className="text-2xl font-semibold mb-4">Game Controls</h2>
+              <h2 className="text-2xl font-semibold">Game Controls</h2>
             </div>
 
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-xl font-semibold mb-4 text-white">Host Controls</h2>
               <div className="space-y-3 gap-5">
-                {isHost && (
+                { (
                 <div className="space-y-4">
                   <div className="p-3 bg-[#2f2f2f] rounded-lg">
                     <div className="text-sm text-gray-400 mb-5">Begin Session</div>
