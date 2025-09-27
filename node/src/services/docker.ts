@@ -339,6 +339,8 @@ export async function createWgRouter(
   // Convert teamIds to space-seperated string
   const teamIdsStr = teamIds.join(' ');
 
+  const numMembersPerTeamIncAdmin = numMembersPerTeam + 1;
+
   // Create wg-router, config provided by @Howard
   const container = await docker.createContainer({
     Image: 'lscr.io/linuxserver/wireguard:latest',
@@ -350,14 +352,14 @@ export async function createWgRouter(
     Env: [
       'PUID=1000',
       'PGID=1000',
-      `PEERS=${numTeams * numMembersPerTeam + numTeams}`,
+      `PEERS=${numTeams * numMembersPerTeamIncAdmin + numTeams}`,
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
       `SERVERURL=${wgRouterIp}`,
       `SERVERPORT=${wireguardPort}`,
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
-      `NUM_PLAYERS=${numMembersPerTeam}`,
+      `NUM_PLAYERS=${numMembersPerTeamIncAdmin}`,
       `SERVER_IP=${wgRouterIp}`,
       `WIREGUARD_PORT=${wireguardPort}`,
       `TEAM_IDS=${teamIdsStr}`,
