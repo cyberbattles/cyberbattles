@@ -136,7 +136,6 @@ const Admin = () => {
     setPlayers(new Map());
 
     getTeams(currentUser.uid);
-    // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
     getPlayers();
 
   }
@@ -236,7 +235,6 @@ const Admin = () => {
       // Populate the team hook and check if user is host
       if (currentUser) {
         getTeams(currentUser.uid);
-        // getTeams("UH8JGh1xF8TWitzReDtBfUkDkcz1");
         getPlayers();
       }
 
@@ -262,7 +260,7 @@ const Admin = () => {
                 <div className="text-sm text-gray-400 mb-1">Teams:</div>
                 <div className="font-semibold text-white">
                   {
-                    teams.values().map((value) => (
+                    Array.from(teams.values()).map((value) => (
                       <h1 key={value.id}>{value.name}</h1>
                     ))
                   }
@@ -333,9 +331,9 @@ const Admin = () => {
 
             {/* Teams List */}
             {
-              teams.values().map((value) => (
+              Array.from(teams.values()).map((value) => (
 
-                <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md">
+                <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md" key={value.id}>
 
                   <div className="flex flex-row justify-between items-center">
                     <h2 className="text-xl font-semibold text-green-400">{value.name}</h2>
