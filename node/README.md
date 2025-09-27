@@ -43,17 +43,24 @@ This endpoint **creates a new session**.
 
 **Request Body:**
 
-- `scenaroId`: string - The ID of the scenario to use.
+- `scenarioId`: `string` - The ID of the scenario to use.
 - `numTeams`: `number` - How many teams to create.
 - `numMembersPerTeam`: `number` - How many members each team should have.
 - `token`: `string` - The sender's JWT token.
 
 **Responses:**
 
-- `201 Created`: The session was created successfully. The body will be a JSON object like `{ "result": { "sessionId": "...", "teamIds": ["...", "..."] } }`.
-- `400 Bad Request`: The request body is missing data or has the wrong types. Or the parameters are out of range (e.g., too many teams or players).
-- `401 Unauthorized`: The provided token is invalid.
-- `500 Internal Server Error`: Something went wrong on the server.
+- `201 Created`: The session was created successfully. The body will be a JSON object like `{"result": {"sessionId": "...", "teamIds": ["...", "..."]}}`.
+- `400 Bad Request`: The request body is invalid. The response body will be a JSON object with a `result` key explaining the issue.
+
+  - **Example Body 1:** `{"result": "Invalid request body"}`
+
+  - **Example Body 2:** `{"result": "numTeams must be between 1 and 5 (inclusive)"}`
+
+- `401 Unauthorized`: The provided token is invalid. The response body will be **empty**.
+- `500 Internal Server Error`: An unexpected error occurred on the server during session creation (e.g., failed to create a network, container creation failed). The response body will be a JSON object detailing the error.
+
+  - **Example Body:** `{"result": "Error creating session: <specific error message>"}`
 
 ## `POST /api/start-session`
 
@@ -66,10 +73,21 @@ This endpoint **starts a previously created session**.
 
 **Responses:**
 
-- `200 OK`: The session started successfully. The body will be a JSON object like `{ "result": "Session started", "teamsAndMembers": { "teamId1": ["user1", "user2"], ... } }`.
-- `400 Bad Request`: The `sessionId` is invalid or the session couldn't be started (e.g., not enough users joined).
-- `401 Unauthorized`: The provided token is invalid.
-- `500 Internal Server Error`: Something went wrong on the server.
+- `200 OK`: The session started successfully. The body will be a JSON object like `{"result": "Session <sessionId> started successfully.", "teamsAndMembers": {"Team-1": ["user1", "user2"], ...}}`.
+- `400 Bad Request`: The request is invalid or the session cannot be started. The response body will be a JSON object with a `result` key explaining the issue.
+
+  - **Example Body 1:** `{"result": "Invalid session ID"}`
+
+  - **Example Body 2:** `{"result": "Session not found."}`
+
+  - **Example Body 3:** `{"result": "Session is already started."}`
+
+  - **Example Body 4:** `{"result": "Only the session admin can start the session."}`
+
+- `401 Unauthorized`: The provided token is invalid. The response body will be **empty**.
+- `500 Internal Server Error`: An unexpected error occurred on the server while trying to start the session. The response body will be a JSON object detailing the error.
+
+  - **Example Body:** `{"result": "Error starting session: <specific error message>"}`
 
 ## `GET /api/cleanup/:sessionId/:token`
 
