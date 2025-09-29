@@ -271,7 +271,6 @@ const Admin = () => {
 
       // Populate the team hook and check if user is host
       if (currentUser) {
-        // getTeams("oKfcgr6Hj8cVSTWMEnUhAIHwD512");
         getTeams(currentUser.uid);
         getPlayers();
         getScenario();
@@ -348,7 +347,7 @@ const Admin = () => {
           {/* Lobby Content */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
-            <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md">
+            <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
               <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Current Scenario</h2>
               {
                 currentScenario && (
@@ -377,7 +376,7 @@ const Admin = () => {
             </div>
 
             {/* Timer */}
-            <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md">
+            <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
               <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Time Remaining</h2>
               {
                 gameStatus == "started" && (
@@ -428,12 +427,12 @@ const Admin = () => {
             }
             
             {/* Game Controls */}
-            <div className="p-6 rounded-2xl  lg:col-span-2">
+            <div className="p-6 rounded-2xl lg:col-span-2">
               <h2 className="text-2xl font-semibold">Game Controls</h2>
             </div>
 
 
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
+            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
               <h2 className="text-xl font-semibold mb-4 text-white">Host Controls</h2>
               <div className="space-y-3 gap-5">
                 { (
@@ -479,7 +478,7 @@ const Admin = () => {
 
 
 
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
+            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
               <h2 className="text-xl font-semibold mb-4 text-white">Session Info</h2>
               <div className="space-y-3 gap-5">
                 <div className="space-y-4">
