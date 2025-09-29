@@ -380,7 +380,7 @@ const Admin = () => {
             <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md">
               <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Time Remaining</h2>
               {
-                gameStatus == "waiting" && (
+                gameStatus == "started" && (
                   <div className="flex text-3xl items-center align-middle justify-center  h-full">
                     time
                   </div>
