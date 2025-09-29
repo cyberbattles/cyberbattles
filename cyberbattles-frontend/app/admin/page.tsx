@@ -140,20 +140,21 @@ const Admin = () => {
 
   }
 
+// ---- API Callers ---- //
+
   // Start the session
   async function startSession() {
     // Send the api request
     try {
       const token = await currentUser.getIdToken(true);
       const response = await ApiClient.post("/start-session", {
-        headers: {
-          'sessionId': sessionId,
-          'token': token,
-        }
+        sessionId: sessionId,
+        token: token,
       });
-      console.log(response.data);
+      return true;
     } catch (error) {
       console.error("Error starting session:", error);
+      return false;
     }
   };
 
@@ -165,11 +166,15 @@ const Admin = () => {
     let request = "/cleanup/" + sessionId + "/" + token;
     try {
       const response = await ApiClient.get(request);
-      // console.log(response.data);
+      return true;
     } catch (error) {
       console.error("Error cleaning session:", error);
+      return false;
     }
   };
+
+
+// ---- End API Callers ---- //
 
 // ---- Handlers ---- //
 
@@ -186,16 +191,21 @@ const Admin = () => {
     router.push("/dashboard");
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     // If not currently admin of a session, do nothing
     if (!sessionId || !currentUser) {
       console.log("No current admin user or session")
       return;
     }
     setGameStatus("starting")
-    startSession();
-    setGameStatus("started")
-    
+    await startSession().then((value) => {
+      if (value) {
+        setGameStatus("started");
+      } else {
+        // Tell the user that something went wrong +++
+        setGameStatus("waiting")
+      }
+    })
   };
 
    const handleEndGame = async () => {
