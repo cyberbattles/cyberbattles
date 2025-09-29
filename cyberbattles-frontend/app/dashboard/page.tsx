@@ -222,7 +222,7 @@ const Dashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400">
+                <a href="analytics" className="hover:text-blue-400">
                   Analytics
                 </a>
               </li>
@@ -257,18 +257,7 @@ const Dashboard = () => {
 
           {/* Dashboard Widgets */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Total Users</h2>
-              <p className="text-2xl font-bold text-blue-400">1,245</p>
-            </div>
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Active Games</h2>
-              <p className="text-2xl font-bold text-green-400">5</p>
-            </div>
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Active Players</h2>
-              <p className="text-2xl font-bold text-yellow-400">76</p>
-            </div>
+           
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
               <h3 className="text-lg font-semibold mb-2">
