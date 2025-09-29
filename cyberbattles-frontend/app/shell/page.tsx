@@ -5,6 +5,7 @@
 // REF: https://www.npmjs.com/package/xterm-for-react
 // REF: https://www.tkcnn.com/github/xtermjs/xterm.js.html
 // REF: https://chatgpt.com/c/68b93e97-0f38-832f-a207-b02b0dc4eef6
+// REF: https://chatgpt.com/share/68d9cb25-aecc-8008-91cb-1ce122b78793 
 
 import {auth, db} from '@/lib/firebase';
 import {onAuthStateChanged, User} from 'firebase/auth';
@@ -14,7 +15,7 @@ import {Terminal} from 'xterm';
 import {FitAddon} from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import FlagPopup from '@/components/FlagPopup';
-import {doc, getDoc} from 'firebase/firestore';
+import {DocumentData, QueryDocumentSnapshot, collection, doc, getDoc, getDocs} from 'firebase/firestore';
 
 export default function Shell() {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -25,6 +26,10 @@ export default function Shell() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isTerminalInitialized, setIsTerminalInitialized] = useState(false);
   const isMountedRef = useRef(false);
+  const [jwt, setJwt] = useState<string | null>(null);
+  const [showJwt, setShowJwt] = useState(false);
+  const [teamId, setteamId] = useState<string | null>(null);
+
 
   // Track component mount status
   useEffect(() => {
@@ -36,6 +41,30 @@ export default function Shell() {
         wsRef.current.close();
       }
     };
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken(true);
+          setJwt(token);
+          localStorage.setItem("token", token);
+          setShowJwt(true);
+        } catch (error) {
+          console.error("Failed to get JWT:", error);
+          setJwt("Could not retrieve token.");
+          setShowJwt(true);
+        }
+      } else {
+        console.error("No user is signed in.");
+        setJwt(null);
+        setShowJwt(false);
+      }
+    });
+
+    // Cleanup subscription when component unmounts
+    return () => unsubscribe();
   }, []);
 
   // Get username and team names
@@ -118,9 +147,6 @@ export default function Shell() {
 
         xtermRef.current = term;
 
-        // Initialize WebSocket connection
-        initWebSocketConnection(term);
-
         if (isMountedRef.current) {
           setIsTerminalInitialized(true);
         }
@@ -151,94 +177,184 @@ export default function Shell() {
     };
   }, []); // Empty dependency array ensures this runs only once
 
+  // Call this to wait for JWT
+
+  useEffect(() => {
+    if (jwt && xtermRef.current) {
+      initWebSocketConnection(xtermRef.current);
+    }
+  }, [jwt, isTerminalInitialized]); 
+  
+
   // WebSocket connection function
   const initWebSocketConnection = async (term: Terminal) => {
     try {
-      const token = '';
-      const teamId = '';
-      const userId = currentUser?.uid || 'tomtest';
+      const userId = currentUser?.uid || 'GUEST';
 
-      const teamName = await fetchTeamById(teamId);
       const userName = await fetchUsernameById(userId);
-
-      console.log(teamName, userName);
 
       term.writeln(`Connecting to terminal...\r\n`);
       term.writeln(
-        `Team Id: ${teamId} Team Name: ${teamName}, User Id: ${userId}, User Name: ${userName}\r\n`,
+        `Welcome ${userName} to the CyberBattles shell.\r\n`,
       );
 
-      const host = 'localhost:1337';
-      const ws = new WebSocket(
-        `wss://${host}/terminals/${teamId}/${userId}/${token}`,
-      );
+      term.writeln(
+        `To begin, enter your teamname.\r\n`
+      )
 
-      wsRef.current = ws;
+      let inputBuffer = "";
 
-      const connectionTimeout = setTimeout(() => {
-        if (ws.readyState === WebSocket.CONNECTING) {
-          console.error('WebSocket connection timeout - still connecting');
+    const handleInput = async (data: string) => {
+      if (data === "\r") { 
+        const enteredTeamName = inputBuffer.trim();
+        if (enteredTeamName.length === 0) {
           term.writeln(
-            '\r\n\x1b[31mConnection timeout - server not responding\x1b[0m',
+            "\r\x1b[31mTeam name cannot be empty. Try again:\x1b[0m\r\n"
           );
-          ws.close();
+          inputBuffer = "";
+          
+          return;
         }
-      }, 5000);
 
-      ws.onopen = () => {
-        clearTimeout(connectionTimeout);
-        if (!isMountedRef.current) return;
-        setIsConnected(true);
-        term.writeln('\x1b[32mConnected to terminal server!\x1b[0m\r\n');
-        term.writeln(
-          '\x1b[33mType commands to interact with the system...\x1b[0m\r\n',
-        );
+        const teamsRef = collection(db, "teams");
+        const snapshot = await getDocs(collection(db, "teams"));
+        term.writeln(`\r\n`);
 
-        setTimeout(() => {
-          if (fitAddonRef.current) {
-            fitAddonRef.current.fit();
-          }
-        }, 100);
-      };
+        term.writeln('Validating Team...\x1b[0m\r\n')
 
-      ws.onmessage = async event => {
-        if (!isMountedRef.current) return;
+        // Find the first team that matches the name
+        const matchedTeamDoc = snapshot.docs.find((doc) => {
+          const data = doc.data();
+          return data.name?.toLowerCase() === enteredTeamName.toLowerCase();
+        });
 
-        if (event.data instanceof Blob) {
-          const arrayBuffer = await event.data.arrayBuffer();
-          const data = new Uint8Array(arrayBuffer);
-          term.write(data);
-        } else {
-          term.write(event.data);
+        if (!matchedTeamDoc) {
+          term.writeln(`\x1b[31mTeam '${enteredTeamName}' not found. Try again:\x1b[0m\r\n`);
+          inputBuffer = "";
+          return;
         }
-      };
 
-      ws.onclose = event => {
-        clearTimeout(connectionTimeout);
-        if (!isMountedRef.current) return;
-        setIsConnected(false);
-        console.log('WebSocket closed:', event.code, event.reason);
-        term.writeln(
-          `\r\n\x1b[31mDEV MESSAGE: Connection closed: ${event.code} - ${event.reason || 'Make sure backend is running.'}\x1b[0m`,
-        );
-      };
+        const teamData = matchedTeamDoc.data();
 
-      ws.onerror = error => {
-        clearTimeout(connectionTimeout);
-        if (!isMountedRef.current) return;
-        console.error('WebSocket error:', error);
-        term.writeln('\r\n\x1b[31mWebSocket connection error.\x1b[0m');
-      };
-
-      term.onData(data => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(data);
+        // Validate memberIds
+        if (!teamData.memberIds || !Array.isArray(teamData.memberIds)) {
+          term.writeln(`\x1b[31mTeam '${enteredTeamName}' has no members configured.\x1b[0m\r\n`);
+          inputBuffer = "";
+          return;
         }
-      });
-    } catch (err) {
-      console.error('Connection error:', err);
-    }
+
+        if (!teamData.memberIds.includes(userId)) {
+          term.writeln(`\x1b[31mYou are not a member of '${enteredTeamName}'. Access denied.\x1b[0m\r\n`);
+          inputBuffer = "";
+          return;
+        }
+
+        // Success
+        term.writeln(`Joined team: ${enteredTeamName}\r\n`);
+        setteamId(matchedTeamDoc.id);
+        openWebSocket(term, matchedTeamDoc.id, userId, jwt!);
+
+      } else if (data === "\u007F") {
+        // Backspace
+        if (inputBuffer.length > 0) {
+          inputBuffer = inputBuffer.slice(0, -1);
+          term.write("\b \b");
+        }
+      } else {
+        inputBuffer += data;
+        term.write(data);
+      }
+    };
+
+    const disposable = term.onData(handleInput);
+
+  } catch (err) {
+    console.error("Connection error:", err);
+  }
+};
+const openWebSocket = (
+  term: Terminal,
+  teamId: string,
+  userId: string,
+  jwt: string
+) => {
+  const host = "localhost:1337";
+  let retryCount = 0;
+  let ws: WebSocket | null = null;
+  let abort = false; 
+  let closedcommand = false;
+
+  const connect = () => {
+    if (abort || !isMountedRef.current) return;
+
+    ws = new WebSocket(`wss://${host}/terminals/${teamId}/${userId}/${jwt}`);
+    wsRef.current = ws;
+
+    const connectionTimeout = setTimeout(() => {
+      if (ws?.readyState === WebSocket.CONNECTING) {
+        ws.close();
+      }
+    }, 5000);
+
+    ws.onopen = () => {
+      clearTimeout(connectionTimeout);
+      setIsConnected(true);
+      retryCount = 0;
+      term.writeln("\x1b[32mConnected to terminal server!\x1b[0m\r\n");
+    };
+
+    ws.onmessage = async (event) => {
+      if (event.data instanceof Blob) {
+        const arrayBuffer = await event.data.arrayBuffer();
+        const data = new Uint8Array(arrayBuffer);
+        term.write(data);
+      } else {
+        term.write(event.data);
+      }
+    };
+
+    ws.onclose = () => {
+      clearTimeout(connectionTimeout);
+      setIsConnected(false);
+      if (!abort) {
+        retryCount++;
+        // Move cursor up and overwrite previous retry line
+        term.write(`\r\x1b[33mGame not started yet, leave queue with CTRL^C. Retrying x${retryCount}...\x1b[0m`);
+        setTimeout(connect, 5000);
+      }
+    };
+
+    ws.onerror = () => {
+      clearTimeout(connectionTimeout);
+      ws?.close();
+    };
+
+    // Ctrl+C handler
+    const ctrlCHandler = (data: string) => {
+      if (data === "\x03") { // Ctrl+C
+        abort = true;
+        ws?.close();
+        if (!closedcommand) {
+          closedcommand = true;
+        term.writeln("\r\n\x1b[31mConnection aborted by user.\x1b[0m\r\n");
+        }
+      }
+    };
+
+    term.onData(ctrlCHandler);
+
+    // Forward terminal input to WebSocket
+    term.onData((data) => {
+      if (!abort && ws?.readyState === WebSocket.OPEN) {
+        ws.send(data);
+      }
+    });
   };
+
+  connect();
+};
+
+
 
   // Handle resize
   useEffect(() => {
@@ -318,3 +434,11 @@ export default function Shell() {
     </div>
   );
 }
+function setJwt(token: string) {
+  throw new Error('Function not implemented.');
+}
+
+function setShowJwt(arg0: boolean) {
+  throw new Error('Function not implemented.');
+}
+
