@@ -285,6 +285,7 @@ const Admin = () => {
                 <div className={`font-semibold capitalize ${
                   gameStatus === "waiting" ? "text-yellow-400" :
                   gameStatus === "starting" ? "text-blue-400" :
+                  gameStatus === "ending" ? "text-red-400" :
                   "text-green-400"
                 }`}>
                   {gameStatus === "starting" ? "Starting..." : gameStatus}
