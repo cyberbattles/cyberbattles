@@ -328,7 +328,7 @@ const Admin = () => {
                 <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                    <span className="text-blue-400 font-semibold">Game starting in 3 seconds...</span>
+                    <span className="text-blue-400 font-semibold">Game starting...</span>
                   </div>
                 </div>
               )}
@@ -384,6 +384,7 @@ const Admin = () => {
               <div className="space-y-3 gap-5">
                 { (
                 <div className="space-y-4">
+                  { (gameStatus === "waiting" || gameStatus==="starting") &&
                   <div className="p-3 bg-[#2f2f2f] rounded-lg">
                     <div className="text-sm text-gray-400 mb-5">Begin Session</div>
                     <button
@@ -400,6 +401,7 @@ const Admin = () => {
                     
                    
                   </div>
+                  }
                   <div className="p-3 bg-[#2f2f2f] rounded-lg">
                     <div className="text-sm text-gray-400 mb-5">Cleanup Session</div>
                     <button
