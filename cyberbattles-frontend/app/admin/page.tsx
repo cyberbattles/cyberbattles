@@ -13,10 +13,10 @@ import ApiClient from "@/components/ApiClient";
 
 const Admin = () => {
   const router = useRouter();
-  const [sessionId, setSessionId] = useState(null);
+  const [sessionId, setSessionId] = useState("");
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
-  const [currentScenario, setCurrentScenario] = useState("");
+  const [currentScenario, setCurrentScenario] = useState<any | null>(null);
   const [gameStatus, setGameStatus] = useState("waiting"); // waiting, starting, active
 
   const [teams, setTeams] = useState(new Map());
@@ -140,6 +140,33 @@ const Admin = () => {
 
   }
 
+  // Get the current scenario information
+  async function getScenario() {
+    // Check if the sessionId has been set, if not return
+    if (sessionId == "") {
+      return;
+    }
+    try{
+      // Find the session doc
+      const sessionRef = doc(db, "sessions", sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      let scenarioId = ""
+      if (sessionSnap.exists()) {
+        scenarioId = sessionSnap.data().scenarioId;
+      }
+      
+      // Find the scenario doc
+      const scenearioRef = doc(db, "scenarios", scenarioId);
+      const scenarioSnap = await getDoc(scenearioRef);
+      if (scenarioSnap.exists()) {
+        setCurrentScenario(scenarioSnap.data())
+      }
+
+    } catch (error) {
+      console.log("Failed", error);
+    }
+  }
+
 // ---- API Callers ---- //
 
   // Start the session
@@ -239,16 +266,18 @@ const Admin = () => {
       };
     },[]);
 
-  // Set the teams and players hooks
+  // Set the teams, players, and scenario hooks
   useEffect(() => {
 
       // Populate the team hook and check if user is host
       if (currentUser) {
+        // getTeams("oKfcgr6Hj8cVSTWMEnUhAIHwD512");
         getTeams(currentUser.uid);
         getPlayers();
+        getScenario();
       }
 
-  }, [currentUser, teams])
+  }, [currentUser, teams, sessionId])
 
   // ---- End useEffects ---- //
   
@@ -300,7 +329,7 @@ const Admin = () => {
           {/* Header */}
           <header className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold">Session Lobby</h1>
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
               <button
                 className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
                 onClick={handleLeaveLobby}
@@ -313,17 +342,30 @@ const Admin = () => {
               >
                 Logout
               </button>
-            </div>
+            </div> */}
           </header>
 
           {/* Lobby Content */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-2">
-              <h2 className="text-xl font-semibold mb-4 text-blue-400">Current Scenario</h2>
-              <p className="text-gray-300 leading-relaxed">
-                {currentScenario}
-              </p>
+            <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md">
+              <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Current Scenario</h2>
+              {
+                currentScenario && (
+                  <div className="flex flex-col gap-2 text-l text-white">
+                    <p>{currentScenario.scenario_title}</p>
+                    <p>{currentScenario.scenario_description}</p>
+                    <div className="flex gap-10 font-semibold">
+                      <p>
+                        Scenario difficulty: 
+                      </p>
+                      <p>
+                        {currentScenario.scenario_difficulty}
+                      </p>
+                    </div>
+                  </div>
+                )
+              }
               {gameStatus === "starting" && (
                 <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500 rounded-lg">
                   <div className="flex items-center gap-2">
@@ -334,8 +376,20 @@ const Admin = () => {
               )}
             </div>
 
+            {/* Timer */}
+            <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md">
+              <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Time Remaining</h2>
+              {
+                gameStatus == "waiting" && (
+                  <div className="flex text-3xl items-center align-middle justify-center  h-full">
+                    time
+                  </div>
+                )
+              }
+            </div>
+
             {/* Teams */}
-            <div className="p-6 rounded-2xl lg:col-span-2 ">
+            <div className="p-6 rounded-2xl col-span-2 ">
               <h2 className="text-2xl font-semibold">Teams</h2>
             </div>
             
@@ -344,7 +398,7 @@ const Admin = () => {
             {
               Array.from(teams.values()).map((value) => (
 
-                <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md" key={value.id}>
+                <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1" key={value.id}>
 
                   <div className="flex flex-row justify-between items-center">
                     <h2 className="text-xl font-semibold text-green-400">{value.name}</h2>
