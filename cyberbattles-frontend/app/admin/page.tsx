@@ -42,6 +42,9 @@ const Admin = () => {
       querySnapshot.forEach((doc) => {
         setSessionId(doc.data().id);
         teamIds = doc.data().teamIds;
+        if (doc.data().started) {
+          setGameStatus("started");
+        }
       });
 
       teamIds.forEach((teamId) => {
