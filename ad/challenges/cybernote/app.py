@@ -1,6 +1,5 @@
-# a note taking app
-
-from flask import Flask, redirect, render_template_string, request, template_rendered, url_for
+from typing import Required
+from flask import Flask, redirect, render_template_string, request, template_rendered, url_for, make_response, jsonify
 import sqlite3
 import os
 
@@ -8,29 +7,39 @@ app = Flask(__name__)
 
 DB_PATH = "./database.db"
 
-def get_db():
+def getDb():
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     return db
 
+def checkUserCookie():
+    username = request.cookies.get("username")
+    password = request.cookies.get("password")
+
+    if not username or not password:
+        return False
+    
+    sql = "SELECT id FROM users WHERE id = ? AND passwd = ?"
+    con = getDb()
+    cur = con.cursor()
+    result = cur.execute(sql, [username, password]).fetchone()
+    con.close()
+    
+    return result is not None
+
 @app.route("/")
 def main():
+    if checkUserCookie():
+        return redirect(url_for('home'))
+
     return render_template_string("""
         <h2> Welcome to cybernote. login to view your note </h2>
         <a href="/login"><button type=button> Login </button></a>
         <a href="/signup"><button type=button> Signup </button></a>
     """)
 
-# @app.route("/login", methods=["POST", "GET"])
 @app.route("/login")
 def loginPage():
-    # if request.method == "POST":
-    #
-    #
-    #     return """
-    #         login post
-    #     """
-
     return render_template_string("""
         <h1>Login</h1>
 
@@ -39,89 +48,139 @@ def loginPage():
             <input type=text name="user"><br>
             <label>Password: </lable>
             <input type=text name=passwd><br>
-            <input type="submit" name="Login"> 
+            <input type="submit" name="login" value="Login"> 
+            <a href="/">back</a>
         </form>
     """)
 
 @app.route("/signup", methods=["POST", "GET"])
 def signupPage():
     if request.method == "POST":
-        user = request.form.get("id")
+        user = request.form.get("user")
         passwd = request.form.get("passwd")
 
-        sql = "insert into users (id, passwd, note) values (?, ?, ?)"
-        con = get_db()
+        sql = "SELECT id FROM users WHERE id = ?"
+        con = getDb()
         cur = con.cursor()
-        add_to_db = cur.execute(sql, [user, passwd, ""]).fetchone()
-        con.close()
-        return """
-                success
-        """
+        existing_user = cur.execute(sql, [user]).fetchone()
+        
+        if existing_user:
+            con.close()
+            return """
+                <p>User already exists.</p>
+                <a href="/signup"><button type="button">back</button></a>
+            """
 
+        # TODO check valid character 
+        whitelist = "abcdefg"
+
+        sql = "insert into users (id, passwd, note) values (?, ?, ?)"
+        cur.execute(sql, [user, passwd, ""])
+        con.commit()
+        con.close()
+
+        response = make_response(redirect(url_for('home')))
+        response.set_cookie("username", user)
+        response.set_cookie("password", passwd)
+
+        return response
     return """
         <h1>Signup</h1>
-
         <form action="/signup" method="post"> 
             <label>User: <label>
             <input type=text name="user"><br>
             <label>Password: </lable>
             <input type=text name=passwd><br>
-            <input type="submit" name="signup"> 
+            <input type="submit" name="signup" value="Signup"> 
         </form>
     """
 
-
 @app.route("/home", methods=["POST", "GET"])
 def home():
-
-    # this is redirected from the login request. should check if the post request parameter value is correct if yes than redirect to /home/<id>
-    # this is where the sql injection happen
     if request.method == "POST":
-        user = request.form.get("id")
+        username = request.form.get("user")
         passwd = request.form.get("passwd")
 
-        # sql = "SELECT note "
+        print(username, passwd)
 
-        return """
-            display note here and update note here. post request to note
-    """
+        sql = "SELECT note FROM users WHERE id = '%s' AND passwd = '%s'" % (username, passwd)
+
+        con = getDb()
+        cur = con.cursor()
+        result = cur.execute(sql).fetchone()
+        con.close()
+        
+        if result is None:
+            return """
+                <p>Invalid username or password.</p>
+                <a href="/login"><button type="button">Back</button></a>
+            """
+        
+        note = result['note']
+        print("note: ", note)
+
+        page = f"""
+            <h1> {username}'s note </h1>
+            <form action="/note" method="post"> 
+                <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
+
+                <br><br>
+            
+                <input type="submit" name="save" value="Save"> 
+            </form>
+        """
+
+        response = make_response(page)
+        response.set_cookie("username", username)
+        response.set_cookie("password", passwd)
+        return response
+    else:
+        if (not checkUserCookie()):
+            return redirect("/")
+
+        username = request.cookies.get("username")
+        password = request.cookies.get("password")
+
+        sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"
+        con = getDb()
+        cur = con.cursor()
+        result = cur.execute(sql, [username, password]).fetchone()
+        con.close()
+        note = result['note'] if result is not None else ""
+        print(note)
+
+        page = f"""
+            <h1> {username}'s note </h1>
+            <form action="/note" method="post"> 
+                <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
+
+                <br><br>
+            
+                <input type="submit" name="save" value="Save"> 
+            </form>
+        """
+        response = make_response(page)
+        return response
+
+@app.route("/note", methods=["POST"])
+def insertNote():
+    if not checkUserCookie():
+        return redirect("/")
     
-    # read cookie and login, if no cookie then redirect to "/"
-    # login by redirecting 
-    return """
-        get request home
-    """
-
-@app.route("/note", methods=["GET", "POST"])
-def insert_note():
-    return """
-        insert note
-    """
-
-# @app.route("/home/<username>", methods=["GET", "POST"])
-# def homePage(username): 
-#
-#     if request.method == "POST":
-#         passwd = request.form['passwd']
-#
-#         sql = "SELECT note FROM users WHERE id = '%s' AND password = '%s'" % (username, passwd)
-#         con = get_db()
-#         cur = con.cursor()
-#         note= cur.execute(sql).fetchone()
-#         con.close()
-#         print(note)
-#
-#         # redirect to home
-#         return """
-#
-#             asd
-#         """
-#     else:
-#         return  "hi"
-
+    username = request.cookies.get("username")
+    note_content = request.form.get("note")
+    
+    sql = "UPDATE users SET note = ? WHERE id = ?"
+    con = getDb()
+    cur = con.cursor()
+    cur.execute(sql, [note_content, username])
+    con.commit()
+    con.close()
+    
+    return redirect(url_for('home'))
 
 if __name__ == "__main__":
-    con = get_db()
+    con = getDb()
     con.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -131,5 +190,3 @@ if __name__ == "__main__":
                 """)
     con.close()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
-
