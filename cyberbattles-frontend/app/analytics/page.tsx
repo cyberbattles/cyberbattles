@@ -174,7 +174,6 @@ const Analytics = () => {
               <div className="p-3 bg-blue-500/10 rounded-xl">
                 <Users className="w-6 h-6 text-blue-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Total Users</h2>
             <p className="text-3xl font-bold text-white">{stats.totalUsers.toLocaleString()}</p>
@@ -186,7 +185,6 @@ const Analytics = () => {
               <div className="p-3 bg-purple-500/10 rounded-xl">
                 <Gamepad2 className="w-6 h-6 text-purple-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Games Played</h2>
             <p className="text-3xl font-bold text-white">{stats.gamesPlayed.toLocaleString()}</p>
@@ -198,7 +196,6 @@ const Analytics = () => {
               <div className="p-3 bg-green-500/10 rounded-xl">
                 <Gamepad2 className="w-6 h-6 text-green-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Active Games</h2>
             <p className="text-3xl font-bold text-white">{stats.activeGames}</p>
@@ -210,7 +207,6 @@ const Analytics = () => {
               <div className="p-3 bg-yellow-500/10 rounded-xl">
                 <UserCheck className="w-6 h-6 text-yellow-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Active Players</h2>
             <p className="text-3xl font-bold text-white">{stats.activePlayers}</p>
@@ -222,7 +218,6 @@ const Analytics = () => {
               <div className="p-3 bg-blue-500/10 rounded-xl">
                 <Users className="w-6 h-6 text-blue-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Total Clans</h2>
             <p className="text-3xl font-bold text-white">{stats.totalClans}</p>
@@ -233,7 +228,6 @@ const Analytics = () => {
               <div className="p-3 bg-purple-500/10 rounded-xl">
                 <LandPlot className="w-6 h-6 text-purple-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-purple-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Flags Solved</h2>
             <p className="text-3xl font-bold text-white">{stats.totalFlags.toLocaleString()}</p>
@@ -244,7 +238,6 @@ const Analytics = () => {
               <div className="p-3 bg-green-500/10 rounded-xl">
                 <Sword className="w-6 h-6 text-green-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Challenged Created</h2>
             <p className="text-3xl font-bold text-white">{stats.totalChallenges.toLocaleString()}</p>
@@ -255,7 +248,6 @@ const Analytics = () => {
               <div className="p-3 bg-yellow-500/10 rounded-xl">
                 <WifiOff className="w-6 h-6 text-yellow-400" />
               </div>
-              <span className="inline-block w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
             </div>
             <h2 className="text-sm font-medium text-gray-400 mb-1">Ingame Downtime</h2>
             <p className="text-3xl font-bold text-white">{(stats.totalDowntime + "sec").toLocaleString()}</p>
