@@ -14,15 +14,16 @@ def getDb():
 
 def checkUserCookie():
     username = request.cookies.get("username")
-    password = request.cookies.get("password")
+    # password = request.cookies.get("password")
 
-    if not username or not password:
+    # if not username or not password:
+    if not username:
         return False
     
-    sql = "SELECT id FROM users WHERE id = ? AND passwd = ?"
+    sql = "SELECT id FROM users WHERE id = ?"
     con = getDb()
     cur = con.cursor()
-    result = cur.execute(sql, [username, password]).fetchone()
+    result = cur.execute(sql, [username]).fetchone()
     con.close()
     
     return result is not None
@@ -72,7 +73,14 @@ def signupPage():
             """
 
         # TODO check valid character 
-        whitelist = "abcdefg"
+        whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
+        
+        if not all(c in whitelist for c in user):
+            con.close()
+            return """
+                <p>Username must be letters, ('-' and '_' are allowed)</p>
+                <a href="/signup"><button type="button">back</button></a>
+            """
 
         sql = "insert into users (id, passwd, note) values (?, ?, ?)"
         cur.execute(sql, [user, passwd, ""])
@@ -92,6 +100,7 @@ def signupPage():
             <label>Password: </lable>
             <input type=text name=passwd><br>
             <input type="submit" name="signup" value="Signup"> 
+            <a href="/">back</a>
         </form>
     """
 
@@ -100,8 +109,6 @@ def home():
     if request.method == "POST":
         username = request.form.get("user")
         passwd = request.form.get("passwd")
-
-        print(username, passwd)
 
         sql = "SELECT note FROM users WHERE id = '%s' AND passwd = '%s'" % (username, passwd)
 
@@ -117,7 +124,6 @@ def home():
             """
         
         note = result['note']
-        print("note: ", note)
 
         page = f"""
             <h1> {username}'s note </h1>
@@ -139,15 +145,15 @@ def home():
             return redirect("/")
 
         username = request.cookies.get("username")
-        password = request.cookies.get("password")
+        # password = request.cookies.get("password")
 
-        sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"
+        # sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"
+        sql = "SELECT note FROM users WHERE id = ?"
         con = getDb()
         cur = con.cursor()
-        result = cur.execute(sql, [username, password]).fetchone()
+        result = cur.execute(sql, [username]).fetchone()
         con.close()
         note = result['note'] if result is not None else ""
-        print(note)
 
         page = f"""
             <h1> {username}'s note </h1>
