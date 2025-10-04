@@ -14,9 +14,7 @@ def getDb():
 
 def checkUserCookie():
     username = request.cookies.get("username")
-    # password = request.cookies.get("password")
 
-    # if not username or not password:
     if not username:
         return False
     
