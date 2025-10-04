@@ -151,6 +151,14 @@ const Dashboard = () => {
     }
   };
 
+  const handleGoToAdmin = () => {
+      try {
+        router.push("/admin");
+      } catch (error) {
+        console.error("Navigation failed:", error);
+      }
+    };
+
   /**
    * Handles the logic for a user to join a team.
    */
@@ -277,6 +285,26 @@ const Dashboard = () => {
                     joinMessage.type === 'success'
                       ? 'text-green-400'
                       : 'text-red-400'
+                  }`}
+                >
+                  {joinMessage.text}
+                </p>
+              )}
+              <h3 className="text-lg font-semibold mb-2"><br/>Already a session admin?</h3>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={handleGoToAdmin}
+                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                >
+                  Click Here
+                </button>
+              </div>
+              {joinMessage.text && (
+                <p
+                  className={`mt-3 text-sm ${
+                    joinMessage.type === "success"
+                      ? "text-green-400"
+                      : "text-red-400"
                   }`}
                 >
                   {joinMessage.text}
