@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 RUN apt update && \
-  apt install tcpdump vim openssh-server supervisor sudo python3 wireguard curl iproute2 resolvconf iputils-ping tcpdump -y
+    apt install vim openssh-server supervisor python3 python3-flask wireguard curl iproute2 tcpdump -y
 
 RUN mkdir /var/run/sshd
 
@@ -14,7 +14,8 @@ WORKDIR /
 RUN mkdir challenges
 COPY challenges/ challenges/
 
+RUN echo 'echo -e "\e[1;32mWelcome!\e[0m\n\e[1;34mChallenges are under /challenges folder\e[0m\n\e[1;33mMake sure to restart the service with \`supervisorctl restart <challenge name>\` after patching the program\e[0m"' >> /root/.bashrc
 
-EXPOSE 8080 22
+EXPOSE 5000 22
 
 ENTRYPOINT ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
