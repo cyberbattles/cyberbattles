@@ -278,14 +278,16 @@ const openWebSocket = (
   userId: string,
   jwt: string
 ) => {
-  const host = "localhost:1337";
+  const host = "cyberbattl.es";
   let retryCount = 0;
   let ws: WebSocket | null = null;
   let abort = false; 
   let closedcommand = false;
 
   const connect = () => {
-    if (abort || !isMountedRef.current) return;
+    if (abort || !isMountedRef.current) {
+    return;
+}
 
     ws = new WebSocket(`wss://${host}/terminals/${teamId}/${userId}/${jwt}`);
     wsRef.current = ws;
