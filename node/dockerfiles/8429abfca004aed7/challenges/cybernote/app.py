@@ -71,7 +71,7 @@ def signupPage():
             """
 
         # TODO check valid character 
-        whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_"
+        whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
         
         if not all(c in whitelist for c in user):
             con.close()
