@@ -543,6 +543,8 @@ export default function ModernLearnPage() {
                             <CodeBlock content={String(seg.content)} />
                           </div>
                         );
+                      } else {
+                        return null;
                       }
                     })}
                         {item.resources && (
