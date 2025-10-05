@@ -67,7 +67,7 @@ export default function Shell() {
     return () => unsubscribe();
   }, []);
 
-  // Get username and team names
+  // Get username and team ids
   const fetchTeamById = async (teamUid: string) => {
     const teamRef = doc(db, 'teams', teamUid);
     const teamSnap = await getDoc(teamRef);
@@ -81,7 +81,7 @@ export default function Shell() {
     }
   };
 
-  // Get username and team names
+  // Get username and team ids
   const fetchUsernameById = async (userUid: string) => {
     const userRef = doc(db, 'login', userUid);
     const userSnap = await getDoc(userRef);
@@ -199,17 +199,17 @@ export default function Shell() {
       );
 
       term.writeln(
-        `To begin, enter your teamname.\r\n`
+        `To begin, enter the game ID.\r\n`
       )
 
       let inputBuffer = "";
 
     const handleInput = async (data: string) => {
       if (data === "\r") { 
-        const enteredTeamName = inputBuffer.trim();
-        if (enteredTeamName.length === 0) {
+        const enteredTeamId = inputBuffer.trim();
+        if (enteredTeamId.length === 0) {
           term.writeln(
-            "\r\x1b[31mTeam name cannot be empty. Try again:\x1b[0m\r\n"
+            "\r\x1b[31mTeam ID cannot be empty. Try again:\x1b[0m\r\n"
           );
           inputBuffer = "";
           
@@ -225,11 +225,11 @@ export default function Shell() {
         // Find the first team that matches the name
         const matchedTeamDoc = snapshot.docs.find((doc) => {
           const data = doc.data();
-          return data.name?.toLowerCase() === enteredTeamName.toLowerCase();
+          return data.id === enteredTeamId.toLowerCase();
         });
 
         if (!matchedTeamDoc) {
-          term.writeln(`\x1b[31mTeam '${enteredTeamName}' not found. Try again:\x1b[0m\r\n`);
+          term.writeln(`\x1b[31mTeam '${enteredTeamId}' not found. Try again:\x1b[0m\r\n`);
           inputBuffer = "";
           return;
         }
@@ -238,19 +238,19 @@ export default function Shell() {
 
         // Validate memberIds
         if (!teamData.memberIds || !Array.isArray(teamData.memberIds)) {
-          term.writeln(`\x1b[31mTeam '${enteredTeamName}' has no members configured.\x1b[0m\r\n`);
+          term.writeln(`\x1b[31mTeam '${enteredTeamId}' has no members configured.\x1b[0m\r\n`);
           inputBuffer = "";
           return;
         }
 
         if (!teamData.memberIds.includes(userId)) {
-          term.writeln(`\x1b[31mYou are not a member of '${enteredTeamName}'. Access denied.\x1b[0m\r\n`);
+          term.writeln(`\x1b[31mYou are not a member of '${enteredTeamId}'. Access denied.\x1b[0m\r\n`);
           inputBuffer = "";
           return;
         }
 
         // Success
-        term.writeln(`Joined team: ${enteredTeamName}\r\n`);
+        term.writeln(`Joined team: ${enteredTeamId}\r\n`);
         setteamId(matchedTeamDoc.id);
         openWebSocket(term, matchedTeamDoc.id, userId, jwt!);
 
