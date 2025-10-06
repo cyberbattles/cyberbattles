@@ -96,7 +96,7 @@ const JoinTeam = () => {
 
   const handleBackToSelection = () => {
     try {
-      router.push('/team');
+      router.push('/dashboard');
     } catch (error) {
       console.error('Navigation failed:', error);
     }
