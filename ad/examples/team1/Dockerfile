@@ -14,7 +14,7 @@ WORKDIR /
 RUN mkdir challenges
 COPY challenges/ challenges/
 
-RUN echo 'echo -e "\e[1;32mWelcome!\e[0m\n\e[1;34mChallenges are under /challenges folder\e[0m\n\e[1;33mMake sure to restart the service with \`supervisorctl restart <challenge name>\` after patching the program\e[0m"' >> /root/.bashrc
+RUN echo 'echo -e "\e[1;32mWelcome!\e[0m\n\e[1;34mChallenges are under /challenges folder\e[0m\n\e[1;33mMake sure to restart the service with \`supervisorctl restart <challenge name>\` after patching the program\e[0m"' >> /etc/bash.bashrc
 
 EXPOSE 5000 22
 
