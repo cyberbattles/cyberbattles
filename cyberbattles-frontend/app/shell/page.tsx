@@ -30,6 +30,12 @@ export default function Shell() {
   const [showJwt, setShowJwt] = useState(false);
   const [teamId, setteamId] = useState<string | null>(null);
 
+  const isProcessingInputRef = useRef(false);
+  const isConnectingRef = useRef(false);
+
+  let dataHandler: any = null;
+  let ctrlCHandler: any = null;
+
 
   // Track component mount status
   useEffect(() => {
@@ -39,6 +45,9 @@ export default function Shell() {
       // Close WebSocket on unmount
       if (wsRef.current) {
         wsRef.current.close();
+      }
+      if (xtermRef.current) {
+        xtermRef.current.dispose();
       }
     };
   }, []);
@@ -180,7 +189,7 @@ export default function Shell() {
   // Call this to wait for JWT
 
   useEffect(() => {
-    if (jwt && xtermRef.current) {
+    if (jwt && xtermRef.current && !isProcessingInputRef.current) {
       initWebSocketConnection(xtermRef.current);
     }
   }, [jwt, isTerminalInitialized]); 
@@ -250,6 +259,7 @@ export default function Shell() {
         }
 
         // Success
+        disposable.dispose();
         term.writeln(`Joined team: ${enteredTeamId}\r\n`);
         setteamId(matchedTeamDoc.id);
         openWebSocket(term, matchedTeamDoc.id, userId, jwt!);
@@ -272,6 +282,8 @@ export default function Shell() {
     console.error("Connection error:", err);
   }
 };
+
+
 const openWebSocket = (
   term: Terminal,
   teamId: string,
@@ -281,13 +293,36 @@ const openWebSocket = (
   const host = "cyberbattl.es";
   let retryCount = 0;
   let ws: WebSocket | null = null;
-  let abort = false; 
-  let closedcommand = false;
+  let abort = false;
+  let closedByUser = false;
+
+  // Track event disposables so they can be cleaned up on reconnect
+  let inputHandler: any = null;
+  let ctrlCHandler: any = null;
+
+  // Track if we've shown the initial retry message
+  let hasShownRetryMessage = false;
+
+  // Clear any previous connection or event handlers
+  if (wsRef.current) {
+    try {
+      wsRef.current.close();
+    } catch {}
+    wsRef.current = null;
+  }
+
+  if (xtermRef.current) {
+    try {
+      xtermRef.current.reset();
+      xtermRef.current.clear();
+    } catch {}
+  }
+
+  term.write(`\x1b[33mWaiting for game start, leave queue with CTRL^C.\r\n\x1b[0m`);
 
   const connect = () => {
-    if (abort || !isMountedRef.current) {
-    return;
-}
+    if (abort || !isMountedRef.current || isConnectingRef.current) return;
+    isConnectingRef.current = true;
 
     ws = new WebSocket(`wss://${host}/terminals/${teamId}/${userId}/${jwt}`);
     wsRef.current = ws;
@@ -300,11 +335,33 @@ const openWebSocket = (
 
     ws.onopen = () => {
       clearTimeout(connectionTimeout);
+      isConnectingRef.current = false;
       setIsConnected(true);
       retryCount = 0;
-      term.writeln("\x1b[32mConnected to terminal server!\x1b[0m\r\n");
-    };
 
+      // Dispose any previous listeners before adding new ones
+      if (inputHandler) inputHandler.dispose();
+      if (ctrlCHandler) ctrlCHandler.dispose();
+
+      // Forward terminal input to WebSocket
+      inputHandler = term.onData((data) => {
+        if (!abort && ws?.readyState === WebSocket.OPEN) {
+          ws.send(data);
+        }
+      });
+
+      // Ctrl+C handler to abort connection
+      ctrlCHandler = term.onData((data) => {
+        if (data === "\x03") { // Ctrl+C
+          abort = true;
+          ws?.close();
+          if (!closedByUser) {
+            closedByUser = true;
+            term.writeln("\r\n\x1b[31mConnection aborted by user.\x1b[0m\r\n");
+          }
+        }
+      });
+    };
     ws.onmessage = async (event) => {
       if (event.data instanceof Blob) {
         const arrayBuffer = await event.data.arrayBuffer();
@@ -315,48 +372,41 @@ const openWebSocket = (
       }
     };
 
-    ws.onclose = () => {
-      clearTimeout(connectionTimeout);
-      setIsConnected(false);
-      if (!abort) {
-        retryCount++;
-        // Move cursor up and overwrite previous retry line
-        term.write(`\r\x1b[33mGame not started yet, leave queue with CTRL^C. Retrying x${retryCount}...\x1b[0m`);
-        setTimeout(connect, 5000);
-      }
-    };
-
     ws.onerror = () => {
       clearTimeout(connectionTimeout);
+      isConnectingRef.current = false;
       ws?.close();
     };
 
-    // Ctrl+C handler
-    const ctrlCHandler = (data: string) => {
-      if (data === "\x03") { // Ctrl+C
-        abort = true;
-        ws?.close();
-        if (!closedcommand) {
-          closedcommand = true;
-        term.writeln("\r\n\x1b[31mConnection aborted by user.\x1b[0m\r\n");
+    ws.onclose = () => {
+      clearTimeout(connectionTimeout);
+      isConnectingRef.current = false;
+      setIsConnected(false);
+
+      if (!abort && isMountedRef.current) {
+        retryCount++;
+
+        // Show retry message (first time) or update count (subsequent times)
+        if (!hasShownRetryMessage) {
+          hasShownRetryMessage = true;
         }
+
+        setTimeout(connect, 5000);
       }
     };
-
-    term.onData(ctrlCHandler);
-
-    // Forward terminal input to WebSocket
-    term.onData((data) => {
-      if (!abort && ws?.readyState === WebSocket.OPEN) {
-        ws.send(data);
-      }
-    });
   };
 
   connect();
+
+  // Cleanup when closing or unmounting
+  return () => {
+    abort = true;
+    if (ws) ws.close();
+    if (inputHandler) inputHandler.dispose();
+    if (ctrlCHandler) ctrlCHandler.dispose();
+    isConnectingRef.current = false;
+  };
 };
-
-
 
   // Handle resize
   useEffect(() => {
