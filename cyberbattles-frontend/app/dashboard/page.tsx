@@ -25,7 +25,7 @@ const Dashboard = () => {
   // For clan
   const [user, setUser] = useState<User | null>(null);
   const [userClan, setUserClan] = useState<any>(null);
-  const [gameId, setgameId] = useState<any>(null);
+  const [gameteamId, setgameteamId] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
@@ -114,9 +114,9 @@ const Dashboard = () => {
   }, [uid]);
 
   const handleCopy = async () => {
-    if (gameId) {
+    if (gameteamId) {
       try {
-        await navigator.clipboard.writeText(gameId);
+        await navigator.clipboard.writeText(gameteamId);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
@@ -199,19 +199,19 @@ const Dashboard = () => {
               teamData.memberIds.includes(userId)
             ) {
               console.log(`User found in team: ${teamData.name}`);
-              setgameId(teamDoc.id);
+              setgameteamId(teamDoc.id);
               return; 
             }
           }
 
           console.warn("User not found in any team");
-          setgameId(null);
+          setgameteamId(null);
         } catch (error) {
           console.error("Error fetching teams:", error);
-          setgameId(null)
+          setgameteamId(null)
         }
       } else {
-        setgameId(null)
+        setgameteamId(null)
       }
     });
 
@@ -408,27 +408,20 @@ const Dashboard = () => {
                   {joinMessage.text}
                 </p>
               )}
-              <div>
+      {gameteamId && (
+      <div>
       <h3 className="text-lg font-semibold mb-2">
         <br />
-        Current Game ID
+        Current Team ID
       </h3>
-      <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-[600px]">
-      <div className="italic">
-      <h4>You will need this token to join the shell and other aspects of the game.</h4>
-      </div>
+      <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
+
         <div className="flex justify-between items-center">
           <div>
-            {gameId ? (
-              <h4 className="text-l font-bold text-green-600">{gameId}</h4>
-            ) : (
-              <h4 className="text-l text-red-400 italic">
-                You are not in a current game.
-              </h4>
-            )}
+              <h4 className="text-l font-bold text-green-600">{gameteamId}</h4>
           </div>
 
-          {gameId && (
+          {gameteamId && (
             <button
               onClick={handleCopy}
               className="text-gray-300 hover:text-white transition-colors"
@@ -444,6 +437,7 @@ const Dashboard = () => {
         )}
       </div>
     </div>
+)}
             </div>
 
             {/* JWT Display Widget */}
