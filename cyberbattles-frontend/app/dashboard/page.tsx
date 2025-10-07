@@ -151,6 +151,14 @@ const Dashboard = () => {
     }
   };
 
+  const handleGoToAdmin = () => {
+      try {
+        router.push("/admin");
+      } catch (error) {
+        console.error("Navigation failed:", error);
+      }
+    };
+
   /**
    * Handles the logic for a user to join a team.
    */
@@ -222,7 +230,7 @@ const Dashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400">
+                <a href="analytics" className="hover:text-blue-400">
                   Analytics
                 </a>
               </li>
@@ -257,18 +265,7 @@ const Dashboard = () => {
 
           {/* Dashboard Widgets */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Total Users</h2>
-              <p className="text-2xl font-bold text-blue-400">1,245</p>
-            </div>
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Active Games</h2>
-              <p className="text-2xl font-bold text-green-400">5</p>
-            </div>
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-lg font-semibold mb-2">Active Players</h2>
-              <p className="text-2xl font-bold text-yellow-400">76</p>
-            </div>
+           
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
               <h3 className="text-lg font-semibold mb-2">
@@ -288,6 +285,26 @@ const Dashboard = () => {
                     joinMessage.type === 'success'
                       ? 'text-green-400'
                       : 'text-red-400'
+                  }`}
+                >
+                  {joinMessage.text}
+                </p>
+              )}
+              <h3 className="text-lg font-semibold mb-2"><br/>Already a session admin?</h3>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={handleGoToAdmin}
+                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                >
+                  Click Here
+                </button>
+              </div>
+              {joinMessage.text && (
+                <p
+                  className={`mt-3 text-sm ${
+                    joinMessage.type === "success"
+                      ? "text-green-400"
+                      : "text-red-400"
                   }`}
                 >
                   {joinMessage.text}

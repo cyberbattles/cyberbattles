@@ -239,6 +239,37 @@
         overflow-y: auto;
         color: #333;
       }
+
+      /* Tab container styles */
+      .tabs {
+        overflow: hidden;
+        border-bottom: 1px solid #555;
+        margin-bottom: 20px;
+        width: 100%;
+      }
+      .tab-button {
+        background-color: #333;
+        border: 1px solid #555;
+        border-bottom: none;
+        border-radius: 5px 5px 0 0;
+        cursor: pointer;
+        padding: 10px 20px;
+        color: #f0f0f0;
+        font-size: 16px;
+        margin-right: 5px;
+        outline: none;
+      }
+      .tab-button:hover {
+        background-color: #444;
+      }
+      .tab-button.active {
+        background-color: #1e1e1e;
+        border-bottom: 1px solid #1e1e1e;
+        color: #00aaff;
+      }
+      .tab-content {
+        display: none;
+      }
     </style>
   </head>
   <body>
@@ -251,93 +282,144 @@
         </div>
       </div>
 
-      <fieldset>
-        <legend>Session Management</legend>
-        <div class="controls">
-          <label for="admin-jwt">Admin JWT:</label>
-          <input
-            type="text"
-            id="admin-jwt"
-            name="admin-jwt"
-            placeholder="Paste Admin JWT for session actions"
-            size="60"
-          />
-        </div>
-        <hr style="border-color: #444; margin: 15px 0" />
-        <div class="controls">
-          <label for="scenario-id">Scenario ID:</label>
-          <input
-            type="text"
-            id="scenario-id"
-            name="scenario-id"
-            value="8429abfca004aed7"
-            size="25"
-          />
-          <label for="num-teams">Num Teams:</label>
-          <input
-            type="number"
-            id="num-teams"
-            name="num-teams"
-            value="2"
-            min="1"
-          />
-          <label for="num-members">Members/Team:</label>
-          <input
-            type="number"
-            id="num-members"
-            name="num-members"
-            value="1"
-            min="1"
-          />
-          <button id="create-session-btn">Create Session</button>
-        </div>
-        <div class="controls">
-          <label for="session-id">Session ID:</label>
-          <input
-            type="text"
-            id="session-id"
-            name="session-id"
-            placeholder="Autofilled after creation"
-            readonly
-          />
-          <button id="start-session-btn">Start Session</button>
-          <button
-            id="cleanup-session-btn"
-            style="display: none; background-color: #d9534f"
-          >
-            Cleanup Session 🧹
-          </button>
-        </div>
-        <div id="session-info" style="display: none">
-          <h3>Created Team IDs</h3>
-          <ul id="team-id-list"></ul>
-        </div>
-      </fieldset>
+      <div class="tabs">
+        <button class="tab-button active" onclick="openTab(event, 'Admin')">
+          Admin
+        </button>
+        <button class="tab-button" onclick="openTab(event, 'Player')">
+          Player
+        </button>
+      </div>
 
-      <fieldset>
-        <legend>Terminal Connection</legend>
-        <div class="controls">
-          <label for="teamId">Team ID:</label>
-          <select id="teamId" name="teamId">
-            <option>-- Start a session first --</option>
-          </select>
-          <label for="userId">User ID:</label>
-          <select id="userId" name="userId">
-            <option>-- Select a team first --</option>
-          </select>
-          <label for="jwt-token">JWT:</label>
-          <input
-            type="text"
-            id="jwt-token"
-            name="jwt-token"
-            placeholder="Autofills from Admin JWT"
-            size="60"
-          />
-          <button id="connect-btn">Connect to Terminal</button>
-          <button id="get-config-btn" style="display: none">Get Config</button>
-          <button id="view-pcap-btn" style="display: none">View PCAP</button>
-        </div>
-      </fieldset>
+      <div id="Admin" class="tab-content" style="display: block">
+        <fieldset>
+          <legend>Session Management</legend>
+          <div class="controls">
+            <label for="admin-jwt">Admin JWT:</label>
+            <input
+              type="text"
+              id="admin-jwt"
+              name="admin-jwt"
+              placeholder="Paste Admin JWT for session actions"
+              size="60"
+            />
+          </div>
+          <hr style="border-color: #444; margin: 15px 0" />
+          <div class="controls">
+            <label for="scenario-id">Scenario ID:</label>
+            <input
+              type="text"
+              id="scenario-id"
+              name="scenario-id"
+              value="8429abfca004aed7"
+              size="25"
+            />
+            <label for="num-teams">Num Teams:</label>
+            <input
+              type="number"
+              id="num-teams"
+              name="num-teams"
+              value="2"
+              min="1"
+            />
+            <label for="num-members">Members/Team:</label>
+            <input
+              type="number"
+              id="num-members"
+              name="num-members"
+              value="1"
+              min="1"
+            />
+            <button id="create-session-btn">Create Session</button>
+          </div>
+          <div class="controls">
+            <label for="session-id">Session ID:</label>
+            <input
+              type="text"
+              id="session-id"
+              name="session-id"
+              placeholder="Autofilled after creation"
+              readonly
+            />
+            <button id="start-session-btn">Start Session</button>
+            <button
+              id="cleanup-session-btn"
+              style="display: none; background-color: #d9534f"
+            >
+              Cleanup Session
+            </button>
+          </div>
+          <div id="session-info" style="display: none">
+            <h3>Created Team IDs</h3>
+            <ul id="team-id-list"></ul>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Terminal Connection</legend>
+          <div class="controls">
+            <label for="teamId">Team ID:</label>
+            <select id="teamId" name="teamId">
+              <option>-- Start a session first --</option>
+            </select>
+            <label for="userId">User ID:</label>
+            <select id="userId" name="userId">
+              <option>-- Select a team first --</option>
+            </select>
+            <label for="jwt-token">JWT:</label>
+            <input
+              type="text"
+              id="jwt-token"
+              name="jwt-token"
+              placeholder="Autofills from Admin JWT"
+              size="60"
+            />
+            <button id="connect-btn">Connect to Terminal</button>
+            <button id="get-config-btn" style="display: none">
+              Get Config
+            </button>
+            <button id="view-pcap-btn" style="display: none">View PCAP</button>
+          </div>
+        </fieldset>
+      </div>
+
+      <div id="Player" class="tab-content">
+        <fieldset>
+          <legend>Terminal Connection</legend>
+          <div class="controls">
+            <label for="player-session-id">Session ID:</label>
+            <input
+              type="text"
+              id="player-session-id"
+              placeholder="Enter Session ID"
+            />
+            <label for="player-team-id">Team ID:</label>
+            <input
+              type="text"
+              id="player-team-id"
+              placeholder="Enter Team ID"
+            />
+            <label for="player-user-id">User ID:</label>
+            <input
+              type="text"
+              id="player-user-id"
+              placeholder="Enter User ID"
+            />
+          </div>
+          <div class="controls">
+            <label for="player-jwt-token">JWT:</label>
+            <input
+              type="text"
+              id="player-jwt-token"
+              placeholder="Paste your player JWT"
+              size="60"
+            />
+            <button id="player-connect-btn">Connect to Terminal</button>
+            <button id="player-get-config-btn">Get Config</button>
+            <button id="player-view-pcap-btn">View PCAP</button>
+          </div>
+        </fieldset>
+      </div>
 
       <div id="terminal-container">
         <div id="terminal"></div>
@@ -389,6 +471,25 @@
     </div>
 
     <script>
+      // --- TAB SWITCHING LOGIC ---
+      function openTab(evt, tabName) {
+        // Get all elements with class="tab-content" and hide them
+        const tabcontent = document.getElementsByClassName('tab-content');
+        for (let i = 0; i < tabcontent.length; i++) {
+          tabcontent[i].style.display = 'none';
+        }
+
+        // Get all elements with class="tab-button" and remove the class "active"
+        const tablinks = document.getElementsByClassName('tab-button');
+        for (let i = 0; i < tablinks.length; i++) {
+          tablinks[i].classList.remove('active');
+        }
+
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById(tabName).style.display = 'block';
+        evt.currentTarget.classList.add('active');
+      }
+
       const term = new Terminal({
         cursorBlink: true,
         rows: 30,
@@ -421,6 +522,7 @@
         };
       }
 
+      // --- ADMIN TAB EVENT LISTENERS ---
       document.getElementById('admin-jwt').addEventListener('input', event => {
         document.getElementById('jwt-token').value = event.target.value;
       });
@@ -679,33 +781,6 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}
           }
         });
 
-      document
-        .getElementById('close-config-overlay-btn')
-        .addEventListener('click', () => {
-          configOverlay.style.display = 'none';
-        });
-
-      configOverlay.addEventListener('click', event => {
-        if (event.target === configOverlay) {
-          configOverlay.style.display = 'none';
-        }
-      });
-
-      document
-        .getElementById('download-config-btn')
-        .addEventListener('click', () => {
-          const configText = document.getElementById('config-text').textContent;
-          const blob = new Blob([configText], {type: 'text/plain'});
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'wg1.conf';
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        });
-
       const pcapOverlay = document.getElementById('pcap-overlay');
       const pcapElement = document.querySelector('pcap-element');
       const pausePcapRefreshCheckbox =
@@ -713,9 +788,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}
       let pcapBlobUrl = null;
       let pcapRefreshInterval = null;
 
-      async function fetchPcapData() {
-        const teamId = document.getElementById('teamId').value;
-        const token = document.getElementById('jwt-token').value;
+      async function fetchPcapData(teamId, token) {
         if (!teamId || !token) {
           term.write(
             '\r\nERROR: Team and JWT must be present to view PCAP.\r\n',
@@ -755,21 +828,173 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}
       document
         .getElementById('view-pcap-btn')
         .addEventListener('click', async () => {
-          await fetchPcapData();
+          const teamId = document.getElementById('teamId').value;
+          const token = document.getElementById('jwt-token').value;
+          await fetchPcapData(teamId, token);
           pcapOverlay.style.display = 'flex';
 
           if (!pcapRefreshInterval) {
             pcapRefreshInterval = setInterval(() => {
               if (!pausePcapRefreshCheckbox.checked) {
-                fetchPcapData();
+                fetchPcapData(teamId, token);
               }
             }, 5000);
           }
         });
 
+      // --- PLAYER TAB EVENT LISTENERS ---
+      document
+        .getElementById('player-connect-btn')
+        .addEventListener('click', () => {
+          if (ws && ws.readyState !== WebSocket.CLOSED) {
+            ws.close();
+          }
+          term.reset();
+
+          const teamId = document.getElementById('player-team-id').value;
+          const userId = document.getElementById('player-user-id').value;
+          const token = document.getElementById('player-jwt-token').value;
+
+          if (!teamId || !userId || !token) {
+            term.write(
+              'Please provide a Team ID, User ID, and JWT to connect.\r\n',
+            );
+            return;
+          }
+
+          const socketUrl = `ws://${window.location.host}/terminals/${teamId}/${userId}/${token}`;
+          term.write(`Connecting to ${socketUrl}...\r\n`);
+
+          ws = new WebSocket(socketUrl);
+
+          ws.onopen = () => {
+            term.write('Connection established! You have a shell.\r\n');
+            term.focus();
+          };
+          ws.onmessage = async event => {
+            const data =
+              event.data instanceof Blob
+                ? new Uint8Array(await event.data.arrayBuffer())
+                : event.data;
+            term.write(data);
+          };
+          ws.onclose = event => {
+            term.write(`\r\nConnection closed. Code: ${event.code}\r\n`);
+          };
+          ws.onerror = error => {
+            term.write('\r\nAn error occurred with the WebSocket.\r\n');
+            console.error('WebSocket Error:', error);
+          };
+        });
+
+      document
+        .getElementById('player-get-config-btn')
+        .addEventListener('click', async () => {
+          const sessionId = document.getElementById('player-session-id').value;
+          const teamId = document.getElementById('player-team-id').value;
+          const userId = document.getElementById('player-user-id').value;
+          const token = document.getElementById('player-jwt-token').value;
+
+          if (!sessionId || !teamId || !userId || !token) {
+            term.write(
+              '\r\nERROR: Session, Team, User, and JWT must be provided.\r\n',
+            );
+            return;
+          }
+
+          term.write(`\r\nFetching config for user ${userId}...\r\n`);
+
+          try {
+            const response = await fetch(
+              `/api/config/${sessionId}/${teamId}/${userId}/${token}`,
+            );
+            if (!response.ok) {
+              throw new Error(
+                `Server responded with status: ${response.status}`,
+              );
+            }
+            const data = await response.json();
+
+            if (data.config && data.qrCode && data.username && data.ipAddress) {
+              document.getElementById('config-text').textContent = data.config;
+              document.getElementById('config-qr-code').src =
+                `data:image/png;base64,${data.qrCode}`;
+              const tutorial = `# Install wireguard if you haven't already
+sudo wg-quick up ~/Downloads/wg1.conf
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}@${data.ipAddress}`;
+              document.getElementById('tutorial-text').textContent = tutorial;
+              configOverlay.style.display = 'flex';
+            } else {
+              term.write('\r\nERROR: Incomplete config data received.\r\n');
+            }
+          } catch (error) {
+            term.write(
+              `\r\nERROR: Failed to fetch config. ${error.message}\r\n`,
+            );
+          }
+        });
+
+      document
+        .getElementById('player-view-pcap-btn')
+        .addEventListener('click', async () => {
+          const teamId = document.getElementById('player-team-id').value;
+          const token = document.getElementById('player-jwt-token').value;
+          await fetchPcapData(teamId, token);
+          pcapOverlay.style.display = 'flex';
+
+          if (!pcapRefreshInterval) {
+            pcapRefreshInterval = setInterval(() => {
+              if (!pausePcapRefreshCheckbox.checked) {
+                fetchPcapData(teamId, token);
+              }
+            }, 5000);
+          }
+        });
+
+      // --- COMMON AND CLEANUP LOGIC ---
+      document
+        .getElementById('close-config-overlay-btn')
+        .addEventListener('click', () => {
+          configOverlay.style.display = 'none';
+        });
+
+      configOverlay.addEventListener('click', event => {
+        if (event.target === configOverlay) {
+          configOverlay.style.display = 'none';
+        }
+      });
+
+      document
+        .getElementById('download-config-btn')
+        .addEventListener('click', () => {
+          const configText = document.getElementById('config-text').textContent;
+          const blob = new Blob([configText], {type: 'text/plain'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'wg1.conf';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+
       document
         .getElementById('refresh-pcap-btn')
-        .addEventListener('click', fetchPcapData);
+        .addEventListener('click', () => {
+          const activeTab = document
+            .querySelector('.tab-button.active')
+            .textContent.trim();
+          let teamId, token;
+          if (activeTab === 'Admin') {
+            teamId = document.getElementById('teamId').value;
+            token = document.getElementById('jwt-token').value;
+          } else {
+            teamId = document.getElementById('player-team-id').value;
+            token = document.getElementById('player-jwt-token').value;
+          }
+          fetchPcapData(teamId, token);
+        });
 
       document
         .getElementById('close-pcap-overlay-btn')
@@ -813,9 +1038,7 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}
             return;
           }
 
-          term.write(
-            `\r\n🧹 Attempting to clean up session: ${sessionId}...\r\n`,
-          );
+          term.write(`\r\nAttempting to clean up session: ${sessionId}...\r\n`);
 
           try {
             const response = await fetch(`/api/cleanup/${sessionId}/${token}`);
@@ -891,7 +1114,6 @@ ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${data.username}
               tooltipText += `    - Paused:  ${data.docker.containersPaused}\n`;
               tooltipText += `    - Stopped: ${data.docker.containersStopped}\n`;
             }
-            // ## ADDED NEW STATS HERE ##
             if (data.subnetsRemaining !== undefined) {
               tooltipText += `Subnets Free: ${data.subnetsRemaining}\n`;
             }
