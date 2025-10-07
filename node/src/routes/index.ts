@@ -127,19 +127,19 @@ router.post('/start-session', async (req: Request, res: Response) => {
 
 // Return the WireGuard config for a user in a session
 router.get(
-  '/config/:sessionId/:teamId/:userId/:token',
+  '/config/:sessionId/:teamId/:userUid/:token',
   async (req: Request, res: Response) => {
     try {
-      // Get the sessionId, teamId, userId, and token from the request params
-      const {sessionId, teamId, userId, token} = req.params;
+      // Get the sessionId, teamId, userUid, and token from the request params
+      const {sessionId, teamId, userUid, token} = req.params;
 
       // Verify the token
       try {
         const tokenUid = await verifyToken(token);
-        if (!userId || userId.length === 0) {
+        if (!userUid || userUid.length === 0) {
           throw new Error('Invalid token');
         }
-        if (tokenUid !== userId) {
+        if (tokenUid !== userUid) {
           throw new Error('Token UID does not match user ID');
         }
       } catch (error) {
@@ -151,29 +151,43 @@ router.get(
       if (
         typeof sessionId !== 'string' ||
         typeof teamId !== 'string' ||
-        typeof userId !== 'string'
+        typeof userUid !== 'string'
       ) {
         return res.status(400).send('Invalid parameters');
       }
 
       // Look up the team and user based on the URL parameters
-      const userNameRef = db.collection('login').doc(userId);
+      const userNameRef = db.collection('login').doc(userUid);
       const userDoc = await userNameRef.get();
       const user = userDoc.data() as User | undefined;
       const teamRef = db.collection('teams').doc(teamId);
       const teamDoc = await teamRef.get();
       const team = teamDoc.data() as Team | undefined;
-      if (!user || !team) {
-        return res.status(404).send('User or team not found');
+      const sessionRef = db.collection('sessions').doc(sessionId);
+      const sessionDoc = await sessionRef.get();
+      const session = sessionDoc.data() as Session | undefined;
+
+      if (!user || !team || !session) {
+        return res.status(404).send('User, team or session not found');
       }
 
-      // Confirm the user is in the given team
-      if (!team.memberIds.includes(user.UID)) {
-        return res.status(403).send('User is not in the given team');
+      // Confirm the user is session admin OR in the given team
+      let isAdmin = false;
+      if (userUid !== session.adminUid) {
+        if (!team.memberIds.includes(user.UID)) {
+          return res.status(403).send('user is not in the given team');
+        }
+      } else {
+        isAdmin = true;
       }
 
       // Work out which config to give the user
-      const configNumber = team.memberIds.indexOf(user.UID) + 1;
+      let configNumber: number;
+      if (isAdmin) {
+        configNumber = team.memberIds.length + 1; // Admin config is always last
+      } else {
+        configNumber = team.memberIds.indexOf(user.UID) + 1;
+      }
 
       // Read the config file and qr code
       const configPath = path.join(

@@ -1,3 +1,8 @@
+# The backend challenges should be ignored, Firebase handles syncing already
+dockerfiles/*
+dockerfiles
+node/dockerfiles
+
 # Logs
 logs
 *.log

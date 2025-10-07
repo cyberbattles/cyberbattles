@@ -28,12 +28,13 @@ export async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     }
 
     // Verify the token
+    let senderUid: string;
     try {
       const tokenUid = await verifyToken(urlParts[4]);
       if (!tokenUid || tokenUid.length === 0) {
         throw new Error('Invalid token');
       }
-      const senderUid = urlParts[3];
+      senderUid = urlParts[3];
       if (tokenUid !== senderUid || senderUid.length === 0) {
         throw new Error('Token UID does not match sender UID');
       }
@@ -51,27 +52,41 @@ export async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     const teamDoc = await teamRef.get();
     const team = teamDoc.data() as Team | undefined;
 
-    // Double check that the session has started
-    if (team?.sessionId) {
-      const sessionRef = db.collection('sessions').doc(team.sessionId);
-      const sessionDoc = await sessionRef.get();
-      const session = sessionDoc.data() as Session | undefined;
-      if (session && !session.started) {
+    // Check that the team exists
+    if (team === undefined) {
+      console.error(`Team with ID ${urlParts[2]} not found.`);
+      ws.close(4004, 'Team not found.');
+      return;
+    }
+
+    const sessionRef = db.collection('sessions').doc(team.sessionId);
+    const sessionDoc = await sessionRef.get();
+    const session = sessionDoc.data() as Session | undefined;
+
+    // Check that the session exists and is active
+    if (team.sessionId && session !== undefined) {
+      if (!session.started) {
         console.error(
           `Received attempt to connect to an inactive session: ${team.sessionId}`,
         );
         ws.close(4002, `${team.sessionId} has not yet started.`);
         return;
       }
+    } else {
+      console.error(`Session with ID ${team?.sessionId} not found.`);
+      ws.close(4004, 'Session not found.');
+      return;
     }
 
-    // Check that the user is part of the team
-    if (team && !team.memberIds.includes(urlParts[3])) {
-      console.error(
-        `User with ID ${urlParts[3]} is not part of team ${team.id}.`,
-      );
-      ws.close(4003, 'User is not part of the team.');
-      return;
+    // Check that the user is the session admin OR part of the team
+    if (senderUid !== session.adminUid) {
+      if (team && !team.memberIds.includes(urlParts[3])) {
+        console.error(
+          `User with ID ${urlParts[3]} is not part of team ${team.id}.`,
+        );
+        ws.close(4003, 'User is not part of the team.');
+        return;
+      }
     }
 
     if (team?.containerId && userName) {
