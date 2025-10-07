@@ -34,7 +34,7 @@ export default function Shell() {
   const isConnectingRef = useRef(false);
 
   let dataHandler: any = null;
-  let ctrlCHandler: any = null;
+  let ctrlDHandler: any = null;
 
 
   // Track component mount status
@@ -225,6 +225,11 @@ export default function Shell() {
           return;
         }
 
+        const cleanupInput = () => {
+          disposable.dispose();
+          inputBuffer = "";
+        };        
+
         const teamsRef = collection(db, "teams");
         const snapshot = await getDocs(collection(db, "teams"));
         term.writeln(`\r\n`);
@@ -260,6 +265,7 @@ export default function Shell() {
 
         // Success
         disposable.dispose();
+        cleanupInput(); 
         term.writeln(`Joined team: ${enteredTeamId}\r\n`);
         setteamId(matchedTeamDoc.id);
         openWebSocket(term, matchedTeamDoc.id, userId, jwt!);
@@ -290,19 +296,6 @@ const openWebSocket = (
   userId: string,
   jwt: string
 ) => {
-  const host = "cyberbattl.es";
-  let retryCount = 0;
-  let ws: WebSocket | null = null;
-  let abort = false;
-  let closedByUser = false;
-
-  // Track event disposables so they can be cleaned up on reconnect
-  let inputHandler: any = null;
-  let ctrlCHandler: any = null;
-
-  // Track if we've shown the initial retry message
-  let hasShownRetryMessage = false;
-
   // Clear any previous connection or event handlers
   if (wsRef.current) {
     try {
@@ -318,7 +311,20 @@ const openWebSocket = (
     } catch {}
   }
 
-  term.write(`\x1b[33mWaiting for game start, leave queue with CTRL^C.\r\n\x1b[0m`);
+  const host = "cyberbattl.es";
+  let retryCount = 0;
+  let ws: WebSocket | null = null;
+  let abort = false;
+  let closedByUser = false;
+
+  // Track event disposables so they can be cleaned up on reconnect
+  let inputHandler: any = null;
+  let ctrlDHandler: any = null;
+
+  // Track if we've shown the initial retry message
+  let hasShownRetryMessage = false;
+
+  term.write(`\x1b[33mWaiting for game start, leave queue with CTRL^D.\r\n\x1b[0m`);
 
   const connect = () => {
     if (abort || !isMountedRef.current || isConnectingRef.current) return;
@@ -341,7 +347,7 @@ const openWebSocket = (
 
       // Dispose any previous listeners before adding new ones
       if (inputHandler) inputHandler.dispose();
-      if (ctrlCHandler) ctrlCHandler.dispose();
+      if (ctrlDHandler) ctrlDHandler.dispose();
 
       // Forward terminal input to WebSocket
       inputHandler = term.onData((data) => {
@@ -351,8 +357,8 @@ const openWebSocket = (
       });
 
       // Ctrl+C handler to abort connection
-      ctrlCHandler = term.onData((data) => {
-        if (data === "\x03") { // Ctrl+C
+      ctrlDHandler = term.onData((data) => {
+        if (data === "\x04") { // Ctrl+D
           abort = true;
           ws?.close();
           if (!closedByUser) {
@@ -403,7 +409,7 @@ const openWebSocket = (
     abort = true;
     if (ws) ws.close();
     if (inputHandler) inputHandler.dispose();
-    if (ctrlCHandler) ctrlCHandler.dispose();
+    if (ctrlDHandler) ctrlDHandler.dispose();
     isConnectingRef.current = false;
   };
 };
