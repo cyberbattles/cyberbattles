@@ -12,6 +12,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import {getAuth, onAuthStateChanged} from 'firebase/auth';
 import {useRouter} from 'next/navigation';
@@ -22,7 +23,7 @@ const Lobby = () => {
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState<any | null>(null);
-  const [gameStatus, setGameStatus] = useState('waiting'); // waiting, starting, active
+  const [gameStatus, setGameStatus] = useState(''); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
 
   const [team, setTeam] = useState<any>(null);
@@ -44,6 +45,16 @@ const Lobby = () => {
       let scenarioId = ""
       if (sessionSnap.exists()) {
         scenarioId = sessionSnap.data().scenarioId;
+
+        console.log("getting sceneario")
+
+        // Check if the session has started
+        if(sessionSnap.data().started) {
+          console.log("session has already started");
+          setGameStatus("started");
+        } else {
+          setGameStatus("waiting")
+        }
       }
       
       // Find the scenario doc
@@ -206,9 +217,16 @@ const Lobby = () => {
     router.push('/dashboard');
   };
 
-  const handleStartGame = () => {};
+  const handleStartGame = async () => {
+    setGameStatus("starting");
+    await delay(3000);
+    setGameStatus("started");
+    router.push("/shell");
+  };
 
-  // --------------------------------------
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // ------------- useEffects ---------------
 
   useEffect(() => {
 
@@ -228,15 +246,36 @@ const Lobby = () => {
 
         }
         checkHost();
-      }
-
-
-  
+      }  
       return () => {
         unsubscribe;
       };
     },[currentUser, team]);
 
+  useEffect(() => {
+    let unsubscribe = null;
+    if (team && gameStatus && gameStatus != "started"){
+      let unsubscribe = onSnapshot(doc(db, "sessions", team.sessionId), (doc) => {
+        if (doc.exists()) {
+          let started = doc.data().started;
+          if (started) {
+            console.log("Session has started");
+            handleStartGame();
+          } else {
+            console.log("Session has not started");
+            setGameStatus("waiting");
+          }
+        }
+      });
+  }
+    return () => {
+      if (unsubscribe) {
+        unsubscribe;
+      }
+    };
+  }, [team, gameStatus]);
+
+  // ------------- End useEffects ---------------
 
   return (
     <>
@@ -348,16 +387,13 @@ const Lobby = () => {
                       key={uid}
                     >
                       {/* Player name */}
-                      <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
                         <div>{players && players.get(uid) && players.get(uid).userName}</div>
                       {/* Remove player button */}
                         { isHost &&
                           <div className="" onClick={() => removePlayer(uid)}>
                               <IoIosClose size={30}/>
                           </div>
-                        }
-                      </div>
-                      
+                        }                      
                     </div>
                   ))}
               </div>
