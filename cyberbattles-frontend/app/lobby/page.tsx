@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import close from '@/public/images/close_icon.png';
+import { IoIosClose } from "react-icons/io";
 import React, {useState, useEffect} from 'react';
 import {auth, db} from '@/lib/firebase';
 import {signOut} from 'firebase/auth';
@@ -29,6 +29,8 @@ const Lobby = () => {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
 
   // TODO: Setup backend call to get player, scenario and teams information
+
+
 
   // Find the team associated with the given user id
   async function findTeam(uid: string) {
@@ -182,27 +184,6 @@ const Lobby = () => {
 
   // --------------------------------------
 
-  // // Get the auth state and set the current user
-  // try {
-  //   onAuthStateChanged(auth, user => {
-  //     if (user && !currentUser) {
-  //       setCurrentUser(user);
-  //     }
-  //   });
-  // } catch (error) {
-  //   setCurrentUser(null);
-  //   console.error('Failed:', error);
-  // }
-
-  // // Get the team information and players list from firebase
-  // if (currentUser) {
-  //   findTeam(currentUser.uid);
-  //   if (team) {
-  //     getPlayers();
-  //   }
-  //   checkHost();
-  // }
-
   useEffect(() => {
 
       // Get the currentUser
@@ -229,20 +210,18 @@ const Lobby = () => {
 
   return (
     <>
-      {/* Fixed Navbar */}
-
       {/* Lobby Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
         <aside className="w-64 bg-[#1e1e1e] shadow-md">
           <div className="p-6 text-xl font-bold border-b border-gray-700">
-            Game Lobby
+            Session Lobby
           </div>
           <nav className="p-6">
             <ul className="space-y-4">
               <li>
-                <div className="text-sm text-gray-400">Team:</div>
-                <div className="font-semibold text-blue-400">
+                <div className="text-sm text-gray-400 mb-1">Teams:</div>
+                <div className="font-semibold text-white">
                   {teamId && team.name}
                 </div>
               </li>
@@ -252,16 +231,13 @@ const Lobby = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
-                <div
-                  className={`font-semibold capitalize ${
-                    gameStatus === 'waiting'
-                      ? 'text-yellow-400'
-                      : gameStatus === 'starting'
-                        ? 'text-blue-400'
-                        : 'text-green-400'
-                  }`}
-                >
-                  {gameStatus === 'starting' ? 'Starting...' : gameStatus}
+                <div className={`font-semibold capitalize ${
+                  gameStatus === "waiting" ? "text-yellow-400" :
+                  gameStatus === "starting" ? "text-blue-400" :
+                  gameStatus === "ending" ? "text-red-400" :
+                  "text-green-400"
+                }`}>
+                  {gameStatus === "starting" ? "Starting..." : gameStatus}
                 </div>
               </li>
             </ul>
@@ -272,7 +248,7 @@ const Lobby = () => {
         <main className="flex-1 p-8 overflow-auto">
           {/* Header */}
           <header className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-bold">Game Lobby</h1>
+            <h1 className="text-2xl font-bold">Session Lobby</h1>
             <div className="flex gap-4">
               <button
                 className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
@@ -292,29 +268,49 @@ const Lobby = () => {
           {/* Lobby Content */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-2">
-              <h2 className="text-xl font-semibold mb-4 text-blue-400">
-                Current Scenario
-              </h2>
-              <p className="text-gray-300 leading-relaxed">{currentScenario}</p>
-              {gameStatus === 'starting' && (
+            {/* <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
+              <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Current Scenario</h2>
+              {
+                currentScenario && (
+                  <div className="flex flex-col gap-2 text-l text-white">
+                    <p>{currentScenario.scenario_title}</p>
+                    <p>{currentScenario.scenario_description}</p>
+                    <div className="flex gap-10 font-semibold">
+                      <p>
+                        Scenario difficulty: 
+                      </p>
+                      <p>
+                        {currentScenario.scenario_difficulty}
+                      </p>
+                    </div>
+                  </div>
+                )
+              }
+              {gameStatus === "starting" && (
                 <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                    <span className="text-blue-400 font-semibold">
-                      Game starting in 3 seconds...
-                    </span>
+                    <span className="text-blue-400 font-semibold">Game starting...</span>
                   </div>
                 </div>
               )}
-            </div>
+            </div> */}
 
-            {/* Players List */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-green-400">
-                Players
-              </h2>
-              <div className="space-y-3">
+            {/* Teams */}
+            <div className="p-6 rounded-2xl col-span-2 ">
+              <h2 className="text-2xl font-semibold text-green-400">{teamId && team.name}</h2>
+            </div>
+            
+
+            {/* Teams List */}
+            { team &&
+            <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2">
+
+              <div className="flex flex-row justify-between items-center">
+                <h2 className="text-xl font-semibold ">Team members</h2>
+              </div>
+
+              <div className="flex flex-col gap-5">
                 {players.size != 0 &&
                   team.memberIds.map((uid: string) => (
                     <div
@@ -322,61 +318,28 @@ const Lobby = () => {
                       key={uid}
                     >
                       {/* Player name */}
-                      <div className="flex items-center gap-3">
-                        <span className="font-medium">
-                          {players.get(uid) && players.get(uid).userName}
-                        </span>
-                      </div>
+                      <div className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg" key={uid}>
+                        <div>{players && players.get(uid) && players.get(uid).userName}</div>
                       {/* Remove player button */}
-                      {isHost && (
-                        <div className="" onClick={() => removePlayer(uid)}>
-                          <Image
-                            src={close}
-                            alt="close"
-                            width={20}
-                            className="invert"
-                          />
-                        </div>
-                      )}
+                        { isHost &&
+                          <div className="" onClick={() => removePlayer(uid)}>
+                              <IoIosClose size={30}/>
+                          </div>
+                        }
+                      </div>
+                      
                     </div>
                   ))}
               </div>
-            </div>
 
-            {/* Game Controls */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              Game Controls
-              {isHost && (
-                <div className="space-y-4">
-                  <div className="p-3 bg-[#2f2f2f] rounded-lg">
-                    <div className="text-sm text-gray-400 mb-1">
-                      Host Controls
-                    </div>
-                    <button
-                      onClick={handleStartGame}
-                      disabled={gameStatus === 'starting'}
-                      className={`w-full px-4 py-3 rounded-xl font-bold transition ${
-                        gameStatus !== 'starting'
-                          ? 'bg-green-600 hover:opacity-90'
-                          : 'bg-gray-600 cursor-not-allowed opacity-50'
-                      }`}
-                    >
-                      {gameStatus === 'starting'
-                        ? 'Starting Game...'
-                        : 'Start Game'}
-                    </button>
-                  </div>
-                </div>
-              )}
-              <div className="mt-4 p-3 bg-[#2f2f2f] rounded-lg">
-                <div className="text-sm text-gray-400 mb-2">Scenario Info</div>
-                <div className="text-sm space-y-1">
-                  <div>Name: ubuntu - basic</div>
-                  <div>Challenges: 5</div>
-                  <div>Difficulty: Beginner</div>
+              <div className="flex h-full align-bottom items-end">
+                <div className="flex flex-row px-2 pt-3 w-full justify-between border-t">
+                  <h2 className="text-l font-semibold text-white">Team ID: {team.id}</h2>
+                  {/* <h2 className="text-l font-semibold text-white">Team Members: {value.numMembers}</h2> */}
                 </div>
               </div>
             </div>
+            }
           </section>
         </main>
       </div>
