@@ -21,7 +21,7 @@ const Lobby = () => {
   const router = useRouter();
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
-  const [currentScenario, setCurrentScenario] = useState('');
+  const [currentScenario, setCurrentScenario] = useState<any | null>(null);
   const [gameStatus, setGameStatus] = useState('waiting'); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
 
@@ -31,6 +31,32 @@ const Lobby = () => {
   // TODO: Setup backend call to get player, scenario and teams information
 
 
+  // Get the current scenario information
+  async function getScenario() {
+    // Check if the sessionId has been set, if not return
+    if (teamId == "") {
+      return;
+    }
+    try{
+      // Find the session doc
+      const sessionRef = doc(db, "sessions", team.sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      let scenarioId = ""
+      if (sessionSnap.exists()) {
+        scenarioId = sessionSnap.data().scenarioId;
+      }
+      
+      // Find the scenario doc
+      const scenearioRef = doc(db, "scenarios", scenarioId);
+      const scenarioSnap = await getDoc(scenearioRef);
+      if (scenarioSnap.exists()) {
+        setCurrentScenario(scenarioSnap.data())
+      }
+
+    } catch (error) {
+      console.log("Failed", error);
+    }
+  }
 
   // Find the team associated with the given user id
   async function findTeam(uid: string) {
@@ -198,9 +224,13 @@ const Lobby = () => {
         findTeam(currentUser.uid);
         if (team) {
           getPlayers();
+          getScenario();
+
         }
         checkHost();
       }
+
+
   
       return () => {
         unsubscribe;
@@ -268,7 +298,7 @@ const Lobby = () => {
           {/* Lobby Content */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
-            {/* <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
+            <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2">
               <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Current Scenario</h2>
               {
                 currentScenario && (
@@ -294,7 +324,7 @@ const Lobby = () => {
                   </div>
                 </div>
               )}
-            </div> */}
+            </div>
 
             {/* Teams */}
             <div className="p-6 rounded-2xl col-span-2 ">
