@@ -29,6 +29,7 @@ export default function Shell() {
   const [jwt, setJwt] = useState<string | null>(null);
   const [showJwt, setShowJwt] = useState(false);
   const [teamId, setteamId] = useState<string | null>(null);
+  const [gameteamId, setgameteamId] = useState<any>(null);
 
   const isProcessingInputRef = useRef(false);
   const isConnectingRef = useRef(false);
@@ -75,6 +76,43 @@ export default function Shell() {
     // Cleanup subscription when component unmounts
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, "teams");
+          const teamsSnap = await getDocs(teamsRef);
+
+          const userId = currentUser.uid;
+
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(userId)
+            ) {
+              console.log(`User found in team: ${teamData.name}`);
+              setgameteamId(teamDoc.id);
+              return; 
+            }
+          }
+
+          console.warn("User not found in any team");
+          setgameteamId(null);
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+          setgameteamId(null)
+        }
+      } else {
+        setgameteamId(null)
+      }
+    });
+
+    // Cleanup the auth listener when the component unmounts
+    return () => unsubscribe();
+  }, [auth, db]);
 
   // Get username and team ids
   const fetchTeamById = async (teamUid: string) => {
@@ -154,6 +192,21 @@ export default function Shell() {
           term.open(terminalRef.current);
         }
 
+        term.onData((data) => {
+          if (data === "\x04") { // Ctrl + D
+            term.writeln("\r\n\x1b[31mSession aborted by user.\x1b[0m\r\n");
+        
+            // Close any active WebSocket
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+              wsRef.current.close();
+            }
+        
+            // Reset UI state
+            setIsConnected(false);
+            isConnectingRef.current = false;
+          }
+        });
+
         xtermRef.current = term;
 
         if (isMountedRef.current) {
@@ -207,82 +260,16 @@ export default function Shell() {
         `Welcome ${userName} to the CyberBattles shell.\r\n`,
       );
 
-      term.writeln(
-        `To begin, enter the game ID.\r\n`
-      )
-
-      let inputBuffer = "";
-
-    const handleInput = async (data: string) => {
-      if (data === "\r") { 
-        const enteredTeamId = inputBuffer.trim();
-        if (enteredTeamId.length === 0) {
-          term.writeln(
-            "\r\x1b[31mTeam ID cannot be empty. Try again:\x1b[0m\r\n"
-          );
-          inputBuffer = "";
-          
-          return;
-        }
-
-        const cleanupInput = () => {
-          disposable.dispose();
-          inputBuffer = "";
-        };        
-
-        const teamsRef = collection(db, "teams");
-        const snapshot = await getDocs(collection(db, "teams"));
-        term.writeln(`\r\n`);
-
         term.writeln('Validating Team...\x1b[0m\r\n')
 
-        // Find the first team that matches the name
-        const matchedTeamDoc = snapshot.docs.find((doc) => {
-          const data = doc.data();
-          return data.id === enteredTeamId.toLowerCase();
-        });
-
-        if (!matchedTeamDoc) {
-          term.writeln(`\x1b[31mTeam '${enteredTeamId}' not found. Try again:\x1b[0m\r\n`);
-          inputBuffer = "";
+        if (!gameteamId) {
+          term.write(`\x1b[33mYou are not a member of a team. Join a team to begin. Abort with CTRL^D\r\n\x1b[0m`);
           return;
-        }
+        };
 
-        const teamData = matchedTeamDoc.data();
+        term.write(`\x1b[33mWaiting for game start, leave queue with CTRL^D.\r\n\x1b[0m`);
 
-        // Validate memberIds
-        if (!teamData.memberIds || !Array.isArray(teamData.memberIds)) {
-          term.writeln(`\x1b[31mTeam '${enteredTeamId}' has no members configured.\x1b[0m\r\n`);
-          inputBuffer = "";
-          return;
-        }
-
-        if (!teamData.memberIds.includes(userId)) {
-          term.writeln(`\x1b[31mYou are not a member of '${enteredTeamId}'. Access denied.\x1b[0m\r\n`);
-          inputBuffer = "";
-          return;
-        }
-
-        // Success
-        disposable.dispose();
-        cleanupInput(); 
-        term.writeln(`Joined team: ${enteredTeamId}\r\n`);
-        setteamId(matchedTeamDoc.id);
-        openWebSocket(term, matchedTeamDoc.id, userId, jwt!);
-
-      } else if (data === "\u007F") {
-        // Backspace
-        if (inputBuffer.length > 0) {
-          inputBuffer = inputBuffer.slice(0, -1);
-          term.write("\b \b");
-        }
-      } else {
-        inputBuffer += data;
-        term.write(data);
-      }
-    };
-
-    const disposable = term.onData(handleInput);
+        openWebSocket(term, gameteamId, userId, jwt!);
 
   } catch (err) {
     console.error("Connection error:", err);
@@ -324,13 +311,11 @@ const openWebSocket = (
   // Track if we've shown the initial retry message
   let hasShownRetryMessage = false;
 
-  term.write(`\x1b[33mWaiting for game start, leave queue with CTRL^D.\r\n\x1b[0m`);
-
   const connect = () => {
     if (abort || !isMountedRef.current || isConnectingRef.current) return;
     isConnectingRef.current = true;
 
-    ws = new WebSocket(`wss://${host}/terminals/${teamId}/${userId}/${jwt}`);
+    ws = new WebSocket(`wss://${host}/terminals/${gameteamId}/${userId}/${jwt}`);
     wsRef.current = ws;
 
     const connectionTimeout = setTimeout(() => {
@@ -353,18 +338,6 @@ const openWebSocket = (
       inputHandler = term.onData((data) => {
         if (!abort && ws?.readyState === WebSocket.OPEN) {
           ws.send(data);
-        }
-      });
-
-      // Ctrl+C handler to abort connection
-      ctrlDHandler = term.onData((data) => {
-        if (data === "\x04") { // Ctrl+D
-          abort = true;
-          ws?.close();
-          if (!closedByUser) {
-            closedByUser = true;
-            term.writeln("\r\n\x1b[31mConnection aborted by user.\x1b[0m\r\n");
-          }
         }
       });
     };
