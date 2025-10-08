@@ -72,7 +72,7 @@ export default function ModernLearnPage() {
       ],
     },
     {
-      title: 'Red Teaming',
+      title: 'Ethical Hacking',
       icon: <FaShieldAlt className="text-lg" />,
       difficulty: 'Intermediate',
       estimatedTime: '5 min',
@@ -80,17 +80,17 @@ export default function ModernLearnPage() {
         {
           type: 'text',
           content:
-            'Red teaming represents the offensive side of cybersecurity—ethical hackers who simulate real-world cyberattacks to help organizations identify and fix vulnerabilities before malicious actors can exploit them.',
+            'Ethical hackers represent the offensive side of cybersecurity hackers who simulate real-world cyberattacks to help organizations identify and fix vulnerabilities before malicious actors can exploit them. Ethical hackers have the same skills and use the same tools and tactics as malicious hackers, but their goal is always to improve network security without harming the network or its users.',
         },
         {
           type: 'text',
           content:
-            'Unlike malicious attackers, red team professionals operate with explicit permission and focus on improving security rather than causing damage. They use the same sophisticated tools and techniques as cybercriminals, but their mission is protection through controlled testing.',
+            'Unlike malicious attackers, these professionals operate with explicit permission and focus on improving security rather than causing damage. They use the same sophisticated tools and techniques as cybercriminals, but their mission is protection through controlled testing.',
         },
         {
           type: 'text',
           content:
-            "Red teams often engage in adversarial exercises with blue teams (system defenders), creating realistic scenarios that test an organization's entire security posture—from technical controls to human factors.",
+            "In many ways, ethical hacking is like a rehearsal for real-world cyberattacks. Organizations hire ethical hackers to launch simulated attacks on their computer networks. During these attacks, the ethical hackers demonstrate how actual cybercriminals break into a network and the damage they could do once inside.",
         },
         {
           type: 'text',
@@ -103,7 +103,7 @@ export default function ModernLearnPage() {
             'Arsenal of Techniques:\n• Social engineering and phishing campaigns\n• Physical security assessments\n• Network reconnaissance and sniffing\n• Credential attacks and password spraying\n• Privilege escalation and lateral movement',
         },
       ],
-      resources: ['https://www.ibm.com/think/topics/red-teaming'],
+      resources: ['https://www.ibm.com/think/topics/ethical-hacking'],
     },
     {
       title: 'Blue Teaming',
@@ -119,7 +119,7 @@ export default function ModernLearnPage() {
         {
           type: 'text',
           content:
-            "Unlike red teams who simulate attacks, blue teams have comprehensive access to an organization's entire infrastructure. This 'white box' perspective allows them to create detailed risk assessments and implement proactive security measures.",
+            "Blue teams have comprehensive access to an organization's entire infrastructure. This 'white box' perspective allows them to create detailed risk assessments and implement proactive security measures.",
         },
         {
           type: 'text',
