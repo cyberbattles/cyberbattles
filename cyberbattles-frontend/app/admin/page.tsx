@@ -337,20 +337,6 @@ const Admin = () => {
           {/* Header */}
           <header className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold">Session Lobby</h1>
-            {/* <div className="flex gap-4">
-              <button
-                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
-                onClick={handleLeaveLobby}
-              >
-                Leave Lobby
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div> */}
           </header>
 
           {/* Lobby Content */}
@@ -385,7 +371,7 @@ const Admin = () => {
             </div>
 
             {/* Timer */}
-            <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
+            {/* <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
               <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Time Remaining</h2>
               {
                 gameStatus == "started" && (
@@ -394,7 +380,7 @@ const Admin = () => {
                   </div>
                 )
               }
-            </div>
+            </div> */}
 
             {/* Teams */}
             <div className="p-6 rounded-2xl col-span-2 ">
