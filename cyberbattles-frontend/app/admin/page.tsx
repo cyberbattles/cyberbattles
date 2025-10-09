@@ -82,7 +82,8 @@ const Admin = () => {
         getUser(pid).then((value) => {
           if (!players.has(pid)){
             players.set(pid, value);
-            setPlayers(new Map(players));          }
+            setPlayers(new Map(players));          
+          }
         }).catch((error) => {
           console.log("Unable to find player", error);
         });
@@ -156,6 +157,11 @@ const Admin = () => {
       let scenarioId = ""
       if (sessionSnap.exists()) {
         scenarioId = sessionSnap.data().scenarioId;
+        // Check if the session has already started
+        let started = sessionSnap.data().started;
+        if (started) {
+          setGameStatus("started");
+        }
       }
       
       // Find the scenario doc
