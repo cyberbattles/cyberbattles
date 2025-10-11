@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as http from 'http';
 import * as path from 'path';
+import * as cors from 'cors';
 import {WebSocketServer} from 'ws';
 import {handleWSConnection} from './services/websockets';
 import apiRoutes from './routes';
@@ -22,7 +23,11 @@ async function main() {
 
   // Setup Express server and WebSocket server
   const app = express();
+
+  // Allow all CORS origins and sanitize inputs
+  app.use(cors({origin: '*'}));
   app.use(require('sanitize').middleware);
+
   const server = http.createServer(app);
   const wss = new WebSocketServer({server});
 
