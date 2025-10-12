@@ -25,6 +25,7 @@ const Lobby = () => {
   const [currentScenario, setCurrentScenario] = useState<any | null>(null);
   const [gameStatus, setGameStatus] = useState(''); // waiting, starting, active
   const [isHost, setIsHost] = useState(false);
+  const [gameId, setgameId] = useState<any>(null);
 
   const [team, setTeam] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
@@ -90,6 +91,43 @@ const Lobby = () => {
       console.log('Failed', error);
     }
   }
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, "teams");
+          const teamsSnap = await getDocs(teamsRef);
+
+          const userId = currentUser.uid;
+
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(userId)
+            ) {
+              console.log(`User found in team: ${teamData.name}`);
+              setgameId(teamDoc.id);
+              return; 
+            }
+          }
+
+          console.warn("User not found in any team");
+          setgameId(null);
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+          setgameId(null)
+        }
+      } else {
+        setgameId(null)
+      }
+    });
+
+    // Cleanup the auth listener when the component unmounts
+    return () => unsubscribe();
+  }, [auth, db]);
 
   // Populate the players hook with map (uid, firestore player doc)
   async function getPlayers() {
@@ -289,9 +327,15 @@ const Lobby = () => {
           <nav className="p-6">
             <ul className="space-y-4">
               <li>
-                <div className="text-sm text-gray-400 mb-1">Teams:</div>
-                <div className="font-semibold text-white">
-                  {teamId && team.name}
+                <div className="text-sm text-gray-400">Team:</div>
+                <div className="font-semibold text-blue-400">
+                  {team?.name || "—"}
+                </div>
+              </li>
+              <li>
+                <div className="text-sm text-gray-400">Team ID:</div>
+                <div className="font-semibold text-blue-400">
+                    {gameId}
                 </div>
               </li>
               <li>
