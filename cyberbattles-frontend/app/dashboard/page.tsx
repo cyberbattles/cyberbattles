@@ -2,6 +2,7 @@
 import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
 import {User, onAuthStateChanged, signOut} from 'firebase/auth';
+import { FaRegCopy } from "react-icons/fa";
 import {
   doc,
   getDoc,
@@ -12,6 +13,7 @@ import {
   query,
   getDocs,
   arrayRemove,
+  Firestore,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
@@ -23,9 +25,13 @@ const Dashboard = () => {
   // For clan
   const [user, setUser] = useState<User | null>(null);
   const [userClan, setUserClan] = useState<any>(null);
+  const [gameteamId, setgameteamId] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [currentUsername, setcurrentUsername] = useState("User");
+  
 
   // New state for the team join feature
   const [teamId, setTeamId] = useState('');
@@ -45,6 +51,35 @@ const Dashboard = () => {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const q = query(
+            collection(db, "login"),
+            where("UID", "==", currentUser.uid)
+          );
+          const querySnap = await getDocs(q);
+  
+          if (!querySnap.empty) {
+            const userDoc = querySnap.docs[0];
+            const userData = userDoc.data();
+            setcurrentUsername(userData.userName);
+          } else {
+            console.warn("User not found in login collection");
+          }
+        } catch (error) {
+          console.error("Error fetching username:", error);
+        }
+      } else {
+        console.log("No user signed in");
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
+  
 
   useEffect(() => {
     const checkUserClan = async () => {
@@ -77,6 +112,18 @@ const Dashboard = () => {
 
     checkUserClan();
   }, [uid]);
+
+  const handleCopy = async () => {
+    if (gameteamId) {
+      try {
+        await navigator.clipboard.writeText(gameteamId);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (error) {
+        console.error("Failed to copy Game ID:", error);
+      }
+    }
+  };
 
   const handleLeaveClan = async () => {
     if (!user || !userClan) return;
@@ -135,9 +182,54 @@ const Dashboard = () => {
     }
   };
 
-  const handleGoToTeam = () => {
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, "teams");
+          const teamsSnap = await getDocs(teamsRef);
+
+          const userId = currentUser.uid;
+
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(userId)
+            ) {
+              console.log(`User found in team: ${teamData.name}`);
+              setgameteamId(teamDoc.id);
+              return; 
+            }
+          }
+
+          console.warn("User not found in any team");
+          setgameteamId(null);
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+          setgameteamId(null)
+        }
+      } else {
+        setgameteamId(null)
+      }
+    });
+
+    // Cleanup the auth listener when the component unmounts
+    return () => unsubscribe();
+  }, [auth, db]);
+
+  const handleGoToJoin = () => {
     try {
-      router.push('/team');
+      router.push('/join-team');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
+
+  const handleGoToCreation = () => {
+    try {
+      router.push('/create-session');
     } catch (error) {
       console.error('Navigation failed:', error);
     }
@@ -252,7 +344,7 @@ const Dashboard = () => {
         <main className="flex-1 p-8 overflow-auto">
           {/* Header */}
           <header className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl font-bold">Welcome, User!</h1>
+            <h1 className="text-2xl font-bold">Welcome, {currentUsername}!</h1>
             <div className="flex gap-4">
               <button
                 className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
@@ -269,14 +361,20 @@ const Dashboard = () => {
 
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
               <h3 className="text-lg font-semibold mb-2">
-                Want to get started and get a team going?
+                Join or Create Game
               </h3>
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
-                  onClick={handleGoToTeam}
-                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                  onClick={handleGoToJoin}
+                  className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
                 >
-                  Click Here
+                  Join a Game
+                </button>
+                <button
+                  onClick={handleGoToCreation}
+                  className="px-4 py-2 bg-blue-800 rounded-xl hover:opacity-90 transition font-bold"
+                >
+                  Create a Game
                 </button>
               </div>
               {joinMessage.text && (
@@ -296,7 +394,7 @@ const Dashboard = () => {
                   onClick={handleGoToAdmin}
                   className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                 >
-                  Click Here
+                  Game Lobby Information
                 </button>
               </div>
               {joinMessage.text && (
@@ -310,6 +408,36 @@ const Dashboard = () => {
                   {joinMessage.text}
                 </p>
               )}
+      {gameteamId && (
+      <div>
+      <h3 className="text-lg font-semibold mb-2">
+        <br />
+        Current Team ID
+      </h3>
+      <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
+
+        <div className="flex justify-between items-center">
+          <div>
+              <h4 className="text-l font-bold text-green-600">{gameteamId}</h4>
+          </div>
+
+          {gameteamId && (
+            <button
+              onClick={handleCopy}
+              className="text-gray-300 hover:text-white transition-colors"
+              title="Copy Game ID"
+            >
+              <FaRegCopy />
+            </button>
+          )}
+        </div>
+
+        {copied && (
+          <p className="text-sm text-green-400 mt-2">Copied to clipboard!</p>
+        )}
+      </div>
+    </div>
+)}
             </div>
 
             {/* JWT Display Widget */}
