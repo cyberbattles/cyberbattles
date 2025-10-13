@@ -47,6 +47,8 @@ const CreateSession = () => {
       zipData: any;
     }>
   >([]);
+  const [jwt, setJwt] = useState<string | null>(null);
+  const [showJwt, setShowJwt] = useState(false);
   const [numTeams, setNumberTeams] = useState(2);
   const [numMembersPerTeam, setPlayersPerTeam] = useState(1);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
@@ -101,6 +103,30 @@ const CreateSession = () => {
     getScenarios();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
+      if (user) {
+        try {
+          const token = await user.getIdToken(true);
+          setJwt(token);
+          localStorage.setItem('token', token);
+          setShowJwt(true);
+        } catch (error) {
+          console.error('Failed to get JWT:', error);
+          setJwt('Could not retrieve token.');
+          setShowJwt(true);
+        }
+      } else {
+        console.error('No user is signed in.');
+        setJwt(null);
+        setShowJwt(false);
+      }
+    });
+
+    // Cleanup subscription when component unmounts
+    return () => unsubscribe();
+  }, []);
+
   async function createSession() {
     try {
       const response = await ApiClient.post('/session', {
@@ -119,7 +145,7 @@ const CreateSession = () => {
   const handleCreateSession = async () => {
     try {
       await createSession();
-      router.push('/lobby');
+      router.push('/admin');
     } catch (error) {
       console.error('Create session failed:', error);
     }
