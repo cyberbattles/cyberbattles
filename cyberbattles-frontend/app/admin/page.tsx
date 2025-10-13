@@ -13,6 +13,7 @@ import ApiClient from "@/components/ApiClient";
 
 const Admin = () => {
   const router = useRouter();
+  const [sessionIds, setSessionIds] = useState<string[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
@@ -26,26 +27,55 @@ const Admin = () => {
   
   // TODO: Setup backend call to get player, scenario and teams information
 
-
-  // Find the teams associated with the session admin id
-  async function getTeams(uid: string) {
-    // Check if the teamId has already been set, if so return
-    if (teams.size != 0) {
-      return;
-    }
-    try{
+  async function getSessions(uid: string) {
+    try {
       const sessionRef = collection(db, "sessions");
       const q =  query(sessionRef, where("adminUid", "==", uid));
-      // Get the teamIds array
-      let teamIds: string[] = [];
+
+      // Iterate through the sessions and add all ids to the array
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        setSessionId(doc.data().id);
-        teamIds = doc.data().teamIds;
-        if (doc.data().started) {
+        console.log(doc.data().id);
+        let newId = doc.data().id;
+        let newSessionIds: string[] = sessionIds;
+        newSessionIds.push(newId)
+        setSessionIds(newSessionIds);
+      });
+
+      // If sessions were found, set the current to be the first
+      if (sessionIds.length != 0) {
+        setSessionId(sessionIds[0]);
+      }
+      
+    } catch (error) {
+      console.log("Failed", error);
+    }
+  }
+
+  // Find the teams associated with the session admin id
+  async function getTeams() {
+
+    if (teams.size != 0){
+      return;
+    }
+
+    // If sessionId is not set then do nothing
+    if(sessionId == ""){
+      return;
+    }
+
+    try{
+
+      // Get the teamIds array
+      let teamIds: string[] = [];
+      const sessionRef = doc(db, "sessions", sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      if (sessionSnap.exists()){
+        teamIds = sessionSnap.data().teamIds;
+        if (sessionSnap.data().started) {
           setGameStatus("started");
         }
-      });
+      };
 
       teamIds.forEach((teamId) => {
         addTeam(teamId);
@@ -138,7 +168,7 @@ const Admin = () => {
     setTeams(new Map());
     setPlayers(new Map());
 
-    getTeams(currentUser.uid);
+    getTeams();
     getPlayers();
 
   }
@@ -146,12 +176,12 @@ const Admin = () => {
   // FUNC: Refresh the teams
   const refreshTeams = async () => {
 
-    // Reinitialise the use state hooks to remove member *** CHANGE THIS ***
+    // Reinitialise the use state hooks to remove member
 
     setTeams(new Map());
     setPlayers(new Map());
 
-    getTeams(currentUser.uid);
+    getTeams();
     getPlayers();
 
   }
@@ -287,7 +317,8 @@ const Admin = () => {
 
       // Populate the team hook and check if user is host
       if (currentUser) {
-        getTeams(currentUser.uid);
+        getSessions(currentUser.uid);
+        getTeams();
         getPlayers();
         getScenario();
       }
