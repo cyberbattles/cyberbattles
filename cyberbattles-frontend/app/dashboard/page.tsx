@@ -322,13 +322,13 @@ const Dashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="analytics" className="hover:text-blue-400">
-                  Analytics
+                <a href="reports" className="hover:text-blue-400">
+                  Game Reports
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400">
-                  Reports
+                <a href="analytics" className="hover:text-blue-400">
+                  Analytics
                 </a>
               </li>
               <li>
