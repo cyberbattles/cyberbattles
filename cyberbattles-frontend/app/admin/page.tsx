@@ -77,6 +77,8 @@ const Admin = () => {
         teamIds = sessionSnap.data().teamIds;
         if (sessionSnap.data().started) {
           setGameStatus("started");
+        } else {
+          setGameStatus("waiting")
         }
       };
 
