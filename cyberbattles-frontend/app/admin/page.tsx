@@ -13,6 +13,7 @@ import ApiClient from "@/components/ApiClient";
 
 const Admin = () => {
   const router = useRouter();
+  const [sessionIds, setSessionIds] = useState<string[]>([]);
   const [sessionId, setSessionId] = useState("");
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
@@ -26,26 +27,60 @@ const Admin = () => {
   
   // TODO: Setup backend call to get player, scenario and teams information
 
-
-  // Find the teams associated with the session admin id
-  async function getTeams(uid: string) {
-    // Check if the teamId has already been set, if so return
-    if (teams.size != 0) {
-      return;
-    }
-    try{
+  async function getSessions(uid: string) {
+    try {
       const sessionRef = collection(db, "sessions");
       const q =  query(sessionRef, where("adminUid", "==", uid));
-      // Get the teamIds array
-      let teamIds: string[] = [];
+
+      // Iterate through the sessions and add all ids to the array
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        setSessionId(doc.data().id);
-        teamIds = doc.data().teamIds;
-        if (doc.data().started) {
-          setGameStatus("started");
+        let newId = doc.data().id;
+        let newSessionIds: string[] = sessionIds;
+        
+        // Only add the sessionId if its not in the array already
+        if (!sessionIds.find((id) => id == newId)){
+          newSessionIds.push(newId)
+          setSessionIds(newSessionIds);
         }
       });
+
+      // If sessions were found, set the current to be the first
+      if (sessionIds.length != 0) {
+        setSessionId(sessionIds[0]);
+      }
+      
+    } catch (error) {
+      console.log("Failed", error);
+    }
+  }
+
+  // Find the teams associated with the session admin id
+  async function getTeams() {
+
+    if (teams.size != 0){
+      return;
+    }
+
+    // If sessionId is not set then do nothing
+    if(sessionId == ""){
+      return;
+    }
+
+    try{
+
+      // Get the teamIds array
+      let teamIds: string[] = [];
+      const sessionRef = doc(db, "sessions", sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      if (sessionSnap.exists()){
+        teamIds = sessionSnap.data().teamIds;
+        if (sessionSnap.data().started) {
+          setGameStatus("started");
+        } else {
+          setGameStatus("waiting")
+        }
+      };
 
       teamIds.forEach((teamId) => {
         addTeam(teamId);
@@ -139,7 +174,7 @@ const Admin = () => {
     setTeams(new Map());
     setPlayers(new Map());
 
-    getTeams(currentUser.uid);
+    getTeams();
     getPlayers();
 
   }
@@ -147,12 +182,12 @@ const Admin = () => {
   // FUNC: Refresh the teams
   const refreshTeams = async () => {
 
-    // Reinitialise the use state hooks to remove member *** CHANGE THIS ***
+    // Reinitialise the use state hooks to remove member
 
     setTeams(new Map());
     setPlayers(new Map());
 
-    getTeams(currentUser.uid);
+    getTeams();
     getPlayers();
 
   }
@@ -227,17 +262,10 @@ const Admin = () => {
 
 // ---- Handlers ---- //
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  const handleLeaveLobby = () => {
-    router.push("/dashboard");
+  const handleChangeSession = async (sid: string) => {
+    setTeams(new Map());
+    setPlayers(new Map());
+    setSessionId(sid);
   };
 
   const handleStartGame = async () => {
@@ -290,10 +318,12 @@ const Admin = () => {
 
   // Set the teams, players, and scenario hooks
   useEffect(() => {
-
       // Populate the team hook and check if user is host
       if (currentUser) {
-        getTeams(currentUser.uid);
+        if (sessionId == ""){
+          getSessions(currentUser.uid);
+        }
+        getTeams();
         getPlayers();
         getScenario();
       }
@@ -348,8 +378,38 @@ const Admin = () => {
         {/* Main Content */}
         <main className="flex-1 p-8 overflow-auto">
           {/* Header */}
-          <header className="flex justify-between items-center mb-8">
+          <header className="flex justify-between items-center gap-10 mb-8 mr-10">
             <h1 className="text-2xl font-bold">Session Lobby</h1>
+            <ul className="flex flex-col gap-5 text-sm md:flex-row ">
+              {
+                sessionIds.map((id) => (
+                  <button
+                    className={`px-4 py-2 rounded-xl hover:opacity-90 transition font-bold ${
+                        id === sessionId ? "bg-gray-600 " :
+                        "bg-[#1e1e1e]"
+                      }`}
+                    onClick={() => handleChangeSession(id)}
+                    key={id}
+                  >{id}
+                  </button>
+                ))
+              }
+              
+            </ul>
+            {/* <div className="flex gap-4">
+              <button
+                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
+                onClick={handleLeaveLobby}
+              >
+                Leave Lobby
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div> */}
           </header>
 
           {/* Lobby Content */}
