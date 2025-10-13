@@ -32,6 +32,8 @@ export interface Team {
   id: string;
   /** The session ID of the session this team belongs to. */
   sessionId: string;
+  /** The IP address assigned to the team's container, on the WireGuard network. */
+  ipAddress: string | null;
 }
 
 /**
