@@ -380,7 +380,7 @@ const Admin = () => {
                   <button
                     className={`px-4 py-2 rounded-xl hover:opacity-90 transition font-bold ${
                         id === sessionId ? "bg-gray-600 " :
-                        "shadow"
+                        "bg-[#1e1e1e]"
                       }`}
                     onClick={() => handleChangeSession(id)}
                     key={id}
