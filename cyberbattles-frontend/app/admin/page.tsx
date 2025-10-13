@@ -35,11 +35,14 @@ const Admin = () => {
       // Iterate through the sessions and add all ids to the array
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
-        console.log(doc.data().id);
         let newId = doc.data().id;
         let newSessionIds: string[] = sessionIds;
-        newSessionIds.push(newId)
-        setSessionIds(newSessionIds);
+        
+        // Only add the sessionId if its not in the array already
+        if (!sessionIds.find((id) => id == newId)){
+          newSessionIds.push(newId)
+          setSessionIds(newSessionIds);
+        }
       });
 
       // If sessions were found, set the current to be the first
@@ -251,17 +254,10 @@ const Admin = () => {
 
 // ---- Handlers ---- //
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  const handleLeaveLobby = () => {
-    router.push("/dashboard");
+  const handleChangeSession = async (sid: string) => {
+    setTeams(new Map());
+    setPlayers(new Map());
+    setSessionId(sid);
   };
 
   const handleStartGame = async () => {
@@ -314,10 +310,11 @@ const Admin = () => {
 
   // Set the teams, players, and scenario hooks
   useEffect(() => {
-
       // Populate the team hook and check if user is host
       if (currentUser) {
-        getSessions(currentUser.uid);
+        if (sessionId == ""){
+          getSessions(currentUser.uid);
+        }
         getTeams();
         getPlayers();
         getScenario();
@@ -373,11 +370,23 @@ const Admin = () => {
         {/* Main Content */}
         <main className="flex-1 p-8 overflow-auto">
           {/* Header */}
-          <header className="flex justify-between items-center mb-8">
+          <header className="flex justify-between items-center gap-10 mb-8 mr-10">
             <h1 className="text-2xl font-bold">Session Lobby</h1>
-            <ul className="flex text-l ">
-              <li>Item</li>
-              <li>Item</li>
+            <ul className="flex flex-col gap-5 text-sm md:flex-row ">
+              {
+                sessionIds.map((id) => (
+                  <button
+                    className={`px-4 py-2 rounded-xl hover:opacity-90 transition font-bold ${
+                        id === sessionId ? "bg-gray-600 " :
+                        "shadow"
+                      }`}
+                    onClick={() => handleChangeSession(id)}
+                    key={id}
+                  >{id}
+                  </button>
+                ))
+              }
+              
             </ul>
             {/* <div className="flex gap-4">
               <button
