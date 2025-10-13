@@ -375,6 +375,10 @@ const Admin = () => {
           {/* Header */}
           <header className="flex justify-between items-center mb-8">
             <h1 className="text-2xl font-bold">Session Lobby</h1>
+            <ul className="flex text-l ">
+              <li>Item</li>
+              <li>Item</li>
+            </ul>
             {/* <div className="flex gap-4">
               <button
                 className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
