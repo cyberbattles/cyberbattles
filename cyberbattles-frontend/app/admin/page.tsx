@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image"
-import { IoIosClose } from "react-icons/io";
+import { IoIosClose, IoIosRefresh } from "react-icons/io";
 import React, { useState, useEffect, ReactNode } from "react";
 import { auth, db } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
@@ -132,6 +132,19 @@ const Admin = () => {
     }).catch((error: any) => {
       console.error("Error updating document: ", error)
     })
+
+    // Reinitialise the use state hooks to remove member *** CHANGE THIS ***
+
+    setTeams(new Map());
+    setPlayers(new Map());
+
+    getTeams(currentUser.uid);
+    getPlayers();
+
+  }
+
+  // FUNC: Refresh the teams
+  const refreshTeams = async () => {
 
     // Reinitialise the use state hooks to remove member *** CHANGE THIS ***
 
@@ -392,7 +405,12 @@ const Admin = () => {
 
             {/* Teams */}
             <div className="p-6 rounded-2xl col-span-2 ">
-              <h2 className="text-2xl font-semibold">Teams</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-semibold">Teams</h2>
+                <div className="" onClick={() => refreshTeams()}>
+                  <IoIosRefresh size={20}/>
+                </div>
+              </div>
             </div>
             
 
