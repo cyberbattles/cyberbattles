@@ -47,27 +47,6 @@ export default function Shell() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
-      if (user) {
-        try {
-          const token = await user.getIdToken(true);
-          setJwt(token);
-          localStorage.setItem('token', token);
-        } catch (error) {
-          console.error('Failed to get JWT:', error);
-          setJwt('Could not retrieve token.');
-        }
-      } else {
-        console.error('No user is signed in.');
-        setJwt(null);
-      }
-    });
-
-    // Cleanup subscription when component unmounts
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (currentUser) {
         try {
@@ -97,6 +76,19 @@ export default function Shell() {
         }
       } else {
         setgameteamId('');
+      }
+      if (currentUser) {
+        try {
+          const token = await currentUser.getIdToken(true);
+          setJwt(token);
+          localStorage.setItem('token', token);
+        } catch (error) {
+          console.error('Failed to get JWT:', error);
+          setJwt('Could not retrieve token.');
+        }
+      } else {
+        console.error('No user is signed in.');
+        setJwt(null);
       }
     });
 
