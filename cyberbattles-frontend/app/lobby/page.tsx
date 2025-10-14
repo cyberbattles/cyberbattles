@@ -431,13 +431,7 @@ const Lobby = () => {
                       key={uid}
                     >
                       {/* Player name */}
-                        <div>{players && players.get(uid) && players.get(uid).userName}</div>
-                      {/* Remove player button */}
-                        { isHost &&
-                          <div className="" onClick={() => removePlayer(uid)}>
-                              <IoIosClose size={30}/>
-                          </div>
-                        }                      
+                        <div>{players && players.get(uid) && players.get(uid).userName}</div>                   
                     </div>
                   ))}
               </div>
