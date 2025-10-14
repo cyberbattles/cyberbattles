@@ -233,11 +233,6 @@ const Admin = () => {
         case 200:
           const result: StartSessionResult = response.data;
 
-          // If somehow a 200 is returned but the success is false
-          if (!result.success) {
-            throw new Error(result.message);
-          }
-
           // Get the team ids from the result
           let teamIds: string[] = [];
           if (result.teamsAndMembers) {
