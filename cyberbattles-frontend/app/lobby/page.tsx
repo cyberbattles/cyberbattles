@@ -29,6 +29,7 @@ const Lobby = () => {
 
   const [team, setTeam] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [isKicked, setIsKicked] = useState(false);
 
   // TODO: Setup backend call to get player, scenario and teams information
 
@@ -255,6 +256,12 @@ const Lobby = () => {
     router.push('/dashboard');
   };
 
+  const handleKicked = async () => {
+    setIsKicked(true);
+    await delay(3000);
+    router.push("/dashboard");
+  }
+
   const handleStartGame = async () => {
     setGameStatus("starting");
     await delay(3000);
@@ -312,6 +319,33 @@ const Lobby = () => {
       }
     };
   }, [team, gameStatus]);
+
+  // Checking if you have been kicked useEffect
+  useEffect(() => {
+    let unsubscribe = null;
+    if (team && teamId && currentUser){
+      let unsubscribe = onSnapshot(doc(db, "teams", teamId), (doc) => {
+        if (doc.exists()) {
+          let kick = true;
+          let memberIds:string[] = doc.data().memberIds;
+          memberIds.forEach((id) => {
+            // Check if the current user id is in the array
+            if (currentUser.uid == id){
+              kick = false;
+            }
+          })
+          if (kick) {
+            handleKicked();
+          }
+        }
+      });
+  }
+    return () => {
+      if (unsubscribe) {
+        unsubscribe;
+      }
+    };
+  }, [team, teamId, currentUser]);
 
   // ------------- End useEffects ---------------
 
@@ -377,6 +411,15 @@ const Lobby = () => {
               </button>
             </div>
           </header>
+
+          {isKicked && (
+            <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
+                <span className="text-red-400 font-semibold">You have been kicked ...</span>
+              </div>
+            </div>
+          )}
 
           {/* Lobby Content */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
