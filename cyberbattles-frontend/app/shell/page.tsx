@@ -28,6 +28,11 @@ export default function Shell() {
   const [jwt, setJwt] = useState<string | null>(null);
   const [gameteamId, setgameteamId] = useState<string>('');
 
+  // Admin related states
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [teamIds, setTeamIds] = useState<string[]>([]);
+  const [showAdminModal, setShowAdminModal] = useState(false);
+
   const isProcessingInputRef = useRef(false);
   const isConnectingRef = useRef(false);
 
@@ -54,6 +59,8 @@ export default function Shell() {
           const teamsSnap = await getDocs(teamsRef);
 
           const userId = currentUser.uid;
+
+          await checkIfUserIsAdmin(userId);
 
           for (const teamDoc of teamsSnap.docs) {
             const teamData = teamDoc.data();
@@ -84,7 +91,7 @@ export default function Shell() {
           localStorage.setItem('token', token);
         } catch (error) {
           console.error('Failed to get JWT:', error);
-          setJwt('Could not retrieve token.');
+          setJwt(null);
         }
       } else {
         console.error('No user is signed in.');
@@ -95,6 +102,28 @@ export default function Shell() {
     // Cleanup the auth listener when the component unmounts
     return () => unsubscribe();
   }, []);
+
+  // Check if the user is the session admin
+  const checkIfUserIsAdmin = async (userUid: string) => {
+    const sessionId = localStorage.getItem('sessionId');
+
+    const sessionRef = doc(db, 'sessions', sessionId || '');
+    const sessionSnap = await getDoc(sessionRef);
+    const sessionData = sessionSnap.data();
+
+    if (sessionData && sessionData.adminId === userUid) {
+      setIsAdmin(true);
+
+      const teamIds = localStorage.getItem('teamIds')?.split(',');
+      if (teamIds) {
+        setTeamIds(teamIds);
+      }
+
+      setShowAdminModal(true);
+      return;
+    }
+    setIsAdmin(false);
+  };
 
   // Get username and team ids
   const fetchUsernameById = async (userUid: string) => {
@@ -213,13 +242,21 @@ export default function Shell() {
     const initWebSocketConnection = async (term: Terminal) => {
       try {
         const userId = currentUser?.uid || 'GUEST';
-
         const userName = await fetchUsernameById(userId);
+
+        await checkIfUserIsAdmin(userId);
 
         term.writeln(`Connecting to terminal...\r\n`);
         term.writeln(`Welcome ${userName} to the CyberBattles shell.\r\n`);
 
-        if (gameteamId === '') {
+        if (isAdmin && !gameteamId) {
+          term.writeln(
+            `\x1b[33mAdmin mode: Please select a team to connect to.\x1b[0m\r\n`,
+          );
+          return;
+        }
+
+        if (gameteamId === '' && !isAdmin) {
           term.write(
             `\x1b[33mYou are not a member of a team. Join a team to begin. Abort with CTRL^D\r\n\x1b[0m`,
           );
@@ -255,13 +292,6 @@ export default function Shell() {
       wsRef.current = null;
     }
 
-    if (xtermRef.current) {
-      try {
-        xtermRef.current.reset();
-        xtermRef.current.clear();
-      } catch {}
-    }
-
     const host = 'cyberbattl.es';
     let ws: WebSocket | null = null;
     let abort = false;
@@ -287,6 +317,13 @@ export default function Shell() {
       }, 5000);
 
       ws.onopen = () => {
+        if (xtermRef.current) {
+          try {
+            xtermRef.current.reset();
+            xtermRef.current.clear();
+          } catch {}
+        }
+
         clearTimeout(connectionTimeout);
         isConnectingRef.current = false;
         setIsConnected(true);
@@ -421,6 +458,68 @@ export default function Shell() {
       <div>
         <FlagPopup />
       </div>
+
+      {showAdminModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#2c3e50',
+              padding: '20px 40px',
+              borderRadius: '8px',
+              color: 'white',
+              textAlign: 'center',
+            }}
+          >
+            <h3 style={{marginTop: 0}}>Select a Team Terminal</h3>
+            <p>
+              As an admin, please choose which team's terminal you want to
+              access.
+            </p>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                marginTop: '20px',
+              }}
+            >
+              {teamIds.map(id => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    setgameteamId(id);
+                    setShowAdminModal(false);
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    border: 'none',
+                    borderRadius: '4px',
+                    backgroundColor: '#3498db',
+                    color: 'white',
+                    fontSize: '16px',
+                  }}
+                >
+                  Connect to Team: {id}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
