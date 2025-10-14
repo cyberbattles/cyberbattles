@@ -38,6 +38,7 @@ const CreateSession = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [scenarios, setScenarios] = useState<
     Array<{
       id: string;
@@ -144,6 +145,12 @@ const CreateSession = () => {
   }
 
   const handleCreateSession = async () => {
+    // Set that an attempt has been made
+    setAttempted(true);
+    // If no scenario is selected then alert and return
+    if (selectedScenario == null) {
+      return;
+    }
     try {
       setCreating(true);
       await createSession();
@@ -238,6 +245,10 @@ const CreateSession = () => {
               />
             </div>
 
+            { !selectedScenario && attempted && 
+              <h1 className='text-red-600'>Please select a scenario...</h1>
+            }
+
             <div className="flex flex-col items-center space-y-4">
               <button
                 className={`w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl transition font-bold text-xl shadow-md ${
@@ -265,6 +276,7 @@ const CreateSession = () => {
               >
                 Back to Selection
               </button>
+              
             </div>
           </section>
         </main>
