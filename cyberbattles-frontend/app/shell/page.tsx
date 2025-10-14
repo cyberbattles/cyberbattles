@@ -10,19 +10,11 @@
 import {auth, db} from '@/lib/firebase';
 import {onAuthStateChanged, User} from 'firebase/auth';
 import React, {useEffect, useRef, useState} from 'react';
-import {MdOutlineSignalWifiStatusbarConnectedNoInternet4} from 'react-icons/md';
 import {Terminal} from 'xterm';
 import {FitAddon} from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import FlagPopup from '@/components/FlagPopup';
-import {
-  DocumentData,
-  QueryDocumentSnapshot,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs} from 'firebase/firestore';
 
 export default function Shell() {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -34,15 +26,10 @@ export default function Shell() {
   const [isTerminalInitialized, setIsTerminalInitialized] = useState(false);
   const isMountedRef = useRef(false);
   const [jwt, setJwt] = useState<string | null>(null);
-  const [showJwt, setShowJwt] = useState(false);
-  const [teamId, setteamId] = useState<string | null>(null);
-  const [gameteamId, setgameteamId] = useState<any>(null);
+  const [gameteamId, setgameteamId] = useState<string>('');
 
   const isProcessingInputRef = useRef(false);
   const isConnectingRef = useRef(false);
-
-  let dataHandler: any = null;
-  let ctrlDHandler: any = null;
 
   // Track component mount status
   useEffect(() => {
@@ -66,16 +53,13 @@ export default function Shell() {
           const token = await user.getIdToken(true);
           setJwt(token);
           localStorage.setItem('token', token);
-          setShowJwt(true);
         } catch (error) {
           console.error('Failed to get JWT:', error);
           setJwt('Could not retrieve token.');
-          setShowJwt(true);
         }
       } else {
         console.error('No user is signed in.');
         setJwt(null);
-        setShowJwt(false);
       }
     });
 
@@ -106,33 +90,19 @@ export default function Shell() {
           }
 
           console.warn('User not found in any team');
-          setgameteamId(null);
+          setgameteamId('');
         } catch (error) {
           console.error('Error fetching teams:', error);
-          setgameteamId(null);
+          setgameteamId('');
         }
       } else {
-        setgameteamId(null);
+        setgameteamId('');
       }
     });
 
     // Cleanup the auth listener when the component unmounts
     return () => unsubscribe();
-  }, [auth, db]);
-
-  // Get username and team ids
-  const fetchTeamById = async (teamUid: string) => {
-    const teamRef = doc(db, 'teams', teamUid);
-    const teamSnap = await getDoc(teamRef);
-
-    if (teamSnap.exists()) {
-      const teamData = teamSnap.data();
-      return teamData.name;
-    } else {
-      console.warn('No such team!');
-      return null;
-    }
-  };
+  }, []);
 
   // Get username and team ids
   const fetchUsernameById = async (userUid: string) => {
@@ -247,39 +217,37 @@ export default function Shell() {
   }, []); // Empty dependency array ensures this runs only once
 
   // Call this to wait for JWT
-
   useEffect(() => {
+    const initWebSocketConnection = async (term: Terminal) => {
+      try {
+        const userId = currentUser?.uid || 'GUEST';
+
+        const userName = await fetchUsernameById(userId);
+
+        term.writeln(`Connecting to terminal...\r\n`);
+        term.writeln(`Welcome ${userName} to the CyberBattles shell.\r\n`);
+
+        if (gameteamId === '') {
+          term.write(
+            `\x1b[33mYou are not a member of a team. Join a team to begin. Abort with CTRL^D\r\n\x1b[0m`,
+          );
+          return;
+        }
+
+        term.write(
+          `\x1b[33mWaiting for game start, leave queue with CTRL^D.\r\n\x1b[0m`,
+        );
+
+        openWebSocket(term, gameteamId, userId, jwt!);
+      } catch (err) {
+        console.error('Connection error:', err);
+      }
+    };
+
     if (jwt && xtermRef.current && !isProcessingInputRef.current) {
       initWebSocketConnection(xtermRef.current);
     }
-  }, [jwt, isTerminalInitialized]);
-
-  // WebSocket connection function
-  const initWebSocketConnection = async (term: Terminal) => {
-    try {
-      const userId = currentUser?.uid || 'GUEST';
-
-      const userName = await fetchUsernameById(userId);
-
-      term.writeln(`Connecting to terminal...\r\n`);
-      term.writeln(`Welcome ${userName} to the CyberBattles shell.\r\n`);
-
-      if (!gameteamId) {
-        term.write(
-          `\x1b[33mYou are not a member of a team. Join a team to begin. Abort with CTRL^D\r\n\x1b[0m`,
-        );
-        return;
-      }
-
-      term.write(
-        `\x1b[33mWaiting for game start, leave queue with CTRL^D.\r\n\x1b[0m`,
-      );
-
-      openWebSocket(term, gameteamId, userId, jwt!);
-    } catch (err) {
-      console.error('Connection error:', err);
-    }
-  };
+  }, [jwt, isTerminalInitialized, currentUser, gameteamId]);
 
   const openWebSocket = (
     term: Terminal,
@@ -303,14 +271,12 @@ export default function Shell() {
     }
 
     const host = 'cyberbattl.es';
-    let retryCount = 0;
     let ws: WebSocket | null = null;
     let abort = false;
-    let closedByUser = false;
 
     // Track event disposables so they can be cleaned up on reconnect
     let inputHandler: any = null;
-    let ctrlDHandler: any = null;
+    const ctrlDHandler: any = null;
 
     // Track if we've shown the initial retry message
     let hasShownRetryMessage = false;
@@ -319,9 +285,7 @@ export default function Shell() {
       if (abort || !isMountedRef.current || isConnectingRef.current) return;
       isConnectingRef.current = true;
 
-      ws = new WebSocket(
-        `wss://${host}/terminals/${gameteamId}/${userId}/${jwt}`,
-      );
+      ws = new WebSocket(`wss://${host}/terminals/${teamId}/${userId}/${jwt}`);
       wsRef.current = ws;
 
       const connectionTimeout = setTimeout(() => {
@@ -334,7 +298,6 @@ export default function Shell() {
         clearTimeout(connectionTimeout);
         isConnectingRef.current = false;
         setIsConnected(true);
-        retryCount = 0;
 
         // Dispose any previous listeners before adding new ones
         if (inputHandler) inputHandler.dispose();
@@ -369,8 +332,6 @@ export default function Shell() {
         setIsConnected(false);
 
         if (!abort && isMountedRef.current) {
-          retryCount++;
-
           // Show retry message (first time) or update count (subsequent times)
           if (!hasShownRetryMessage) {
             hasShownRetryMessage = true;
@@ -470,11 +431,4 @@ export default function Shell() {
       </div>
     </div>
   );
-}
-function setJwt(token: string) {
-  throw new Error('Function not implemented.');
-}
-
-function setShowJwt(arg0: boolean) {
-  throw new Error('Function not implemented.');
 }
