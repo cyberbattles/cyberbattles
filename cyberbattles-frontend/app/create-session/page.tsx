@@ -37,6 +37,8 @@ interface ScenarioOption {
 const CreateSession = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [scenarios, setScenarios] = useState<
     Array<{
       id: string;
@@ -143,10 +145,18 @@ const CreateSession = () => {
   }
 
   const handleCreateSession = async () => {
+    // Set that an attempt has been made
+    setAttempted(true);
+    // If no scenario is selected then alert and return
+    if (selectedScenario == null) {
+      return;
+    }
     try {
+      setCreating(true);
       await createSession();
       router.push('/admin');
     } catch (error) {
+      setCreating(false);
       console.error('Create session failed:', error);
     }
   };
@@ -237,17 +247,36 @@ const CreateSession = () => {
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className="w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
+                className={`w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl transition font-bold text-xl shadow-md ${
+                  loading || creating ? "cursor-not-allowed opacity-50"
+                          : "hover:bg-[#3a3a3a] hover:border-blue-400"
+                }`}
                 onClick={handleCreateSession}
               >
-                Create
+                { creating &&
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+                    <span className="text-blue-400 font-semibold">Creating...</span>
+                  </div>
+                }
+                { !creating &&
+                  <div>Create</div>
+                }
               </button>
               <button
-                className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
+                className={`w-80 py-3 px-8 bg-gray-600 rounded-2xl transition font-semibold text-lg shadow-md ${
+                  loading || creating ? "cursor-not-allowed opacity-50" 
+                          : "hover:opacity-90"
+                }`}
                 onClick={handleBackToSelection}
               >
                 Back to Selection
               </button>
+
+              { !selectedScenario && attempted && 
+                <h1 className='text-red-600'>Please select a scenario...</h1>
+              }
+              
             </div>
           </section>
         </main>
