@@ -24,6 +24,7 @@ import {
   getAvailableSubnet,
   releaseWGPort,
   releaseSubnet,
+  getWgAddress,
 } from '../helpers';
 import {startTrafficCap} from './trafficcap';
 
@@ -72,6 +73,7 @@ export async function createTeam(
       containerId,
       id: teamId,
       sessionId,
+      ipAddress: null,
     };
   } catch (error) {
     throw new Error(
@@ -178,6 +180,8 @@ export async function createSession(
         networkName,
         teamIds[i],
       );
+
+      team.ipAddress = await getWgAddress(sessionId, team.id);
     } catch (error) {
       throw new Error(
         `Team Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,

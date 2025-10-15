@@ -368,7 +368,7 @@ const Dashboard = () => {
                 </button>
                 <button
                   onClick={handleGoToCreation}
-                  className="px-4 py-2 bg-blue-800 rounded-xl hover:opacity-90 transition font-bold"
+                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                 >
                   Create a Game
                 </button>
