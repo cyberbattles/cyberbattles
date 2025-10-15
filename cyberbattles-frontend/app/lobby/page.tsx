@@ -288,7 +288,6 @@ const Lobby = () => {
         if (team) {
           getPlayers();
           getScenario();
-
         }
         checkHost();
       }  
@@ -320,20 +319,28 @@ const Lobby = () => {
     };
   }, [team, gameStatus]);
 
-  // Checking if you have been kicked useEffect
+  // checking the memberIds array useEffect
   useEffect(() => {
     let unsubscribe = null;
     if (team && teamId && currentUser){
       let unsubscribe = onSnapshot(doc(db, "teams", teamId), (doc) => {
         if (doc.exists()) {
+          players.clear();
           let kick = true;
           let memberIds:string[] = doc.data().memberIds;
           memberIds.forEach((id) => {
+            // Refresh each users value in the players map
+            const userObj = getUser(id);
+              userObj.then((value: any) => {
+                players.set(id, value);
+                setPlayers(new Map(players));
+              });
             // Check if the current user id is in the array
             if (currentUser.uid == id){
               kick = false;
             }
           })
+          // If didnt find uid then they have been kicked
           if (kick) {
             handleKicked();
           }
@@ -468,16 +475,16 @@ const Lobby = () => {
 
               <div className="flex flex-col gap-5">
                 {players.size != 0 &&
-                  team.memberIds.map((uid: string) => (
+                  Array.from(players.values()).map((player) => (
                     <div
                       className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
-                      key={uid}
+                      key={player.uid}
                     >
                       {/* Player name */}
-                        <div>{players && players.get(uid) && players.get(uid).userName}</div>
+                        <div>{player.userName}</div>
                       {/* Remove player button */}
                         { isHost &&
-                          <div className="" onClick={() => removePlayer(uid)}>
+                          <div className="" onClick={() => removePlayer(player.uid)}>
                               <IoIosClose size={30}/>
                           </div>
                         }                      
