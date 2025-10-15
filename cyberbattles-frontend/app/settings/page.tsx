@@ -289,8 +289,8 @@ const Settings = () => {
                           <Shield className="w-5 h-5 text-blue-600" />
                         </div>
                         <div className="text-left">
-                          <p className="text-sm font-semibold text-slate-900">Change Password</p>
-                          <p className="text-xs text-slate-500">Update your account password</p>
+                          <p className="text-sm font-semibold text-slate-900">Forgot Password?</p>
+                          <p className="text-xs text-slate-500">A verification email will be sent </p>
                         </div>
                       </div>
                       <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
