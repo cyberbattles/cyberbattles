@@ -239,9 +239,8 @@ const Admin = () => {
             teamIds = Object.keys(result.teamsAndMembers);
           }
 
-          // Store the sessionId and teamIds in local storage
+          // Store the sessionId in local storage
           localStorage.setItem('sessionId', sessionId);
-          localStorage.setItem('teamIds', teamIds.join(','));
 
           return true;
         case 400:
@@ -293,6 +292,7 @@ const Admin = () => {
     setTeams(new Map());
     setPlayers(new Map());
     setSessionId(sid);
+    localStorage.setItem('sessionId', sid);
   };
 
   const handleStartGame = async () => {
@@ -415,20 +415,6 @@ const Admin = () => {
                 </button>
               ))}
             </ul>
-            {/* <div className="flex gap-4">
-              <button
-                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
-                onClick={handleLeaveLobby}
-              >
-                Leave Lobby
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div> */}
           </header>
 
           {/* Lobby Content */}
@@ -459,18 +445,6 @@ const Admin = () => {
                 </div>
               )}
             </div>
-
-            {/* Timer */}
-            {/* <div className="flex flex-col p-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2 lg:col-span-1">
-              <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Time Remaining</h2>
-              {
-                gameStatus == "started" && (
-                  <div className="flex text-3xl items-center align-middle justify-center  h-full">
-                    time
-                  </div>
-                )
-              }
-            </div> */}
 
             {/* Teams */}
             <div className="p-6 rounded-2xl col-span-2 ">
@@ -520,7 +494,6 @@ const Admin = () => {
                     <h2 className="text-l font-semibold text-white">
                       Team ID: {value.id}
                     </h2>
-                    {/* <h2 className="text-l font-semibold text-white">Team Members: {value.numMembers}</h2> */}
                   </div>
                 </div>
               </div>
