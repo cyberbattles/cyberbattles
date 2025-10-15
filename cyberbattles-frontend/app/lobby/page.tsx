@@ -1,6 +1,6 @@
 'use client';
 import Image from 'next/image';
-import { IoIosClose } from "react-icons/io";
+import {IoIosClose} from 'react-icons/io';
 import React, {useState, useEffect} from 'react';
 import {auth, db} from '@/lib/firebase';
 import {signOut} from 'firebase/auth';
@@ -32,41 +32,39 @@ const Lobby = () => {
 
   // TODO: Setup backend call to get player, scenario and teams information
 
-
   // Get the current scenario information
   async function getScenario() {
     // Check if the sessionId has been set, if not return
-    if (teamId == "") {
+    if (teamId == '') {
       return;
     }
-    try{
+    try {
       // Find the session doc
-      const sessionRef = doc(db, "sessions", team.sessionId);
+      const sessionRef = doc(db, 'sessions', team.sessionId);
       const sessionSnap = await getDoc(sessionRef);
-      let scenarioId = ""
+      let scenarioId = '';
       if (sessionSnap.exists()) {
         scenarioId = sessionSnap.data().scenarioId;
 
-        console.log("getting sceneario")
+        console.log('getting sceneario');
 
         // Check if the session has started
-        if(sessionSnap.data().started) {
-          console.log("session has already started");
-          setGameStatus("started");
+        if (sessionSnap.data().started) {
+          console.log('session has already started');
+          setGameStatus('started');
         } else {
-          setGameStatus("waiting")
+          setGameStatus('waiting');
         }
       }
-      
+
       // Find the scenario doc
-      const scenearioRef = doc(db, "scenarios", scenarioId);
+      const scenearioRef = doc(db, 'scenarios', scenarioId);
       const scenarioSnap = await getDoc(scenearioRef);
       if (scenarioSnap.exists()) {
-        setCurrentScenario(scenarioSnap.data())
+        setCurrentScenario(scenarioSnap.data());
       }
-
     } catch (error) {
-      console.log("Failed", error);
+      console.log('Failed', error);
     }
   }
 
@@ -93,10 +91,10 @@ const Lobby = () => {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (currentUser) {
         try {
-          const teamsRef = collection(db, "teams");
+          const teamsRef = collection(db, 'teams');
           const teamsSnap = await getDocs(teamsRef);
 
           const userId = currentUser.uid;
@@ -110,18 +108,18 @@ const Lobby = () => {
             ) {
               console.log(`User found in team: ${teamData.name}`);
               setgameId(teamDoc.id);
-              return; 
+              return;
             }
           }
 
-          console.warn("User not found in any team");
+          console.warn('User not found in any team');
           setgameId(null);
         } catch (error) {
-          console.error("Error fetching teams:", error);
-          setgameId(null)
+          console.error('Error fetching teams:', error);
+          setgameId(null);
         }
       } else {
-        setgameId(null)
+        setgameId(null);
       }
     });
 
@@ -256,10 +254,10 @@ const Lobby = () => {
   };
 
   const handleStartGame = async () => {
-    setGameStatus("starting");
+    setGameStatus('starting');
     await delay(3000);
-    setGameStatus("started");
-    router.push("/shell");
+    setGameStatus('started');
+    router.push('/shell');
   };
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -267,45 +265,43 @@ const Lobby = () => {
   // ------------- useEffects ---------------
 
   useEffect(() => {
+    // Get the currentUser
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user && !currentUser) {
+        setCurrentUser(user);
+      }
+    });
 
-      // Get the currentUser
-      const unsubscribe = onAuthStateChanged(auth, user => {
-        if (user && !currentUser) {
-          setCurrentUser(user);
-        }
-      });
-
-      // Populate the team hook and check if user is host
-      if (currentUser) {
-        findTeam(currentUser.uid);
-        if (team) {
-          getPlayers();
-          getScenario();
-
-        }
-        checkHost();
-      }  
-      return () => {
-        unsubscribe;
-      };
-    },[currentUser, team]);
+    // Populate the team hook and check if user is host
+    if (currentUser) {
+      findTeam(currentUser.uid);
+      if (team) {
+        getPlayers();
+        getScenario();
+      }
+      checkHost();
+    }
+    return () => {
+      unsubscribe;
+    };
+  }, [currentUser, team]);
 
   useEffect(() => {
-    let unsubscribe = null;
-    if (team && gameStatus && gameStatus != "started"){
-      let unsubscribe = onSnapshot(doc(db, "sessions", team.sessionId), (doc) => {
+    const unsubscribe = null;
+    if (team && gameStatus && gameStatus != 'started') {
+      const unsubscribe = onSnapshot(doc(db, 'sessions', team.sessionId), doc => {
         if (doc.exists()) {
-          let started = doc.data().started;
+          const started = doc.data().started;
           if (started) {
-            console.log("Session has started");
+            console.log('Session has started');
             handleStartGame();
           } else {
-            console.log("Session has not started");
-            setGameStatus("waiting");
+            console.log('Session has not started');
+            setGameStatus('waiting');
           }
         }
       });
-  }
+    }
     return () => {
       if (unsubscribe) {
         unsubscribe;
@@ -329,14 +325,12 @@ const Lobby = () => {
               <li>
                 <div className="text-sm text-gray-400">Team:</div>
                 <div className="font-semibold text-blue-400">
-                  {team?.name || "—"}
+                  {team?.name || '—'}
                 </div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Team ID:</div>
-                <div className="font-semibold text-blue-400">
-                    {gameId}
-                </div>
+                <div className="font-semibold text-blue-400">{gameId}</div>
               </li>
               <li>
                 <div className="text-sm text-gray-400">Players:</div>
@@ -344,13 +338,18 @@ const Lobby = () => {
               </li>
               <li>
                 <div className="text-sm text-gray-400">Status:</div>
-                <div className={`font-semibold capitalize ${
-                  gameStatus === "waiting" ? "text-yellow-400" :
-                  gameStatus === "starting" ? "text-blue-400" :
-                  gameStatus === "ending" ? "text-red-400" :
-                  "text-green-400"
-                }`}>
-                  {gameStatus === "starting" ? "Starting..." : gameStatus}
+                <div
+                  className={`font-semibold capitalize ${
+                    gameStatus === 'waiting'
+                      ? 'text-yellow-400'
+                      : gameStatus === 'starting'
+                        ? 'text-blue-400'
+                        : gameStatus === 'ending'
+                          ? 'text-red-400'
+                          : 'text-green-400'
+                  }`}
+                >
+                  {gameStatus === 'starting' ? 'Starting...' : gameStatus}
                 </div>
               </li>
             </ul>
@@ -382,28 +381,26 @@ const Lobby = () => {
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
             <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2">
-              <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">Current Scenario</h2>
-              {
-                currentScenario && (
-                  <div className="flex flex-col gap-2 text-l text-white">
-                    <p>{currentScenario.scenario_title}</p>
-                    <p>{currentScenario.scenario_description}</p>
-                    <div className="flex gap-10 font-semibold">
-                      <p>
-                        Scenario difficulty: 
-                      </p>
-                      <p>
-                        {currentScenario.scenario_difficulty}
-                      </p>
-                    </div>
+              <h2 className="text-xl font-semibold mb-4 border-b text-blue-400">
+                Current Scenario
+              </h2>
+              {currentScenario && (
+                <div className="flex flex-col gap-2 text-l text-white">
+                  <p>{currentScenario.scenario_title}</p>
+                  <p>{currentScenario.scenario_description}</p>
+                  <div className="flex gap-10 font-semibold">
+                    <p>Scenario difficulty:</p>
+                    <p>{currentScenario.scenario_difficulty}</p>
                   </div>
-                )
-              }
-              {gameStatus === "starting" && (
+                </div>
+              )}
+              {gameStatus === 'starting' && (
                 <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                    <span className="text-blue-400 font-semibold">Game starting...</span>
+                    <span className="text-blue-400 font-semibold">
+                      Game starting...
+                    </span>
                   </div>
                 </div>
               )}
@@ -411,45 +408,51 @@ const Lobby = () => {
 
             {/* Teams */}
             <div className="p-6 rounded-2xl col-span-2 ">
-              <h2 className="text-2xl font-semibold text-green-400">{teamId && team.name}</h2>
+              <h2 className="text-2xl font-semibold text-green-400">
+                {teamId && team.name}
+              </h2>
             </div>
-            
 
             {/* Teams List */}
-            { team &&
-            <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2">
+            {team && (
+              <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2">
+                <div className="flex flex-row justify-between items-center">
+                  <h2 className="text-xl font-semibold ">Team members</h2>
+                </div>
 
-              <div className="flex flex-row justify-between items-center">
-                <h2 className="text-xl font-semibold ">Team members</h2>
-              </div>
-
-              <div className="flex flex-col gap-5">
-                {players.size != 0 &&
-                  team.memberIds.map((uid: string) => (
-                    <div
-                      className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
-                      key={uid}
-                    >
-                      {/* Player name */}
-                        <div>{players && players.get(uid) && players.get(uid).userName}</div>
-                      {/* Remove player button */}
-                        { isHost &&
+                <div className="flex flex-col gap-5">
+                  {players.size != 0 &&
+                    team.memberIds.map((uid: string) => (
+                      <div
+                        className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
+                        key={uid}
+                      >
+                        {/* Player name */}
+                        <div>
+                          {players &&
+                            players.get(uid) &&
+                            players.get(uid).userName}
+                        </div>
+                        {/* Remove player button */}
+                        {isHost && (
                           <div className="" onClick={() => removePlayer(uid)}>
-                              <IoIosClose size={30}/>
+                            <IoIosClose size={30} />
                           </div>
-                        }                      
-                    </div>
-                  ))}
-              </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
 
-              <div className="flex h-full align-bottom items-end">
-                <div className="flex flex-row px-2 pt-3 w-full justify-between border-t">
-                  <h2 className="text-l font-semibold text-white">Team ID: {team.id}</h2>
-                  {/* <h2 className="text-l font-semibold text-white">Team Members: {value.numMembers}</h2> */}
+                <div className="flex h-full align-bottom items-end">
+                  <div className="flex flex-row px-2 pt-3 w-full justify-between border-t">
+                    <h2 className="text-l font-semibold text-white">
+                      Team ID: {team.id}
+                    </h2>
+                    {/* <h2 className="text-l font-semibold text-white">Team Members: {value.numMembers}</h2> */}
+                  </div>
                 </div>
               </div>
-            </div>
-            }
+            )}
           </section>
         </main>
       </div>
