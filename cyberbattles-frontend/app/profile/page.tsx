@@ -1,20 +1,13 @@
 'use client';
-import React, {useState, useEffect} from 'react';
-import Image from 'next/image';
-import logo from '../../public/images/logo.png';
-import {auth, db} from '../../lib/firebase';
+import React, {useState} from 'react';
+import {db} from '../../lib/firebase';
 import {
   getAuth,
   onAuthStateChanged,
   deleteUser,
   reauthenticateWithCredential,
 } from 'firebase/auth';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  EmailAuthProvider,
-} from 'firebase/auth';
+import {updateProfile, EmailAuthProvider, updatePassword} from 'firebase/auth';
 import {
   deleteObject,
   getDownloadURL,
@@ -22,39 +15,19 @@ import {
   ref,
   uploadBytes,
 } from 'firebase/storage';
-import {
-  doc,
-  getDoc,
-  onSnapshot,
-  collection,
-  updateDoc,
-} from 'firebase/firestore';
+import {doc, updateDoc} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
-import {FileData} from 'firebase/ai';
-import {AuthCredential, EmailAuthCredential} from 'firebase/auth/web-extension';
-
-//------------------------------
-
-//-------------------------------
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const learnItems = [
     ['Edit Profile', ''],
-    ['Authentication', ''],
     ['Delete Account', ''],
   ];
 
-  const optionStyle =
-    'mt-10 w-full border-bottom border-solid border-b-2 hover:scale-105 duration-300';
-
-  // Firebase imports
   const auth = getAuth();
   const storage = getStorage();
-
-  // React imports
   const router = useRouter();
-
-  // useState hooks
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [photoURL, setPhotoURL] = useState(
     'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png',
@@ -63,16 +36,25 @@ export default function ProfilePage() {
   const [password, setPassword] = useState('');
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [photo, setPhoto] = useState(null);
+  const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [username, setUsername] = useState('');
   const [usernameError, setUsernameError] = useState('');
 
-  {
-    /* Check if the user auth state has changed. If so update the currentUser .*/
-  }
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState('');
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  /* Check if the user auth state has changed. If so update the currentUser .*/
   try {
     onAuthStateChanged(auth, user => {
       if (user && !currentUser) {
@@ -88,58 +70,77 @@ export default function ProfilePage() {
   }
 
   // Firebase functions
-  const handleChange = (e: any) => {
-    // console.log(e)
-    // console.log(e.target.files[0])
-    if (e.target.files[0]) {
-      setPhoto(e.target.files[0]);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Clear previous errors and previews
+    setPhotoError('');
+    setPhotoPreview(null);
+    setPhoto(null);
+
+    const file = e.target.files?.[0];
+
+    if (file) {
+      // Check file size (2MB limit)
+      if (file.size > 2 * 1024 * 1024) {
+        setPhotoError('File is too large (max 2MB).');
+        return; // Stop the function if the file is too big
+      }
+
+      // Set the file object for the eventual upload
+      setPhoto(file);
+
+      // Create a temporary URL for the client-side preview
+      setPhotoPreview(URL.createObjectURL(file));
     }
   };
 
-  const handleUpload = async (e: any) => {
-    const fileRef = ref(storage, currentUser.uid + '.png');
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
 
     setLoading(true);
 
+    const profileUpdates: {displayName?: string; photoURL?: string} = {};
+
     if (photo) {
-      const snapshot = await uploadBytes(fileRef, photo);
-      const tmpPhotoURL = await getDownloadURL(fileRef);
-      console.log(username);
-      if (username) {
-        await updateProfile(currentUser, {
-          displayName: username,
-          photoURL: tmpPhotoURL,
-        });
-      } else {
-        await updateProfile(currentUser, {photoURL: tmpPhotoURL});
+      const fileRef = ref(storage, `${currentUser.uid}.png`);
+      try {
+        await uploadBytes(fileRef, photo);
+
+        const newPhotoURL = await getDownloadURL(fileRef);
+        profileUpdates.photoURL = newPhotoURL;
+      } catch (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        setError('Failed to upload photo. Please try again.');
+        setLoading(false);
+        return;
       }
     }
 
     if (username) {
-      const uid = currentUser.uid;
+      profileUpdates.displayName = username;
+    }
 
-      // Update the login firestore
-      const loginRef = collection(db, 'login');
-      const docRef = doc(db, 'login', uid);
-      await updateDoc(docRef, {
-        userName: username,
-      })
-        .then(() => {
-          console.log('Document successfully updated!');
-        })
-        .catch((error: any) => {
-          console.error('Error updating document: ', error);
-        });
+    if (Object.keys(profileUpdates).length > 0) {
+      try {
+        await updateProfile(currentUser, profileUpdates);
+      } catch (updateError) {
+        console.error('Error updating profile:', updateError);
+        setError('Failed to save profile changes.');
+        setLoading(false);
+        return;
+      }
+    }
 
-      // Update the auth profile
-      await updateProfile(currentUser, {displayName: username});
+    if (username) {
+      const docRef = doc(db, 'login', currentUser.uid);
+      await updateDoc(docRef, {userName: username});
     }
 
     setLoading(false);
     window.location.reload();
   };
 
-  const handleDelete = async (e: any) => {
+  const handleDelete = async () => {
     setLoading(true);
 
     const credential = EmailAuthProvider.credential(email, password);
@@ -151,21 +152,20 @@ export default function ProfilePage() {
           const photoURLRef = ref(storage, photoURL);
           deleteObject(photoURLRef)
             .then()
-            .catch(e => {
+            .catch(_ => {
               console.log('Unable to delete profile picture');
             });
         }
         deleteUser(currentUser)
           .then(() => {
-            alert('User successfully deleted');
             setLoading(false);
             router.push('/');
           })
-          .catch(e => {
+          .catch(_ => {
             setError('Unable to delete user');
           });
       })
-      .catch(e => {
+      .catch(_ => {
         // error detected
         setError('Unable to authenticate user');
       });
@@ -176,169 +176,309 @@ export default function ProfilePage() {
   const handleCancel = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setPhoto(null);
+    setPhotoPreview(null);
+    setPhotoError('');
+    setUsername('');
+    setUsernameError('');
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+    setLoading(true);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      setLoading(false);
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters.');
+      setLoading(false);
+      return;
+    }
+
+    if (!currentUser || !currentUser.email) {
+      setPasswordError('User not found.');
+      setLoading(false);
+      return;
+    }
+
+    // 2. Re-authenticate the user for security
+    const credential = EmailAuthProvider.credential(
+      currentUser.email,
+      currentPassword,
+    );
+
     try {
-      window.location.reload();
-    } catch (err: any) {
-      setError(err.message);
+      await reauthenticateWithCredential(currentUser, credential);
+
+      // 3. Update the password
+      await updatePassword(currentUser, newPassword);
+
+      setPasswordSuccess('Password updated successfully!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+
+      // Revert to the main profile view after 2 seconds
+      setTimeout(() => {
+        setIsChangingPassword(false);
+        setPasswordSuccess('');
+      }, 2000);
+    } catch (error: any) {
+      // Handle errors like wrong password
+      if (error.code === 'auth/wrong-password') {
+        setPasswordError('Incorrect current password.');
+      } else {
+        setPasswordError('Failed to update password. Please try again.');
+      }
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
-      <div className="p-10">
-        <section className="min-h-screen pt-50 w-full flex flex-col items-center gap-20">
+      <div className="text-white min-h-screen p-4 sm:p-6 lg:p-10">
+        <section className="w-full max-w-4xl mx-auto flex flex-col items-center gap-10 pt-25 sm:pt-45">
           <div>
-            <p className="text-7xl mt-10">Profile</p>
+            <h1 className="text-5xl lg:text-6xl font-semibold text-gray-100 mt-10">
+              Account Management
+            </h1>
           </div>
 
-          <div className="flex flex-row gap-10 w-full justify-center">
-            <div className="basis-1/4 text-xl flex flex-col gap-4 p-10 rounded-xl border">
+          <div className="w-full rounded-xl shadow-2xl overflow-hidden border border-white">
+            {/* Tab Navigation */}
+            <div className="flex border-b border-white">
               {learnItems.map((item, index) => (
-                <p
+                <button
                   key={index}
-                  className={optionStyle}
-                  onClick={event => {
-                    setSelectedIndex(index);
-                  }}
+                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors duration-200 focus:outline-none ${
+                    selectedIndex === index
+                      ? 'border-b-2 border-gray-50 text-white'
+                      : 'text-gray-400 hover:bg-gray-500/50'
+                  }`}
+                  onClick={() => setSelectedIndex(index)}
                 >
                   {item[0]}
-                </p>
+                </button>
               ))}
             </div>
-            <div className="basis-3/4 text-xl flex flex-col items-center gap-4 p-10 rounded-xl border">
-              <div className="p-5 w-full flex text-3xl border-bottom border-solid border-b-2">
-                <p>{learnItems[selectedIndex][0]}</p>
-              </div>
-              {/* Edit profile */}
+
+            {/* Content Area */}
+            <div className="p-8">
+              {/* Edit Profile Content */}
               {selectedIndex === 0 && (
-                <form
-                  onSubmit={handleUpload}
-                  className="p-5 w-full flex flex-col gap-20"
-                >
-                  <div className="flex flex-row w-full justify-between">
-                    <div className="flex flex-row w-full items-center">
-                      <div className="pl-3 pb-5 w-1/3 placeholder:text-white text-white ">
-                        Username:
-                      </div>
-                      <div className="w-2/3 flex flex-col">
-                        {currentUser && (
-                          <input
-                            className="p-3 w-2/3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
-                            type="text"
-                            value={username}
-                            onChange={e => {
-                              const uname = e.target.value;
-                              if (uname.length > 20) {
-                                setUsername(uname);
-                                setUsernameError(
-                                  'Username must be less than 20 characters',
-                                );
-                              } else if (uname.length < 3) {
-                                setUsername(uname);
-                                setUsernameError(
-                                  'Username must be at least 3 characters',
-                                );
-                              } else if (!/^[a-zA-Z0-9]+$/.test(uname)) {
-                                setUsername(uname);
-                                setUsernameError(
-                                  'Username must be alphanumeric',
-                                );
-                              } else {
-                                setUsername(uname);
-                                setUsernameError('');
-                              }
-                            }}
-                            placeholder={currentUser.displayName}
-                          />
-                        )}
-                        <div className="text-red-500 min-h-[2rem] pl-2 pt-1">
-                          {usernameError}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-row w-full items-center">
-                    <div className="p-3 w-1/3 placeholder:text-white text-white ">
-                      Profile Picture:
-                    </div>
-                    <div className="flex flex-row items-center justify-between w-2/3">
+                <form onSubmit={handleUpload} className="flex flex-col gap-10">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    {/* Profile Picture */}
+                    <div className="flex flex-col items-center gap-4">
                       {currentUser && (
-                        <img
-                          src={photoURL}
-                          alt="avatar"
+                        <Image
+                          src={photoPreview || photoURL}
+                          alt="Avatar"
                           width={150}
                           height={150}
-                          className="rounded-xl"
+                          className="rounded-full shadow-lg"
+                          loading="eager"
                         />
                       )}
                       <input
-                        className="w-2/3 ml-5 bg-blue-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
+                        className="block w-full max-w-xs text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-600 file:text-white hover:file:bg-gray-700"
                         type="file"
                         onChange={handleChange}
                       />
+                      <div className="text-red-500 min-h-[1.5rem] text-sm pt-1 w-full text-center">
+                        {photoError}
+                      </div>
+                    </div>
+
+                    {/* DYNAMIC USERNAME / PASSWORD SECTION */}
+                    <div className="md:col-span-2">
+                      {!isChangingPassword ? (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
+                            Username
+                          </label>
+                          {currentUser && (
+                            <input
+                              className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                              type="text"
+                              value={username}
+                              onChange={e => {
+                                const uname = e.target.value;
+                                setUsername(uname);
+                                if (uname.length > 0 && uname.length < 3)
+                                  setUsernameError('Min 3 characters');
+                                else if (uname.length > 20)
+                                  setUsernameError('Max 20 characters');
+                                else if (
+                                  uname.length > 0 &&
+                                  !/^[a-zA-Z0-9]+$/.test(uname)
+                                )
+                                  setUsernameError('Alphanumeric only');
+                                else setUsernameError('');
+                              }}
+                              placeholder={
+                                currentUser.displayName || 'Set a new username'
+                              }
+                            />
+                          )}
+                          <div className="text-red-500 min-h-[1.5rem] text-sm pt-1">
+                            {usernameError}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsChangingPassword(true)}
+                            className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                          >
+                            Change Password
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center gap-4 mb-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsChangingPassword(false)}
+                              className="text-gray-400 hover:text-white transition"
+                            >
+                              {/* Back Arrow SVG */}
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                                />
+                              </svg>
+                            </button>
+                            <h3 className="text-lg font-bold text-gray-200">
+                              Change Your Password
+                            </h3>
+                          </div>
+
+                          <input
+                            className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                            type="password"
+                            value={currentPassword}
+                            onChange={e => setCurrentPassword(e.target.value)}
+                            placeholder="Current Password"
+                            required
+                          />
+                          <input
+                            className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                            type="password"
+                            value={newPassword}
+                            onChange={e => setNewPassword(e.target.value)}
+                            placeholder="New Password"
+                            required
+                          />
+                          <input
+                            className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            placeholder="Confirm New Password"
+                            required
+                          />
+                          {passwordError && (
+                            <p className="text-red-400 text-sm">
+                              {passwordError}
+                            </p>
+                          )}
+                          {passwordSuccess && (
+                            <p className="text-green-400 text-sm">
+                              {passwordSuccess}
+                            </p>
+                          )}
+
+                          <button
+                            disabled={loading}
+                            type="button"
+                            onClick={handleChangePassword}
+                            className="bg-gray-600 rounded-lg text-white py-2 mt-2 px-6 w-full hover:bg-gray-700 disabled:opacity-50 transition font-bold"
+                          >
+                            Update Password
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex flex-row w-full justify-between items-center gap-5">
+                  {/* Action Buttons for Profile */}
+                  <div className="flex flex-row w-full justify-end items-center gap-4 pt-5 border-t border-slate-700">
                     <button
-                      disabled={loading || usernameError !== ''}
-                      onClick={handleUpload}
-                      className="bg-green-600 rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold"
-                    >
-                      Save changes
-                    </button>
-                    <button
+                      type="button"
                       onClick={handleCancel}
-                      className="rounded-xl text-white py-2 px-6 w-1/2 hover:opacity-90 transition font-bold border-1"
+                      className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
                     >
                       Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={
+                        loading ||
+                        usernameError !== '' ||
+                        photoError !== '' ||
+                        isChangingPassword
+                      }
+                      className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+                    >
+                      Save Changes
                     </button>
                   </div>
                 </form>
               )}
-              {/* Authentication */}
+
+              {/* Delete Account Content */}
               {selectedIndex === 1 && (
-                <div className="p-5 flex flex-col gap-10 w-full">Auth</div>
-              )}
-              {/* Delete account */}
-              {selectedIndex === 2 && (
-                <div className="p-5 w-full flex flex-col gap-5">
-                  <p className="mt-5">
-                    Are you sure you want to delete this account? This action is
-                    irreversible. <br /> <br /> Enter credentials:
+                <div className="w-full flex flex-col gap-6 max-w-lg mx-auto text-center">
+                  <h3 className="text-xl font-bold text-red-400">
+                    Delete Account
+                  </h3>
+                  <p>
+                    This action is permanent and cannot be undone. To confirm,
+                    please enter your email and password below.
                   </p>
 
-                  <div className="flex flex-col w-full gap-5">
-                    {currentUser && (
-                      <>
-                        <input
-                          className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
-                          type="email"
-                          value={email}
-                          onChange={e => setEmail(e.target.value)}
-                          placeholder="Email"
-                          required
-                        />
-                        <input
-                          className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
-                          type="password"
-                          value={password}
-                          onChange={e => setPassword(e.target.value)}
-                          placeholder="Password"
-                          required
-                        />
-                      </>
-                    )}
+                  <div className="flex flex-col w-full gap-4 text-left">
+                    <input
+                      className="p-3 bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-400-400 text-white"
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="Email Address"
+                      required
+                    />
+                    <input
+                      className="p-3 bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-400 text-white"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Password"
+                      required
+                    />
                   </div>
 
-                  {error && <p className="text-red-500 text-sm">{error}</p>}
+                  {error && <p className="text-red-400 text-sm">{error}</p>}
 
                   <button
                     disabled={loading}
                     onClick={handleDelete}
-                    className="bg-red-600 rounded-xl text-white py-2 px-6 w-full hover:opacity-90 transition font-bold"
+                    className="bg-red-600 rounded-lg text-white py-3 px-6 w-full hover:bg-red-700 disabled:opacity-50 transition font-bold"
                   >
-                    Delete Account
+                    I understand, delete my account
                   </button>
                 </div>
               )}
