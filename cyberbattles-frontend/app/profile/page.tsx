@@ -1,11 +1,12 @@
 'use client';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {db} from '../../lib/firebase';
 import {
   getAuth,
   onAuthStateChanged,
   deleteUser,
   reauthenticateWithCredential,
+  signOut,
 } from 'firebase/auth';
 import {updateProfile, EmailAuthProvider, updatePassword} from 'firebase/auth';
 import {
@@ -54,20 +55,32 @@ export default function ProfilePage() {
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  /* Check if the user auth state has changed. If so update the currentUser .*/
-  try {
-    onAuthStateChanged(auth, user => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-        if (user.photoURL) {
-          setPhotoURL(user.photoURL);
+  // Check if the user auth state has changed. If so update the currentUser
+  useEffect(() => {
+    try {
+      onAuthStateChanged(auth, user => {
+        if (user && !currentUser) {
+          setCurrentUser(user);
+          if (user.photoURL) {
+            setPhotoURL(user.photoURL);
+          }
         }
-      }
-    });
-  } catch (error) {
-    setCurrentUser(null);
-    console.error('Failed:', error);
-  }
+      });
+    } catch (error) {
+      setCurrentUser(null);
+      console.error('Failed:', error);
+    }
+  }, [currentUser, auth]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push('/'); // Redirect to homepage after logout
+    } catch (error) {
+      console.error('Failed to log out:', error);
+      setError('Failed to log out. Please try again.');
+    }
+  };
 
   // Firebase functions
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -417,26 +430,36 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Action Buttons for Profile */}
-                  <div className="flex flex-row w-full justify-end items-center gap-4 pt-5 border-t border-slate-700">
+                  <div className="flex flex-row w-full justify-between items-center pt-5 border-t border-slate-700">
                     <button
                       type="button"
-                      onClick={handleCancel}
-                      className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                      onClick={handleLogout}
+                      className="bg-blue-600 rounded-lg text-white py-2.5 px-6 hover:bg-blue-700 transition font-bold"
                     >
-                      Cancel
+                      Logout
                     </button>
-                    <button
-                      type="submit"
-                      disabled={
-                        loading ||
-                        usernameError !== '' ||
-                        photoError !== '' ||
-                        isChangingPassword
-                      }
-                      className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
-                    >
-                      Save Changes
-                    </button>
+
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={handleCancel}
+                        className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={
+                          loading ||
+                          usernameError !== '' ||
+                          photoError !== '' ||
+                          isChangingPassword
+                        }
+                        className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
                   </div>
                 </form>
               )}
