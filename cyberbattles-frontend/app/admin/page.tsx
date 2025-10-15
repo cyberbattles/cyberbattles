@@ -534,7 +534,7 @@ const Admin = () => {
                     )}
                     <div className="p-3 bg-[#2f2f2f] rounded-lg">
                       <div className="text-sm text-gray-400 mb-5">
-                        Cleanup Session
+                        End Session
                       </div>
                       <button
                         onClick={handleEndGame}
@@ -545,9 +545,7 @@ const Admin = () => {
                             : 'bg-gray-600 cursor-not-allowed opacity-50'
                         }`}
                       >
-                        {gameStatus === 'ending'
-                          ? 'Cleaning up...'
-                          : 'Cleanup Session'}
+                        {gameStatus === 'ending' ? 'Ending...' : 'End Session'}
                       </button>
                     </div>
                   </div>
