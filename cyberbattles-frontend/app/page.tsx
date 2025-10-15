@@ -5,11 +5,14 @@ import {auth} from '../lib/firebase';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  User,
+  onAuthStateChanged,
 } from 'firebase/auth';
-import {useRouter} from 'next/navigation';
+import { useRouter } from 'next/navigation'; 
 
 // https://claude.ai/chat/5a4af02b-ce13-4936-86fc-e3fbc403427a
 // https://chatgpt.com/s/t_68d0c7af94bc819199a17e1c7a2da6c4
+
 
 const MatrixBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -81,6 +84,31 @@ const MatrixBackground = () => {
 };
 
 export default function HomePage() {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const router = useRouter();
+  const handleDashboard = async () => {
+    try {
+      if (user != null) {
+      router.push('/dashboard'); 
+      } else {
+        router.push('/login')
+      }
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
   return (
     <div className="relative h-screen overflow-hidden">
       <MatrixBackground />
@@ -94,6 +122,17 @@ export default function HomePage() {
             <p className="text-md sm:text-lg md:text-xl text-white-500 drop-shadow-lg italic font-bold p-4">
               An educational attack and defence CTF platform.
             </p>
+            <button
+              className="relative px-10 py-4 mt-6 text-2xl font-bold rounded-xl 
+              overflow-hidden transition-all duration-300 
+              hover:text-black hover:bg-green-400 
+              shadow-[0_0_5px_#00ff41,0_0_5px_#00ff41] hover:shadow-[0_0_5px_#00ff41,0_0_60px_#00ff41]"
+              onClick={handleDashboard}
+            >
+              <span className="relative z-10">Start Playing Today!</span>
+              <span className="absolute inset-0 bg-green-400/20 blur-xl animate-pulse"></span>
+            </button>
+  
           </section>
         </div>
       </div>
