@@ -245,10 +245,6 @@ const CreateSession = () => {
               />
             </div>
 
-            { !selectedScenario && attempted && 
-              <h1 className='text-red-600'>Please select a scenario...</h1>
-            }
-
             <div className="flex flex-col items-center space-y-4">
               <button
                 className={`w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl transition font-bold text-xl shadow-md ${
@@ -276,6 +272,10 @@ const CreateSession = () => {
               >
                 Back to Selection
               </button>
+
+              { !selectedScenario && attempted && 
+                <h1 className='text-red-600'>Please select a scenario...</h1>
+              }
               
             </div>
           </section>
