@@ -10,7 +10,7 @@
 import {auth, db} from '@/lib/firebase';
 import {onAuthStateChanged, User} from 'firebase/auth';
 import React, {useEffect, useRef, useState} from 'react';
-import {Terminal} from 'xterm';
+import {Terminal, IDisposable} from 'xterm';
 import {FitAddon} from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import FlagPopup from '@/components/FlagPopup';
@@ -31,7 +31,8 @@ export default function Shell() {
   // Admin related states
   const [isAdmin, setIsAdmin] = useState(false);
   const [teamIds, setTeamIds] = useState<string[]>([]);
-  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [teamSelectionListener, setTeamSelectionListener] =
+    useState<IDisposable | null>(null);
 
   const isProcessingInputRef = useRef(false);
   const isConnectingRef = useRef(false);
@@ -52,38 +53,22 @@ export default function Shell() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+    const checkAdminStatus = async () => {
       if (currentUser) {
         try {
-          const teamsRef = collection(db, 'teams');
-          const teamsSnap = await getDocs(teamsRef);
-
-          const userId = currentUser.uid;
-
-          await checkIfUserIsAdmin(userId);
-
-          for (const teamDoc of teamsSnap.docs) {
-            const teamData = teamDoc.data();
-
-            if (
-              Array.isArray(teamData.memberIds) &&
-              teamData.memberIds.includes(userId)
-            ) {
-              console.log(`User found in team: ${teamData.name}`);
-              setgameteamId(teamDoc.id);
-              return;
-            }
-          }
-
-          console.warn('User not found in any team');
-          setgameteamId('');
-        } catch (error) {
-          console.error('Error fetching teams:', error);
-          setgameteamId('');
+          await checkIfUserIsAdmin(currentUser.uid);
+        } catch (_) {
+          setIsAdmin(false);
         }
       } else {
-        setgameteamId('');
+        setIsAdmin(false);
       }
+    };
+    checkAdminStatus();
+  }, [currentUser]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (currentUser) {
         try {
           const token = await currentUser.getIdToken(true);
@@ -103,23 +88,58 @@ export default function Shell() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, 'teams');
+          const teamsSnap = await getDocs(teamsRef);
+
+          const userId = currentUser.uid;
+
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(userId)
+            ) {
+              setgameteamId(teamDoc.id);
+              return;
+            }
+          }
+
+          console.warn('User not found in any team');
+          setgameteamId('');
+        } catch (error) {
+          console.error('Error fetching teams:', error);
+          setgameteamId('');
+        }
+      } else {
+        setgameteamId('');
+      }
+    });
+
+    // Cleanup the auth listener when the component unmounts
+    return () => unsubscribe();
+  }, []);
+
   // Check if the user is the session admin
   const checkIfUserIsAdmin = async (userUid: string) => {
-    const sessionId = localStorage.getItem('sessionId');
+    const sessionId = localStorage.getItem('sessionId') || '';
 
-    const sessionRef = doc(db, 'sessions', sessionId || '');
+    const sessionRef = doc(db, 'sessions', sessionId);
     const sessionSnap = await getDoc(sessionRef);
     const sessionData = sessionSnap.data();
 
-    if (sessionData && sessionData.adminId === userUid) {
+    if (sessionData && sessionData.adminUid === userUid) {
       setIsAdmin(true);
 
-      const teamIds = localStorage.getItem('teamIds')?.split(',');
+      const teamIds = sessionData.teamIds || [];
       if (teamIds) {
         setTeamIds(teamIds);
       }
 
-      setShowAdminModal(true);
       return;
     }
     setIsAdmin(false);
@@ -182,6 +202,7 @@ export default function Shell() {
 
         term.loadAddon(fitAddon);
         fitAddonRef.current = fitAddon;
+        fitAddon.fit();
 
         if (terminalRef.current) {
           // Clear any existing content in the terminal container
@@ -244,15 +265,58 @@ export default function Shell() {
         const userId = currentUser?.uid || 'GUEST';
         const userName = await fetchUsernameById(userId);
 
-        await checkIfUserIsAdmin(userId);
-
         term.writeln(`Connecting to terminal...\r\n`);
         term.writeln(`Welcome ${userName} to the CyberBattles shell.\r\n`);
 
         if (isAdmin && !gameteamId) {
+          // Clean up any previous listener
+          if (teamSelectionListener) {
+            teamSelectionListener.dispose();
+          }
+
           term.writeln(
-            `\x1b[33mAdmin mode: Please select a team to connect to.\x1b[0m\r\n`,
+            '\x1b[33mAdmin Mode: Please select a team to connect to:\x1b[0m',
           );
+          teamIds.forEach((id, index) => {
+            term.writeln(`  [${index + 1}] ${id}`);
+          });
+          term.write('\r\nEnter selection number: ');
+
+          // Create a new, temporary listener
+          const listener = term.onData(data => {
+            // Echo the typed character
+            term.write(data);
+            if (data === '\r') {
+              // Enter key
+              const input = term.buffer.active
+                .getLine(term.buffer.active.cursorY)
+                ?.translateToString()
+                .trim();
+              const selectionStr = input?.split(': ').pop() || '';
+              const selection = parseInt(selectionStr, 10);
+
+              if (
+                !isNaN(selection) &&
+                selection > 0 &&
+                selection <= teamIds.length
+              ) {
+                const selectedTeamId = teamIds[selection - 1];
+                term.writeln(
+                  `\r\nSelected Team: ${selectedTeamId}. Connecting...`,
+                );
+                setgameteamId(selectedTeamId);
+
+                listener.dispose();
+                setTeamSelectionListener(null);
+              } else {
+                term.writeln(
+                  '\r\n\x1b[31mInvalid selection. Please try again.\x1b[0m',
+                );
+                term.write('Enter selection number: ');
+              }
+            }
+          });
+          setTeamSelectionListener(listener);
           return;
         }
 
@@ -273,7 +337,14 @@ export default function Shell() {
       }
     };
 
-    if (jwt && xtermRef.current && !isProcessingInputRef.current) {
+    if (
+      jwt &&
+      xtermRef.current &&
+      !isProcessingInputRef.current &&
+      (gameteamId !== '' || isAdmin) &&
+      !isConnected &&
+      !isConnectingRef.current
+    ) {
       initWebSocketConnection(xtermRef.current);
     }
   }, [jwt, isTerminalInitialized, currentUser, gameteamId]);
@@ -304,10 +375,13 @@ export default function Shell() {
     let hasShownRetryMessage = false;
 
     const connect = () => {
-      if (abort || !isMountedRef.current || isConnectingRef.current) return;
+      if (abort || !isMountedRef.current || isConnectingRef.current) {
+        return;
+      }
       isConnectingRef.current = true;
 
-      ws = new WebSocket(`wss://${host}/terminals/${teamId}/${userId}/${jwt}`);
+      const wssUrl = `wss://${host}/terminals/${teamId}/${userId}/${jwt}`;
+      ws = new WebSocket(wssUrl);
       wsRef.current = ws;
 
       const connectionTimeout = setTimeout(() => {
@@ -317,13 +391,6 @@ export default function Shell() {
       }, 5000);
 
       ws.onopen = () => {
-        if (xtermRef.current) {
-          try {
-            xtermRef.current.reset();
-            xtermRef.current.clear();
-          } catch {}
-        }
-
         clearTimeout(connectionTimeout);
         isConnectingRef.current = false;
         setIsConnected(true);
@@ -391,9 +458,7 @@ export default function Shell() {
       if (fitAddonRef.current && isMountedRef.current) {
         try {
           fitAddonRef.current.fit();
-        } catch (e) {
-          console.log('Resize error:', e);
-        }
+        } catch (e) {}
       }
     };
 
@@ -408,118 +473,14 @@ export default function Shell() {
   }, [isTerminalInitialized]);
 
   return (
-    <div
-      style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#1a1a1a',
-        fontFamily: 'Arial, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          padding: '65px',
-          color: 'white',
-          backgroundColor: '#2c3e50',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-        }}
-      >
-        <div
-          style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            backgroundColor: isConnected ? '#2ecc71' : '#e74c3c',
-          }}
-        ></div>
-        <span>
-          Web Terminal {isConnected ? '- Connected' : '- Connecting...'}
-        </span>
-        {currentUser && (
-          <span style={{marginLeft: 'auto', fontSize: '14px'}}>
-            User: {currentUser.displayName || currentUser.email}
-          </span>
-        )}
-      </div>
-
+    <div className="h-screen w-full flex flex-col bg-[#1a1a1a] font-sans pt-25 sm:pt-45">
       <div
         ref={terminalRef}
-        style={{
-          flex: 1,
-          padding: '10px',
-          overflow: 'hidden',
-          minHeight: 0,
-        }}
+        className="flex-1 min-h-0 overflow-hidden px-5 pb-5"
       />
-
       <div>
         <FlagPopup />
       </div>
-
-      {showAdminModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#2c3e50',
-              padding: '20px 40px',
-              borderRadius: '8px',
-              color: 'white',
-              textAlign: 'center',
-            }}
-          >
-            <h3 style={{marginTop: 0}}>Select a Team Terminal</h3>
-            <p>
-              As an admin, please choose which team's terminal you want to
-              access.
-            </p>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px',
-                marginTop: '20px',
-              }}
-            >
-              {teamIds.map(id => (
-                <button
-                  key={id}
-                  onClick={() => {
-                    setgameteamId(id);
-                    setShowAdminModal(false);
-                  }}
-                  style={{
-                    padding: '10px 20px',
-                    cursor: 'pointer',
-                    border: 'none',
-                    borderRadius: '4px',
-                    backgroundColor: '#3498db',
-                    color: 'white',
-                    fontSize: '16px',
-                  }}
-                >
-                  Connect to Team: {id}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
