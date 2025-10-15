@@ -6,37 +6,22 @@ import {useRouter} from 'next/navigation';
 
 import Select, {SingleValue} from 'react-select';
 
-import {
-  getDocs,
-  updateDoc,
-  arrayUnion,
-  collection,
-  query,
-  onSnapshot,
-} from 'firebase/firestore';
+import {getDocs, collection} from 'firebase/firestore';
 import {auth, db} from '@/lib/firebase';
 import {onAuthStateChanged, User} from 'firebase/auth';
 
 import ApiClient from '@/components/ApiClient';
-
-interface Scenario {
-  id: string;
-  scenario_title: string;
-}
 
 interface ScenarioOption {
   value: string;
   label: string;
 }
 
-// TODO: Call firebase to get aavailable scenarios
-
-// NOTE: Not implemented modularity for multiple scenarios on the backend yet.
-// For now just only setting up the basic scenario 'ubuntu-latest'
-
 const CreateSession = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [scenarios, setScenarios] = useState<
     Array<{
       id: string;
@@ -47,8 +32,8 @@ const CreateSession = () => {
       zipData: any;
     }>
   >([]);
-  const [jwt, setJwt] = useState<string | null>(null);
-  const [showJwt, setShowJwt] = useState(false);
+  const [, setJwt] = useState<string | null>(null);
+  const [, setShowJwt] = useState(false);
   const [numTeams, setNumberTeams] = useState(2);
   const [numMembersPerTeam, setPlayersPerTeam] = useState(1);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
@@ -128,26 +113,34 @@ const CreateSession = () => {
   }, []);
 
   async function createSession() {
-    try {
-      const response = await ApiClient.post('/session', {
-        scenarioId: selectedScenario,
-        numTeams: numTeams,
-        numMembersPerTeam: numMembersPerTeam,
-        token: localStorage.getItem('token'),
-      });
-      console.log(response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating session:', error);
-    }
+    const response = await ApiClient.post('/session', {
+      scenarioId: selectedScenario,
+      numTeams: numTeams,
+      numMembersPerTeam: numMembersPerTeam,
+      token: localStorage.getItem('token'),
+    });
+    console.log(response.data);
+    return response.data;
   }
 
   const handleCreateSession = async () => {
+    setErrorMessage(null);
+    setIsCreating(true);
+
     try {
       await createSession();
       router.push('/admin');
-    } catch (error) {
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || 'Creation failed. Please try again.';
+      setErrorMessage(message);
       console.error('Create session failed:', error);
+
+      setTimeout(() => {
+        setErrorMessage(null);
+      }, 5000);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -237,10 +230,40 @@ const CreateSession = () => {
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className="w-80 py-4 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
+                className={`w-80 h-[60px] flex items-center justify-center py-4 px-8 bg-[#2f2f2f] border rounded-2xl transition font-bold shadow-md ${
+                  errorMessage
+                    ? 'border-red-500 text-red-400'
+                    : 'border-gray-600 hover:border-blue-400 hover:bg-[#3a3a3a]'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
                 onClick={handleCreateSession}
+                disabled={isCreating}
               >
-                Create
+                {isCreating ? (
+                  <svg
+                    className="animate-spin h-6 w-6 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : errorMessage ? (
+                  <span className="text-sm text-center">{errorMessage}</span>
+                ) : (
+                  <span className="text-xl">Create</span>
+                )}
               </button>
               <button
                 className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
