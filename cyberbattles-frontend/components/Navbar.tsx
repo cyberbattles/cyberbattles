@@ -51,6 +51,14 @@ function Navbar() {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      setItems([userItems, userLinks]);
+    } else {
+      setItems([genericItems, genericLinks]);
+    }
+  }, [currentUser]);
+
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (window.location.pathname === '/') {
@@ -120,9 +128,7 @@ function Navbar() {
           <div className="">
             {currentUser && (
               <Link href="/profile">
-                <p className="flex text-2xl">
-                  {currentUser.displayName}
-                </p>
+                <p className="flex text-2xl">{currentUser.displayName}</p>
               </Link>
             )}
             {!currentUser && (
@@ -136,7 +142,13 @@ function Navbar() {
           {currentUser && (
             <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
               {currentUser.photoURL ? (
-                <Image src={photoURL} width="100" height="100" alt="avatar" className="rounded-full" />
+                <Image
+                  src={photoURL}
+                  width="100"
+                  height="100"
+                  alt="avatar"
+                  className="rounded-full"
+                />
               ) : (
                 <Image
                   src={avatarPlaceholder}
