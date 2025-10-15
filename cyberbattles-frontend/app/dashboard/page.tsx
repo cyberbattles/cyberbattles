@@ -16,6 +16,7 @@ import {
   Firestore,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
+import test from 'node:test';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -26,6 +27,9 @@ const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [userClan, setUserClan] = useState<any>(null);
   const [gameteamId, setgameteamId] = useState<any>(null);
+  const [gameteamIp, setgameteamIp] = useState<any>(null);
+  const [gameopponentIp, setgameopponenentIp] = useState<any>(null);
+  const [opponentTeamId, setopponenentTeamId] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
@@ -219,6 +223,83 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, [auth, db]);
 
+  {/* Use Effect function set up for getting team and opponnent IP*/}
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, "teams");
+          const teamsSnap = await getDocs(teamsRef);
+          const userId = currentUser.uid;
+  
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+  
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(userId)
+            ) {
+              const ip = teamData.ipAddress;
+              setgameteamIp(ip);
+              return;
+            }
+          }
+  
+          console.warn("User not found in any team");
+          setgameteamIp(null);
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+          setgameteamIp(null);
+        }
+      } else {
+        setgameteamIp(null);
+      }
+    });
+  
+    // Cleanup the auth listener when the component unmounts
+    return () => unsubscribe();
+  }, [auth, db]);
+
+  
+  useEffect(() => {
+    if (!auth.currentUser || !gameteamId) return; // wait until both are ready
+  
+    const fetchOpponentIp = async () => {
+      try {
+        const sessionRef = collection(db, "sessions");
+        const sessionSnap = await getDocs(sessionRef);
+        const teamId = gameteamId;
+  
+        for (const sessionDoc of sessionSnap.docs) {
+          const sessionData = sessionDoc.data();
+  
+          if (sessionData.teamIds.includes(teamId) && sessionData.started) {
+            const opponentTeamId = sessionData.teamIds.find((id: any) => id !== teamId);
+  
+            const opponentTeamRef = doc(db, "teams", opponentTeamId);
+            const opponentTeamSnap = await getDoc(opponentTeamRef);
+  
+            if (opponentTeamSnap.exists()) {
+              const opponentData = opponentTeamSnap.data();
+              setgameopponenentIp(opponentData.ipAddress ?? null);
+              return;
+            }
+          }
+        }
+  
+        setgameopponenentIp(null);
+      } catch (error) {
+        console.error("Error fetching opponent IP:", error);
+        setgameopponenentIp(null);
+      }
+    };
+  
+    fetchOpponentIp();
+  }, [auth.currentUser, gameteamId]); 
+  
+  
+
+  
   const handleGoToJoin = () => {
     try {
       router.push('/join-team');
@@ -332,7 +413,7 @@ const Dashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400">
+                <a href="settings" className="hover:text-blue-400">
                   Settings
                 </a>
               </li>
@@ -408,11 +489,12 @@ const Dashboard = () => {
                   {joinMessage.text}
                 </p>
               )}
+      <div className='flex items-center gap-8'>
       {gameteamId && (
       <div>
       <h3 className="text-lg font-semibold mb-2">
         <br />
-        Current Team ID
+        Team ID
       </h3>
       <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
 
@@ -424,7 +506,7 @@ const Dashboard = () => {
           {gameteamId && (
             <button
               onClick={handleCopy}
-              className="text-gray-300 hover:text-white transition-colors"
+              className="text-gray-300 hover:text-white transition-colors pl-5"
               title="Copy Game ID"
             >
               <FaRegCopy />
@@ -438,6 +520,67 @@ const Dashboard = () => {
       </div>
     </div>
 )}
+ {gameteamIp && (
+      <div>
+      <h3 className="text-lg font-semibold mb-2">
+        <br />
+        Team IP
+      </h3>
+      <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
+
+        <div className="flex justify-between items-center">
+          <div>
+              <h4 className="text-l font-bold text-blue-600">{gameteamIp}</h4>
+          </div>
+
+          {gameteamIp && (
+            <button
+              onClick={handleCopy}
+              className="text-gray-300 hover:text-white transition-colors pl-5"
+              title="Copy Game ID"
+            >
+              <FaRegCopy />
+            </button>
+          )}
+        </div>
+
+        {copied && (
+          <p className="text-sm text-green-400 mt-2">Copied to clipboard!</p>
+        )}
+      </div>
+    </div>
+)}
+{gameteamIp && (
+      <div>
+      <h3 className="text-lg font-semibold mb-2">
+        <br />
+        Opponent IP
+      </h3>
+      <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
+
+        <div className="flex justify-between items-center">
+          <div>
+              <h4 className="text-l font-bold text-red-600">{gameopponentIp}</h4>
+          </div>
+
+          {gameteamIp && (
+            <button
+              onClick={handleCopy}
+              className="text-gray-300 hover:text-white transition-colors pl-5"
+              title="Copy Game ID"
+            >
+              <FaRegCopy />
+            </button>
+          )}
+        </div>
+
+        {copied && (
+          <p className="text-sm text-green-400 mt-2">Copied to clipboard!</p>
+        )}
+      </div>
+    </div>
+)}
+</div>
             </div>
 
             {/* JWT Display Widget */}
