@@ -478,7 +478,7 @@ const Lobby = () => {
                   Array.from(players.values()).map((player) => (
                     <div
                       className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
-                      key={player.uid}
+                      key={player.UID}
                     >
                       {/* Player name */}
                         <div>{player.userName}</div>
