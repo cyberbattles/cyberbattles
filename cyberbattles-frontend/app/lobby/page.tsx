@@ -30,9 +30,6 @@ const Lobby = () => {
   const [team, setTeam] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any | null>(null);
 
-  // TODO: Setup backend call to get player, scenario and teams information
-
-
   // Get the current scenario information
   async function getScenario() {
     // Check if the sessionId has been set, if not return
@@ -186,52 +183,7 @@ const Lobby = () => {
       console.log('this user is admin');
       setIsHost(true);
     }
-    // setIsHost(true);
   }
-
-  const removePlayer = async (uid: string) => {
-    if (!teamId) {
-      return;
-    }
-    console.log(uid);
-
-    // Create a new members array without the given uid
-
-    const newMembers: string[] = [];
-    team.memberIds.forEach((value: string) => {
-      if (value != uid) {
-        newMembers.push(value);
-      }
-    });
-
-    // Update the memberids field in the team document on firestore
-
-    // Get the team document
-    let docRef = doc(db, 'teams', teamId);
-    // Update the team document
-    await updateDoc(docRef, {
-      memberIds: newMembers,
-    })
-      .then(() => {
-        console.log('Team doc successfully updated');
-      })
-      .catch((error: any) => {
-        console.error('Error updating document: ', error);
-      });
-
-    // Update the use state hooks to remove member
-
-    players.delete(uid);
-    setPlayers(new Map(players));
-
-    docRef = doc(db, 'teams', teamId);
-    // Populate the teamId and Players hooks
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setTeamId(docSnap.data().teamId);
-      setTeam(docSnap.data());
-    }
-  };
 
   async function startSession() {
     try {
@@ -431,13 +383,7 @@ const Lobby = () => {
                       key={uid}
                     >
                       {/* Player name */}
-                        <div>{players && players.get(uid) && players.get(uid).userName}</div>
-                      {/* Remove player button */}
-                        { isHost &&
-                          <div className="" onClick={() => removePlayer(uid)}>
-                              <IoIosClose size={30}/>
-                          </div>
-                        }                      
+                        <div>{players && players.get(uid) && players.get(uid).userName}</div>                   
                     </div>
                   ))}
               </div>
