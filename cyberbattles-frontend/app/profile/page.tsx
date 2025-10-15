@@ -1,5 +1,9 @@
 'use client';
-import React, {useEffect, useState} from 'react';
+
+// Image Cropping code adapted from react-image-crop-demo:
+// https://github.com/dominictobias/react-image-crop/tree/master/src/demo
+
+import React, {useEffect, useState, useRef} from 'react';
 import {db} from '../../lib/firebase';
 import {
   getAuth,
@@ -20,6 +24,16 @@ import {doc, updateDoc} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 import Image from 'next/image';
 
+import ReactCrop, {
+  centerCrop,
+  makeAspectCrop,
+  Crop,
+  PixelCrop,
+} from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import {canvasPreview} from '../../components/canvasPreview';
+import {useDebounceEffect} from '../../components/useDebounceEffect';
+
 export default function ProfilePage() {
   const learnItems = [
     ['Edit Profile', ''],
@@ -37,14 +51,17 @@ export default function ProfilePage() {
   const [password, setPassword] = useState('');
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const [username, setUsername] = useState('');
   const [usernameError, setUsernameError] = useState('');
 
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [imgSrc, setImgSrc] = useState('');
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [photoError, setPhotoError] = useState('');
 
   const [currentPassword, setCurrentPassword] = useState('');
@@ -82,75 +99,155 @@ export default function ProfilePage() {
     }
   };
 
-  // Firebase functions
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Clear previous errors and previews
-    setPhotoError('');
-    setPhotoPreview(null);
-    setPhoto(null);
+  // Helper function to center the crop
+  function centerAspectCrop(
+    mediaWidth: number,
+    mediaHeight: number,
+    aspect: number,
+  ) {
+    return centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        aspect,
+        mediaWidth,
+        mediaHeight,
+      ),
+      mediaWidth,
+      mediaHeight,
+    );
+  }
 
-    const file = e.target.files?.[0];
-
-    if (file) {
-      // Check file size (2MB limit)
-      if (file.size > 2 * 1024 * 1024) {
-        setPhotoError('File is too large (max 2MB).');
-        return; // Stop the function if the file is too big
-      }
-
-      // Set the file object for the eventual upload
-      setPhoto(file);
-
-      // Create a temporary URL for the client-side preview
-      setPhotoPreview(URL.createObjectURL(file));
+  function onSelectFile(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      setCrop(undefined);
+      const reader = new FileReader();
+      reader.addEventListener('load', () =>
+        setImgSrc(reader.result?.toString() || ''),
+      );
+      reader.readAsDataURL(e.target.files[0]);
     }
-  };
+  }
+
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const {width, height} = e.currentTarget;
+    setCrop(centerAspectCrop(width, height, 1 / 1));
+  }
+
+  // This effect updates the preview canvas whenever the crop changes
+  useDebounceEffect(
+    async () => {
+      if (
+        completedCrop?.width &&
+        completedCrop?.height &&
+        imgRef.current &&
+        previewCanvasRef.current
+      ) {
+        canvasPreview(imgRef.current, previewCanvasRef.current, completedCrop);
+      }
+    },
+    100,
+    [completedCrop],
+  );
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return;
+    const image = imgRef.current;
+    const previewCanvas = previewCanvasRef.current;
+
+    if (!currentUser || !completedCrop || !image || !previewCanvas) {
+      // If there's no new image, but there's a username, just update that
+      if (username) {
+        setLoading(true);
+        try {
+          await updateProfile(currentUser, {displayName: username});
+          const docRef = doc(db, 'login', currentUser.uid);
+          await updateDoc(docRef, {userName: username});
+        } catch (error) {
+          console.error('Error updating username:', error);
+          setError('Failed to update username.');
+        }
+        setLoading(false);
+        window.location.reload();
+      }
+      return;
+    }
 
     setLoading(true);
 
-    const profileUpdates: {displayName?: string; photoURL?: string} = {};
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
 
-    if (photo) {
-      const fileRef = ref(storage, `${currentUser.uid}.png`);
-      try {
-        await uploadBytes(fileRef, photo);
+    const offscreen = new OffscreenCanvas(
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+    );
+    const ctx = offscreen.getContext('2d');
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
 
-        const newPhotoURL = await getDownloadURL(fileRef);
-        profileUpdates.photoURL = newPhotoURL;
-      } catch (uploadError) {
-        console.error('Error uploading file:', uploadError);
-        setError('Failed to upload photo. Please try again.');
-        setLoading(false);
-        return;
+    ctx.drawImage(
+      previewCanvas,
+      0,
+      0,
+      previewCanvas.width,
+      previewCanvas.height,
+      0,
+      0,
+      offscreen.width,
+      offscreen.height,
+    );
+
+    const blob = await offscreen.convertToBlob({
+      type: 'image/webp',
+      quality: 0.8, // 80% quality
+    });
+
+    const fileRef = ref(storage, `${currentUser.uid}.webp`);
+
+    try {
+      // Upload the cropped image blob
+      await uploadBytes(fileRef, blob);
+      const newPhotoURL = await getDownloadURL(fileRef);
+
+      const profileUpdates: {displayName?: string; photoURL?: string} = {
+        photoURL: newPhotoURL,
+      };
+      if (username) {
+        profileUpdates.displayName = username;
       }
-    }
 
-    if (username) {
-      profileUpdates.displayName = username;
-    }
+      await updateProfile(currentUser, profileUpdates);
 
-    if (Object.keys(profileUpdates).length > 0) {
-      try {
-        await updateProfile(currentUser, profileUpdates);
-      } catch (updateError) {
-        console.error('Error updating profile:', updateError);
-        setError('Failed to save profile changes.');
-        setLoading(false);
-        return;
+      if (username) {
+        const docRef = doc(db, 'login', currentUser.uid);
+        await updateDoc(docRef, {userName: username});
       }
-    }
 
-    if (username) {
-      const docRef = doc(db, 'login', currentUser.uid);
-      await updateDoc(docRef, {userName: username});
+      setLoading(false);
+      window.location.reload();
+    } catch (uploadError) {
+      console.error('Error uploading file:', uploadError);
+      setError('Failed to upload photo. Please try again.');
+      setLoading(false);
     }
+  };
 
-    setLoading(false);
-    window.location.reload();
+  const handleCancel = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Reset cropping states
+    setImgSrc('');
+    setCrop(undefined);
+    setCompletedCrop(undefined);
+
+    // Reset other form states
+    setError('');
+    setPhotoError('');
+    setUsername('');
+    setUsernameError('');
   };
 
   const handleDelete = async () => {
@@ -186,16 +283,6 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
-  const handleCancel = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setPhoto(null);
-    setPhotoPreview(null);
-    setPhotoError('');
-    setUsername('');
-    setUsernameError('');
-  };
-
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
@@ -219,7 +306,6 @@ export default function ProfilePage() {
       return;
     }
 
-    // 2. Re-authenticate the user for security
     const credential = EmailAuthProvider.credential(
       currentUser.email,
       currentPassword,
@@ -228,7 +314,6 @@ export default function ProfilePage() {
     try {
       await reauthenticateWithCredential(currentUser, credential);
 
-      // 3. Update the password
       await updatePassword(currentUser, newPassword);
 
       setPasswordSuccess('Password updated successfully!');
@@ -289,10 +374,10 @@ export default function ProfilePage() {
                 <form onSubmit={handleUpload} className="flex flex-col gap-10">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
                     {/* Profile Picture */}
-                    <div className="flex flex-col items-center gap-4">
+                    <div className="flex flex-col items-center gap-4 w-full">
                       {currentUser && (
                         <Image
-                          src={photoPreview || photoURL}
+                          src={photoURL}
                           alt="Avatar"
                           width={150}
                           height={150}
@@ -303,7 +388,8 @@ export default function ProfilePage() {
                       <input
                         className="block w-full max-w-xs text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-600 file:text-white hover:file:bg-gray-700"
                         type="file"
-                        onChange={handleChange}
+                        accept="image/*"
+                        onChange={onSelectFile}
                       />
                       <div className="text-red-500 min-h-[1.5rem] text-sm pt-1 w-full text-center">
                         {photoError}
@@ -417,7 +503,6 @@ export default function ProfilePage() {
                           )}
 
                           <button
-                            disabled={loading}
                             type="button"
                             onClick={handleChangePassword}
                             className="bg-gray-600 rounded-lg text-white py-2 mt-2 px-6 w-full hover:bg-gray-700 disabled:opacity-50 transition font-bold"
@@ -509,6 +594,49 @@ export default function ProfilePage() {
           </div>
         </section>
       </div>
+      {imgSrc && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col justify-center items-center p-4 z-50">
+          <div className="flex flex-col items-center gap-4 border-white border p-6 rounded-lg">
+            <ReactCrop
+              crop={crop}
+              onChange={(_, percentCrop) => setCrop(percentCrop)}
+              onComplete={c => setCompletedCrop(c)}
+              aspect={1}
+              className="max-w-xs max-h-[30vh]"
+            >
+              <img
+                ref={imgRef}
+                alt="Crop me"
+                src={imgSrc}
+                onLoad={onImageLoad}
+              />
+            </ReactCrop>
+            <div>
+              <p className="text-center text-sm text-gray-400 mb-2">Preview</p>
+              <canvas
+                ref={previewCanvasRef}
+                className="rounded-full"
+                style={{
+                  border: '1px solid black',
+                  objectFit: 'contain',
+                  width: 150,
+                  height: 150,
+                }}
+              />
+            </div>
+
+            <form onSubmit={handleUpload}>
+              <button
+                type="submit"
+                disabled={loading || photoError !== ''}
+                className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+              >
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }
