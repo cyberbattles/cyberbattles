@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
+import {useRouter, usePathname} from 'next/navigation';
 import logo from '../public/images/logo.png';
 import {IoMenu} from 'react-icons/io5';
 import avatarPlaceholder from '../public/images/avatar_placeholder.png';
@@ -14,6 +14,7 @@ import type {User} from 'firebase/auth';
 
 function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const genericItems = ['Home', 'Leaderboard', 'Lab'];
   const genericLinks = ['/', '/leaderboard', '/lab'];
   const userItems = ['Dashboard', 'Leaderboard', 'Learn', 'Traffic', 'Shell'];
@@ -58,6 +59,19 @@ function Navbar() {
       setItems([genericItems, genericLinks]);
     }
   }, [currentUser]);
+
+  // Redirect logged out users trying to access protected routes
+  useEffect(() => {
+    if (currentUser === null) {
+      const isProtectedRoute = userLinks.some(link =>
+        pathname.startsWith(link),
+      );
+
+      if (isProtectedRoute) {
+        router.push('/');
+      }
+    }
+  }, [currentUser, pathname, router, userLinks]);
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
