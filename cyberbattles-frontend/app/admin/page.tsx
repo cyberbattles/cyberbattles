@@ -1,7 +1,8 @@
 'use client';
 import {IoIosClose, IoIosRefresh} from 'react-icons/io';
 import React, {useState, useEffect} from 'react';
-import {auth, db} from '@/lib/firebase';
+import {useRouter} from 'next/navigation';
+import {db} from '@/lib/firebase';
 import {
   collection,
   query,
@@ -33,6 +34,7 @@ const Admin = () => {
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState<any | null>(null);
   const [gameStatus, setGameStatus] = useState('waiting'); // waiting, starting, active
+  const router = useRouter();
 
   const [teams, setTeams] = useState(new Map());
   const {currentUser} = useAuth();
@@ -263,6 +265,8 @@ const Admin = () => {
 
   // Cleanup the session
   async function cleanupSession() {
+    if (!currentUser) return false;
+
     // Create the api request url
     const token = await currentUser.getIdToken(true);
     const request = '/cleanup/' + sessionId + '/' + token;
@@ -323,8 +327,7 @@ const Admin = () => {
     }
     setGameStatus('ending');
     await cleanupSession();
-    setGameStatus('waiting');
-    window.location.reload();
+    router.push('/dashboard');
   };
 
   // Set the teams, players, and scenario hooks
