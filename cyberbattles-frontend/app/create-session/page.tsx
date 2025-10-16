@@ -128,7 +128,6 @@ const CreateSession = () => {
     setIsCreating(true);
 
     try {
-      setCreating(true);
       await createSession();
       router.push('/admin');
     } catch (error: any) {
@@ -267,19 +266,11 @@ const CreateSession = () => {
                 )}
               </button>
               <button
-                className={`w-80 py-3 px-8 bg-gray-600 rounded-2xl transition font-semibold text-lg shadow-md ${
-                  loading || creating ? "cursor-not-allowed opacity-50" 
-                          : "hover:opacity-90"
-                }`}
+                className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
                 onClick={handleBackToSelection}
               >
                 Back to Selection
               </button>
-
-              { !selectedScenario && attempted && 
-                <h1 className='text-red-600'>Please select a scenario...</h1>
-              }
-              
             </div>
           </section>
         </main>
