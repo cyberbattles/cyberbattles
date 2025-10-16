@@ -362,6 +362,9 @@ export default function Shell() {
     let inputHandler: IDisposable | null = null;
     let hasShownRetryMessage = false;
 
+    let connectedPreviously = false;
+    let connectStartTime = 0;
+
     // Make the connect function async to allow for awaiting the token
     const connect = async () => {
       if (abort || !isMountedRef.current || isConnectingRef.current) {
@@ -392,6 +395,9 @@ export default function Shell() {
           isConnectingRef.current = false;
           setIsConnected(true);
           hasShownRetryMessage = false;
+
+          connectedPreviously = true;
+          connectStartTime = Date.now();
 
           if (inputHandler) inputHandler.dispose();
 
@@ -429,7 +435,15 @@ export default function Shell() {
           }
 
           if (!abort && isMountedRef.current) {
-            if (!hasShownRetryMessage) {
+            const connectionDuration = connectedPreviously
+              ? Date.now() - connectStartTime
+              : 0;
+
+            if (
+              connectedPreviously &&
+              connectionDuration > 2000 &&
+              !hasShownRetryMessage
+            ) {
               term.writeln(
                 '\r\n\x1b[31mConnection lost. Attempting to reconnect...\x1b[0m\r\n',
               );
