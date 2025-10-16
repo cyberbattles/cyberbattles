@@ -10,9 +10,9 @@ import {
   where,
   query,
 } from 'firebase/firestore';
-import {auth, db} from '@/lib/firebase';
+import {db} from '@/lib/firebase';
 import {updateDoc} from 'firebase/firestore';
-import {onAuthStateChanged, User} from 'firebase/auth';
+import {useAuth} from '@/components/Auth';
 
 // https://claude.ai/chat/905473d6-1bea-4927-9c12-e2b8fb49674e
 
@@ -22,33 +22,29 @@ const CreateClan = () => {
   const [numMembers, setNumMembers] = useState(10);
   const [createMessage, setCreateMessage] = useState({type: '', text: ''});
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [isInClan, setIsInClan] = useState(false);
   const [uid, setUid] = useState<string | null>(null);
-  const [clanLoading, setClanLoading] = useState(true);
+  const {currentUser} = useAuth();
 
   // Monitor auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+    const fetchUid = async () => {
       if (currentUser) {
-        setUser(currentUser);
         setUid(currentUser.uid);
         localStorage.setItem('currentuid', currentUser.uid);
       } else {
-        setUser(null);
         setUid(null);
         localStorage.removeItem('currentuid');
       }
-    });
-    return () => unsubscribe();
-  }, []);
+    };
+
+    fetchUid();
+  }, [currentUser]);
 
   useEffect(() => {
     const checkUserClan = async () => {
       if (!uid) {
         setIsInClan(false);
-        setClanLoading(false);
         return;
       }
 
@@ -62,8 +58,6 @@ const CreateClan = () => {
       } catch (error) {
         console.error('Error checking user clan:', error);
         setIsInClan(false);
-      } finally {
-        setClanLoading(false);
       }
     };
 
@@ -106,7 +100,7 @@ const CreateClan = () => {
       return;
     }
 
-    if (!user) {
+    if (!currentUser) {
       setCreateMessage({
         type: 'error',
         text: 'You must be logged in to create a clan.',
@@ -129,15 +123,15 @@ const CreateClan = () => {
         clanTag: clanTag.trim(),
         numMembers: numMembers,
         clanId: clanId,
-        memberIds: [user.uid], // Creator is automatically a member
+        memberIds: [currentUser.uid], // Creator is automatically a member
         createdAt: new Date(),
-        createdBy: user.uid,
+        createdBy: currentUser.uid,
       };
 
       // Write the clan document to Firestore
       await setDoc(clanRef, clanData);
 
-      const userRef = doc(db, 'login', user.uid);
+      const userRef = doc(db, 'login', currentUser.uid);
       await updateDoc(userRef, {
         inClan: true,
       });
@@ -234,7 +228,7 @@ const CreateClan = () => {
               <button
                 className="w-80 py-4 px-8 bg-blue-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleCreateClan}
-                disabled={isLoading || !user}
+                disabled={isLoading || !currentUser}
               >
                 {isLoading ? 'Creating...' : 'Create Clan'}
               </button>
@@ -254,11 +248,6 @@ const CreateClan = () => {
                   }`}
                 >
                   {createMessage.text}
-                </p>
-              )}
-              {!user && !authLoading && (
-                <p className="mt-3 text-sm text-yellow-400">
-                  Please log in to create a clan.
                 </p>
               )}
             </div>

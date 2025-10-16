@@ -5,15 +5,13 @@ import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import logo from '../public/images/logo.png';
 import {IoMenu} from 'react-icons/io5';
-import avatarPlaceholder from '../public/images/avatar_placeholder.png';
 import React, {useEffect, useState} from 'react';
-import {onAuthStateChanged} from 'firebase/auth';
-import {auth} from '@/lib/firebase';
-
-import type {User} from 'firebase/auth';
+import {useAuth} from '@/components/Auth';
 
 function Navbar() {
   const router = useRouter();
+
+  const pfpPlaceholder = '/images/avatar_placeholder.png';
   const genericItems = ['Home', 'Leaderboard', 'Lab'];
   const genericLinks = ['/', '/leaderboard', '/lab'];
   const userItems = ['Dashboard', 'Leaderboard', 'Learn', 'Traffic', 'Shell'];
@@ -26,8 +24,8 @@ function Navbar() {
   ];
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [photoURL, setPhotoURL] = useState('');
+  const {currentUser} = useAuth();
+  const [photoURL, setPhotoURL] = useState(pfpPlaceholder);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -36,20 +34,16 @@ function Navbar() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-        if (user.photoURL) {
-          setPhotoURL(user.photoURL);
-        }
-        setItems([userItems, userLinks]);
-      } else {
-        setCurrentUser(null);
+    if (currentUser) {
+      setItems([userItems, userLinks]);
+      if (currentUser.photoURL) {
+        setPhotoURL(currentUser.photoURL);
       }
-    });
-
-    return () => unsubscribe();
-  }, []);
+    } else {
+      setItems([genericItems, genericLinks]);
+      setPhotoURL(pfpPlaceholder); // Clear photoURL on logout
+    }
+  }, [currentUser]);
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -119,10 +113,8 @@ function Navbar() {
         <div className="flex items-center pr-10 gap-5">
           <div className="">
             {currentUser && (
-              <Link href="/profile">
-                <p className="flex text-2xl">
-                  {currentUser.displayName}
-                </p>
+              <Link href="/account">
+                <p className="flex text-2xl">{currentUser.displayName}</p>
               </Link>
             )}
             {!currentUser && (
@@ -135,15 +127,13 @@ function Navbar() {
           </div>
           {currentUser && (
             <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
-              {currentUser.photoURL ? (
-                <Image src={photoURL} width="100" height="100" alt="avatar" className="rounded-full" />
-              ) : (
-                <Image
-                  src={avatarPlaceholder}
-                  alt="avatar"
-                  className="rounded-full"
-                />
-              )}
+              <Image
+                src={photoURL}
+                width="100"
+                height="100"
+                alt="avatar"
+                className="rounded-full"
+              />
             </Link>
           )}
         </div>
