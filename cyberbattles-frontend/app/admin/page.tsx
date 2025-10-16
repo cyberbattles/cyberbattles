@@ -11,9 +11,9 @@ import {
   getDocs,
   updateDoc,
 } from 'firebase/firestore';
-import {onAuthStateChanged} from 'firebase/auth';
 import Navbar from '@/components/Navbar';
 import ApiClient from '@/components/ApiClient';
+import {useAuth} from '@/components/Auth';
 
 /**
  * An interface representing a result of starting a session.
@@ -35,7 +35,7 @@ const Admin = () => {
   const [gameStatus, setGameStatus] = useState('waiting'); // waiting, starting, active
 
   const [teams, setTeams] = useState(new Map());
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const {currentUser} = useAuth();
 
   async function getSessions(uid: string) {
     try {
@@ -223,6 +223,9 @@ const Admin = () => {
   async function startSession() {
     // Send the api request
     try {
+      if (!currentUser) {
+        throw new Error('No current user');
+      }
       const token = await currentUser.getIdToken(true);
       const response = await ApiClient.post('/start-session', {
         sessionId: sessionId,
@@ -323,20 +326,6 @@ const Admin = () => {
     setGameStatus('waiting');
     window.location.reload();
   };
-
-  // Set the current logged in user on initial render
-  useEffect(() => {
-    // Get the currentUser
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [currentUser]);
 
   // Set the teams, players, and scenario hooks
   useEffect(() => {

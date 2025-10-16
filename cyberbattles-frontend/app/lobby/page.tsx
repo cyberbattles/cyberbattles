@@ -1,6 +1,4 @@
 'use client';
-import Image from 'next/image';
-import {IoIosClose} from 'react-icons/io';
 import React, {useState, useEffect} from 'react';
 import {auth, db} from '@/lib/firebase';
 import {signOut} from 'firebase/auth';
@@ -11,12 +9,10 @@ import {
   doc,
   getDoc,
   getDocs,
-  updateDoc,
   onSnapshot,
 } from 'firebase/firestore';
-import {getAuth, onAuthStateChanged} from 'firebase/auth';
 import {useRouter} from 'next/navigation';
-import ApiClient from '@/components/ApiClient';
+import {useAuth} from '@/components/Auth';
 
 const Lobby = () => {
   const router = useRouter();
@@ -24,11 +20,11 @@ const Lobby = () => {
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState<any | null>(null);
   const [gameStatus, setGameStatus] = useState(''); // waiting, starting, active
-  const [isHost, setIsHost] = useState(false);
+  const [, setIsHost] = useState(false);
   const [gameId, setgameId] = useState<any>(null);
 
   const [team, setTeam] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const {currentUser} = useAuth();
 
   // Get the current scenario information
   async function getScenario() {
@@ -89,7 +85,7 @@ const Lobby = () => {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+    const updateTeams = async () => {
       if (currentUser) {
         try {
           const teamsRef = collection(db, 'teams');
@@ -119,11 +115,9 @@ const Lobby = () => {
       } else {
         setgameId(null);
       }
-    });
-
-    // Cleanup the auth listener when the component unmounts
-    return () => unsubscribe();
-  }, [auth, db]);
+    };
+    updateTeams();
+  }, [currentUser, db]);
 
   // Populate the players hook with map (uid, firestore player doc)
   async function getPlayers() {
@@ -178,18 +172,9 @@ const Lobby = () => {
     console.log(adminUid);
 
     // Determine if the current user is admin
-    if (currentUser.uid == adminUid) {
+    if (currentUser && currentUser.uid == adminUid) {
       console.log('this user is admin');
       setIsHost(true);
-    }
-  }
-
-  async function startSession() {
-    try {
-      const response = await ApiClient.post('/start-session');
-      return response.data;
-    } catch (error) {
-      console.error('Error starting session:', error);
     }
   }
 
@@ -215,16 +200,7 @@ const Lobby = () => {
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-  // ------------- useEffects ---------------
-
   useEffect(() => {
-    // Get the currentUser
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-      }
-    });
-
     // Populate the team hook and check if user is host
     if (currentUser) {
       findTeam(currentUser.uid);
@@ -234,26 +210,26 @@ const Lobby = () => {
       }
       checkHost();
     }
-    return () => {
-      unsubscribe;
-    };
   }, [currentUser, team]);
 
   useEffect(() => {
     const unsubscribe = null;
     if (team && gameStatus && gameStatus != 'started') {
-      const unsubscribe = onSnapshot(doc(db, 'sessions', team.sessionId), doc => {
-        if (doc.exists()) {
-          const started = doc.data().started;
-          if (started) {
-            console.log('Session has started');
-            handleStartGame();
-          } else {
-            console.log('Session has not started');
-            setGameStatus('waiting');
+      const unsubscribe = onSnapshot(
+        doc(db, 'sessions', team.sessionId),
+        doc => {
+          if (doc.exists()) {
+            const started = doc.data().started;
+            if (started) {
+              console.log('Session has started');
+              handleStartGame();
+            } else {
+              console.log('Session has not started');
+              setGameStatus('waiting');
+            }
           }
-        }
-      });
+        },
+      );
     }
     return () => {
       if (unsubscribe) {
@@ -261,8 +237,6 @@ const Lobby = () => {
       }
     };
   }, [team, gameStatus]);
-
-  // ------------- End useEffects ---------------
 
   return (
     <>
@@ -373,18 +347,22 @@ const Lobby = () => {
                   <h2 className="text-xl font-semibold ">Team members</h2>
                 </div>
 
-              <div className="flex flex-col gap-5">
-                {players.size != 0 &&
-                  team.memberIds.map((uid: string) => (
-                    <div
-                      className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
-                      key={uid}
-                    >
-                      {/* Player name */}
-                        <div>{players && players.get(uid) && players.get(uid).userName}</div>                   
-                    </div>
-                  ))}
-              </div>
+                <div className="flex flex-col gap-5">
+                  {players.size != 0 &&
+                    team.memberIds.map((uid: string) => (
+                      <div
+                        className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
+                        key={uid}
+                      >
+                        {/* Player name */}
+                        <div>
+                          {players &&
+                            players.get(uid) &&
+                            players.get(uid).userName}
+                        </div>
+                      </div>
+                    ))}
+                </div>
 
                 <div className="flex h-full align-bottom items-end">
                   <div className="flex flex-row px-2 pt-3 w-full justify-between border-t">

@@ -1,12 +1,5 @@
 'use client';
-import React, {useEffect, useRef, useState} from 'react';
-import Image from 'next/image';
-import {auth} from '../lib/firebase';
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from 'firebase/auth';
-import {useRouter} from 'next/navigation';
+import React, {useEffect, useRef} from 'react';
 
 // https://claude.ai/chat/5a4af02b-ce13-4936-86fc-e3fbc403427a
 // https://chatgpt.com/s/t_68d0c7af94bc819199a17e1c7a2da6c4
