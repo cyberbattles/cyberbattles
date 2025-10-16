@@ -1,28 +1,17 @@
 'use client';
 
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {doc, getDoc, updateDoc, arrayUnion} from 'firebase/firestore';
-import {auth, db} from '@/lib/firebase';
-import {onAuthStateChanged, User} from 'firebase/auth';
+import {db} from '@/lib/firebase';
+import {useAuth} from '@/components/Auth';
 
 const JoinTeam = () => {
   const router = useRouter();
   const [teamId, setTeamId] = useState('');
   const [joinMessage, setJoinMessage] = useState({type: '', text: ''});
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // Monitor auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
-      setUser(currentUser);
-      setAuthLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const {currentUser} = useAuth();
 
   const handleJoinTeam = async () => {
     // Prevent multiple submissions
@@ -34,7 +23,7 @@ const JoinTeam = () => {
       return;
     }
 
-    if (!user) {
+    if (!currentUser) {
       setJoinMessage({
         type: 'error',
         text: 'You must be logged in to join a team.',
@@ -53,7 +42,10 @@ const JoinTeam = () => {
         const teamData = docSnap.data();
 
         // Check if user is already a member
-        if (teamData.memberIds && teamData.memberIds.includes(user.uid)) {
+        if (
+          teamData.memberIds &&
+          teamData.memberIds.includes(currentUser.uid)
+        ) {
           setJoinMessage({
             type: 'error',
             text: 'You are already a member of this team.',
@@ -66,7 +58,7 @@ const JoinTeam = () => {
 
         // Add the user's UID to the memberIds array
         await updateDoc(teamRef, {
-          memberIds: arrayUnion(user.uid),
+          memberIds: arrayUnion(currentUser.uid),
         });
 
         setJoinMessage({
@@ -102,17 +94,6 @@ const JoinTeam = () => {
     }
   };
 
-  // Show loading state while checking auth
-  if (authLoading) {
-    return (
-      <>
-        <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white items-center justify-center">
-          <div className="text-xl">Loading...</div>
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
@@ -147,7 +128,7 @@ const JoinTeam = () => {
               <button
                 className="w-80 py-4 px-8 bg-green-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleJoinTeam}
-                disabled={isLoading || !user}
+                disabled={isLoading || !currentUser}
               >
                 {isLoading ? 'Joining...' : 'Join Team'}
               </button>
@@ -167,11 +148,6 @@ const JoinTeam = () => {
                   }`}
                 >
                   {joinMessage.text}
-                </p>
-              )}
-              {!user && !authLoading && (
-                <p className="mt-3 text-sm text-yellow-400">
-                  Please log in to join a team.
                 </p>
               )}
             </div>

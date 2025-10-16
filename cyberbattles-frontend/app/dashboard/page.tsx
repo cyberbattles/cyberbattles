@@ -2,7 +2,7 @@
 import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
 import {User, onAuthStateChanged, signOut} from 'firebase/auth';
-import { FaRegCopy } from "react-icons/fa";
+import {FaRegCopy} from 'react-icons/fa';
 import {
   doc,
   getDoc,
@@ -30,8 +30,7 @@ const Dashboard = () => {
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [currentUsername, setcurrentUsername] = useState("User");
-  
+  const [currentUsername, setcurrentUsername] = useState('User');
 
   // New state for the team join feature
   const [teamId, setTeamId] = useState('');
@@ -53,33 +52,32 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (currentUser) {
         try {
           const q = query(
-            collection(db, "login"),
-            where("UID", "==", currentUser.uid)
+            collection(db, 'login'),
+            where('UID', '==', currentUser.uid),
           );
           const querySnap = await getDocs(q);
-  
+
           if (!querySnap.empty) {
             const userDoc = querySnap.docs[0];
             const userData = userDoc.data();
             setcurrentUsername(userData.userName);
           } else {
-            console.warn("User not found in login collection");
+            console.warn('User not found in login collection');
           }
         } catch (error) {
-          console.error("Error fetching username:", error);
+          console.error('Error fetching username:', error);
         }
       } else {
-        console.log("No user signed in");
+        console.log('No user signed in');
       }
     });
-  
+
     return () => unsubscribe();
   }, []);
-  
 
   useEffect(() => {
     const checkUserClan = async () => {
@@ -120,7 +118,7 @@ const Dashboard = () => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
-        console.error("Failed to copy Game ID:", error);
+        console.error('Failed to copy Game ID:', error);
       }
     }
   };
@@ -183,10 +181,10 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (currentUser) {
         try {
-          const teamsRef = collection(db, "teams");
+          const teamsRef = collection(db, 'teams');
           const teamsSnap = await getDocs(teamsRef);
 
           const userId = currentUser.uid;
@@ -200,18 +198,18 @@ const Dashboard = () => {
             ) {
               console.log(`User found in team: ${teamData.name}`);
               setgameteamId(teamDoc.id);
-              return; 
+              return;
             }
           }
 
-          console.warn("User not found in any team");
+          console.warn('User not found in any team');
           setgameteamId(null);
         } catch (error) {
-          console.error("Error fetching teams:", error);
-          setgameteamId(null)
+          console.error('Error fetching teams:', error);
+          setgameteamId(null);
         }
       } else {
-        setgameteamId(null)
+        setgameteamId(null);
       }
     });
 
@@ -244,12 +242,12 @@ const Dashboard = () => {
   };
 
   const handleGoToAdmin = () => {
-      try {
-        router.push("/admin");
-      } catch (error) {
-        console.error("Navigation failed:", error);
-      }
-    };
+    try {
+      router.push('/admin');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
 
   /**
    * Handles the logic for a user to join a team.
@@ -332,8 +330,8 @@ const Dashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400">
-                  Settings
+                <a href="account" className="hover:text-blue-400">
+                  Account
                 </a>
               </li>
             </ul>
@@ -357,8 +355,6 @@ const Dashboard = () => {
 
           {/* Dashboard Widgets */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           
-
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
               <h3 className="text-lg font-semibold mb-2">
                 Join or Create Game
@@ -388,7 +384,10 @@ const Dashboard = () => {
                   {joinMessage.text}
                 </p>
               )}
-              <h3 className="text-lg font-semibold mb-2"><br/>Already a session admin?</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                <br />
+                Already a session admin?
+              </h3>
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={handleGoToAdmin}
@@ -400,44 +399,47 @@ const Dashboard = () => {
               {joinMessage.text && (
                 <p
                   className={`mt-3 text-sm ${
-                    joinMessage.type === "success"
-                      ? "text-green-400"
-                      : "text-red-400"
+                    joinMessage.type === 'success'
+                      ? 'text-green-400'
+                      : 'text-red-400'
                   }`}
                 >
                   {joinMessage.text}
                 </p>
               )}
-      {gameteamId && (
-      <div>
-      <h3 className="text-lg font-semibold mb-2">
-        <br />
-        Current Team ID
-      </h3>
-      <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
+              {gameteamId && (
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    <br />
+                    Current Team ID
+                  </h3>
+                  <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="text-l font-bold text-green-600">
+                          {gameteamId}
+                        </h4>
+                      </div>
 
-        <div className="flex justify-between items-center">
-          <div>
-              <h4 className="text-l font-bold text-green-600">{gameteamId}</h4>
-          </div>
+                      {gameteamId && (
+                        <button
+                          onClick={handleCopy}
+                          className="text-gray-300 hover:text-white transition-colors"
+                          title="Copy Game ID"
+                        >
+                          <FaRegCopy />
+                        </button>
+                      )}
+                    </div>
 
-          {gameteamId && (
-            <button
-              onClick={handleCopy}
-              className="text-gray-300 hover:text-white transition-colors"
-              title="Copy Game ID"
-            >
-              <FaRegCopy />
-            </button>
-          )}
-        </div>
-
-        {copied && (
-          <p className="text-sm text-green-400 mt-2">Copied to clipboard!</p>
-        )}
-      </div>
-    </div>
-)}
+                    {copied && (
+                      <p className="text-sm text-green-400 mt-2">
+                        Copied to clipboard!
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* JWT Display Widget */}

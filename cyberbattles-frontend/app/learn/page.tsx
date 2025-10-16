@@ -90,7 +90,7 @@ export default function ModernLearnPage() {
         {
           type: 'text',
           content:
-            "In many ways, ethical hacking is like a rehearsal for real-world cyberattacks. Organizations hire ethical hackers to launch simulated attacks on their computer networks. During these attacks, the ethical hackers demonstrate how actual cybercriminals break into a network and the damage they could do once inside.",
+            'In many ways, ethical hacking is like a rehearsal for real-world cyberattacks. Organizations hire ethical hackers to launch simulated attacks on their computer networks. During these attacks, the ethical hackers demonstrate how actual cybercriminals break into a network and the damage they could do once inside.',
         },
         {
           type: 'text',
@@ -214,105 +214,101 @@ export default function ModernLearnPage() {
         },
         {
           type: 'code',
-          content:
-            'CTF{yoU_FoUnD_M3}',
+          content: 'CTF{yoU_FoUnD_M3}',
         },
         {
           type: 'text',
           content:
-            "These challenges simulate real-world vulnerabilities and problems across areas like cryptography, web security, reverse engineering, forensics and binary exploitation.",
+            'These challenges simulate real-world vulnerabilities and problems across areas like cryptography, web security, reverse engineering, forensics and binary exploitation.',
         },
         {
           type: 'text',
           content:
-            "The goal is to capture as many flags as possible as a team or individual within a time limit. Each flag earns points and players or teams are ranked on a scoreboard.",
+            'The goal is to capture as many flags as possible as a team or individual within a time limit. Each flag earns points and players or teams are ranked on a scoreboard.',
         },
         {
           type: 'heading',
-          content:
-            "Cryptography",
+          content: 'Cryptography',
         },
-        {type: 'text', content: "Cryptography included breaking weak algorithms, recovering keys, understanding math flaws, such as a Caesar Cipher algorithm.\n\n In the example below, we see a encoded message which has used a caeser cipher algorithm. All letters are shifted by a certain number of offsets. In this case, we have an offset of 3, so A would become D. To crack the encryption we can shift the offset, print the result and end when a flag is discovered."},
+        {
+          type: 'text',
+          content:
+            'Cryptography included breaking weak algorithms, recovering keys, understanding math flaws, such as a Caesar Cipher algorithm.\n\n In the example below, we see a encoded message which has used a caeser cipher algorithm. All letters are shifted by a certain number of offsets. In this case, we have an offset of 3, so A would become D. To crack the encryption we can shift the offset, print the result and end when a flag is discovered.',
+        },
         {
           type: 'code',
           content:
             'ciphertext = "fdwfk_wkh_iodj"\ndef decrypt(text, shift):\n   result = ""\n   for c in text:\n     if c.isalpha():\n       shift_base = ord(A) if c.isupper() else ord(a)\n       result += chr((ord(c) - shift_base - shift) % 26 + shift_base)\n     else:\n     result += c\n   return result',
         },
         {
-        type: 'code',
+          type: 'code',
           content:
             'for s in range(26):\n   print(s, decrypt(ciphertext, s))\nOUTPUT: catch_the_flag',
         },
         {
           type: 'heading',
-          content:
-            "Binary Exploitation (PWN)",
+          content: 'Binary Exploitation (PWN)',
         },
         {
           type: 'text',
           content:
-            "Binary Exploitation includes reverse engineering of binaries, exploiting memory bugs like buffer overflows, formatted strings. An example of this is an input overflow to get a shell.\n\n In the below code the function vuln() is called from main. Using gets() the program reads bytes from standard input into buffer without any bounds checking. If the user types more than 32 bytes, those extra bytes are written into adjacent memory releasing the flag.",
+            'Binary Exploitation includes reverse engineering of binaries, exploiting memory bugs like buffer overflows, formatted strings. An example of this is an input overflow to get a shell.\n\n In the below code the function vuln() is called from main. Using gets() the program reads bytes from standard input into buffer without any bounds checking. If the user types more than 32 bytes, those extra bytes are written into adjacent memory releasing the flag.',
         },
         {
           type: 'code',
-            content:
-              'void win() {\n    printf("CTF{buffer_overflow_success});\n}\n\n\nvoid vuln() {\n    char buf[32];\n    gets(buf); // Vulnerable function!\n}\n\n\nint main() {\n    vuln();\n    return 0;\n}',
-          },
-          {
-            type: 'heading',
-            content:
-              "Reverse Engineering",
-          },
-          {
-            type: 'text',
-            content:
-              "Involves analysing compiled code to recover logic or keys. Examples include disassembling binary to find hidden flags.",
-          },
-          {
-            type: 'heading',
-            content:
-              "Web Exploitation",
-          },
-          {
-            type: 'text',
-            content:
-              "Occurs via exploiting vulnerable web apps (SQLI, XSS, insecure auth) by potentially injecting payloads into parameters.\n\n In the example provided below an SQL attack occurs. We are assuming that the application builds an SQL query by string concatenation. If an attacker was to supply the command below, because 1 is always true, the WHERE clause can evaluate to true, bypassing authentication.",
-          },
-          {
-            type: 'code',
-              content:
-                "-- Vulnerable login check\nSELECT * FROM users WHERE username = '$user' AND password = '$pass';\n\n-- Attacker Input\n' OR '1'='1\n Authentication bypassed!",
-            },
-            {
-              type: 'heading',
-              content:
-                "Forensics",
-            },
-            {
-              type: 'text',
-              content:
-                "Analysing files, memory dumps, disk images or network traffic to receover hidden files, such as inside a PNG.",
-            },
-            {
-              type: 'heading',
-              content:
-                "OSINT",
-            },
-            {
-              type: 'text',
-              content:
-                "OSINT (Open-Source Intelligence) is the process of collecting and analyzing information from publicly available sources to generate useful intelligence. These sources can include websites, social media, news articles, government publications, forums, images, and even metadata hidden in files.",
-            },
-            {
-              type: 'heading',
-              content:
-                "Beginner Learning Tool",
-            },
-            {
-              type: 'text',
-              content:
-                "CyberChef is a simple, intuitive web app for analysing and decoding data without having to deal with complex tools or programming languages. CyberChef encourages both technical and non-technical people to explore data formats, encryption and compression. A simple, intuitive web app for analysing and decoding data without having to deal with complex tools or programming languages. CyberChef encourages both technical and non-technical people to explore data formats, encryption and compression.",
-            },
+          content:
+            'void win() {\n    printf("CTF{buffer_overflow_success});\n}\n\n\nvoid vuln() {\n    char buf[32];\n    gets(buf); // Vulnerable function!\n}\n\n\nint main() {\n    vuln();\n    return 0;\n}',
+        },
+        {
+          type: 'heading',
+          content: 'Reverse Engineering',
+        },
+        {
+          type: 'text',
+          content:
+            'Involves analysing compiled code to recover logic or keys. Examples include disassembling binary to find hidden flags.',
+        },
+        {
+          type: 'heading',
+          content: 'Web Exploitation',
+        },
+        {
+          type: 'text',
+          content:
+            'Occurs via exploiting vulnerable web apps (SQLI, XSS, insecure auth) by potentially injecting payloads into parameters.\n\n In the example provided below an SQL attack occurs. We are assuming that the application builds an SQL query by string concatenation. If an attacker was to supply the command below, because 1 is always true, the WHERE clause can evaluate to true, bypassing authentication.',
+        },
+        {
+          type: 'code',
+          content:
+            "-- Vulnerable login check\nSELECT * FROM users WHERE username = '$user' AND password = '$pass';\n\n-- Attacker Input\n' OR '1'='1\n Authentication bypassed!",
+        },
+        {
+          type: 'heading',
+          content: 'Forensics',
+        },
+        {
+          type: 'text',
+          content:
+            'Analysing files, memory dumps, disk images or network traffic to receover hidden files, such as inside a PNG.',
+        },
+        {
+          type: 'heading',
+          content: 'OSINT',
+        },
+        {
+          type: 'text',
+          content:
+            'OSINT (Open-Source Intelligence) is the process of collecting and analyzing information from publicly available sources to generate useful intelligence. These sources can include websites, social media, news articles, government publications, forums, images, and even metadata hidden in files.',
+        },
+        {
+          type: 'heading',
+          content: 'Beginner Learning Tool',
+        },
+        {
+          type: 'text',
+          content:
+            'CyberChef is a simple, intuitive web app for analysing and decoding data without having to deal with complex tools or programming languages. CyberChef encourages both technical and non-technical people to explore data formats, encryption and compression. A simple, intuitive web app for analysing and decoding data without having to deal with complex tools or programming languages. CyberChef encourages both technical and non-technical people to explore data formats, encryption and compression.',
+        },
       ],
       resources: [
         'https://gchq.github.io/CyberChef/',
@@ -349,7 +345,14 @@ export default function ModernLearnPage() {
     false,
     false,
   ]);
-  const [isLocked, setIsLocked] = useState([false, true, true, true, true, true]);
+  const [isLocked, setIsLocked] = useState([
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+  ]);
 
   const handleModuleComplete = () => {
     const newCompleted = [...completedModules];
@@ -518,35 +521,35 @@ export default function ModernLearnPage() {
                     {/* Enhanced Content Body */}
                     <div className="p-8 max-h-[500px] overflow-y-auto custom-scrollbar">
                       <div className="space-y-6">
-                      {item.segments.map((seg, i) => {
-                      if (seg.type === 'text') {
-                        return (
-                          <div
-                            key={i}
-                            className="text-white/80 leading-relaxed whitespace-pre-line text-lg"
-                          >
-                            {seg.content}
-                          </div>
-                        );
-                      } else if (seg.type === 'heading') {
-                        return (
-                          <h3
-                            key={i}
-                            className="text-2xl font-bold text-white mt-8 mb-4"
-                          >
-                            {seg.content}
-                          </h3>
-                        );
-                      } else if (seg.type === 'code') {
-                        return (
-                          <div key={i} className="my-6">
-                            <CodeBlock content={String(seg.content)} />
-                          </div>
-                        );
-                      } else {
-                        return null;
-                      }
-                    })}
+                        {item.segments.map((seg, i) => {
+                          if (seg.type === 'text') {
+                            return (
+                              <div
+                                key={i}
+                                className="text-white/80 leading-relaxed whitespace-pre-line text-lg"
+                              >
+                                {seg.content}
+                              </div>
+                            );
+                          } else if (seg.type === 'heading') {
+                            return (
+                              <h3
+                                key={i}
+                                className="text-2xl font-bold text-white mt-8 mb-4"
+                              >
+                                {seg.content}
+                              </h3>
+                            );
+                          } else if (seg.type === 'code') {
+                            return (
+                              <div key={i} className="my-6">
+                                <CodeBlock content={String(seg.content)} />
+                              </div>
+                            );
+                          } else {
+                            return null;
+                          }
+                        })}
                         {item.resources && (
                           <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                             <h4 className="font-semibold text-blue-300 mb-3 flex items-center gap-2">
