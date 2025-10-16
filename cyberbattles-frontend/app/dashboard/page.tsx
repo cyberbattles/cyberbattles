@@ -11,6 +11,7 @@ import {
   query,
   getDocs,
   arrayRemove,
+  onSnapshot,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
@@ -23,7 +24,7 @@ const Dashboard = () => {
   // For clan
   const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
-  const [gameteamId, setgameteamId] = useState<any>(null);
+  const [gameTeamId, setGameTeamId] = useState<string>('');
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
@@ -99,9 +100,9 @@ const Dashboard = () => {
   }, [uid]);
 
   const handleCopy = async () => {
-    if (gameteamId) {
+    if (gameTeamId) {
       try {
-        await navigator.clipboard.writeText(gameteamId);
+        await navigator.clipboard.writeText(gameTeamId);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
@@ -167,40 +168,32 @@ const Dashboard = () => {
     }
   };
 
+  // Listen for changes to the user's team document
   useEffect(() => {
-    const updateGameId = async () => {
-      if (currentUser) {
-        try {
-          const teamsRef = collection(db, 'teams');
-          const teamsSnap = await getDocs(teamsRef);
+    if (!currentUser) {
+      return;
+    }
 
-          const userId = currentUser.uid;
+    const teamsQuery = query(
+      collection(db, 'teams'),
+      where('memberIds', 'array-contains', currentUser.uid),
+    );
 
-          for (const teamDoc of teamsSnap.docs) {
-            const teamData = teamDoc.data();
-
-            if (
-              Array.isArray(teamData.memberIds) &&
-              teamData.memberIds.includes(userId)
-            ) {
-              console.log(`User found in team: ${teamData.name}`);
-              setgameteamId(teamDoc.id);
-              return;
-            }
-          }
-
-          console.warn('User not found in any team');
-          setgameteamId(null);
-        } catch (error) {
-          console.error('Error fetching teams:', error);
-          setgameteamId(null);
-        }
+    const unsubscribe = onSnapshot(teamsQuery, querySnapshot => {
+      if (!querySnapshot.empty) {
+        const teamDoc = querySnapshot.docs[0];
+        console.log("User's team updated:", teamDoc.id);
+        setGameTeamId(teamDoc.id);
       } else {
-        setgameteamId(null);
+        console.log('User is not currently in a team.');
+        setGameTeamId('');
       }
+    });
+
+    return () => {
+      unsubscribe();
     };
-    updateGameId();
-  }, [auth, db]);
+  }, [currentUser]);
 
   const handleGoToJoin = () => {
     try {
@@ -229,6 +222,14 @@ const Dashboard = () => {
   const handleGoToAdmin = () => {
     try {
       router.push('/admin');
+    } catch (error) {
+      console.error('Navigation failed:', error);
+    }
+  };
+
+  const handleGoToLobby = () => {
+    try {
+      router.push('/lobby');
     } catch (error) {
       console.error('Navigation failed:', error);
     }
@@ -289,50 +290,51 @@ const Dashboard = () => {
           {/* Dashboard Widgets */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
-              <h3 className="text-lg font-semibold mb-2">
-                Join or Create Game
-              </h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={handleGoToJoin}
-                  className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
-                >
-                  Join a Game
-                </button>
-                <button
-                  onClick={handleGoToCreation}
-                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                >
-                  Create a Game
-                </button>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">
-                <br />
-                Already a session admin?
-              </h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={handleGoToAdmin}
-                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                >
-                  Game Lobby Information
-                </button>
-              </div>
-              {gameteamId && (
-                <div>
+              {gameTeamId === '' && (
+                <>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Join or Create Game
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleGoToJoin}
+                      className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      Join a Game
+                    </button>
+                    <button
+                      onClick={handleGoToCreation}
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      Create a Game
+                    </button>
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">
                     <br />
-                    Current Team ID
+                    Already a session admin?
                   </h3>
-                  <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-l font-bold text-green-600">
-                          {gameteamId}
-                        </h4>
-                      </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleGoToAdmin}
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      Game Lobby Information
+                    </button>
+                  </div>
+                </>
+              )}
 
-                      {gameteamId && (
+              {gameTeamId !== '' && (
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-lg font-semibold">Current Team ID</h3>
+                    <div className="bg-[#2f2f2f] p-4 rounded-xl">
+                      <div className="flex justify-between items-center gap-4">
+                        <div>
+                          <h4 className="text-l font-bold text-green-600">
+                            {gameTeamId}
+                          </h4>
+                        </div>
                         <button
                           onClick={handleCopy}
                           className="text-gray-300 hover:text-white transition-colors"
@@ -340,15 +342,21 @@ const Dashboard = () => {
                         >
                           <FaRegCopy />
                         </button>
+                      </div>
+                      {copied && (
+                        <p className="text-sm text-green-400 mt-2">
+                          Copied to clipboard!
+                        </p>
                       )}
                     </div>
-
-                    {copied && (
-                      <p className="text-sm text-green-400 mt-2">
-                        Copied to clipboard!
-                      </p>
-                    )}
                   </div>
+
+                  <button
+                    onClick={handleGoToLobby}
+                    className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                  >
+                    Go to Game Lobby
+                  </button>
                 </div>
               )}
             </div>
