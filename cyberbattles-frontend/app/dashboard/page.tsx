@@ -1,7 +1,7 @@
 'use client';
 import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
-import {User, onAuthStateChanged, signOut} from 'firebase/auth';
+import {signOut} from 'firebase/auth';
 import {FaRegCopy} from 'react-icons/fa';
 import {
   doc,
@@ -13,6 +13,7 @@ import {
   arrayRemove,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
+import {useAuth} from '@/components/Auth';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -20,7 +21,7 @@ const Dashboard = () => {
   const [showJwt, setShowJwt] = useState(false);
 
   // For clan
-  const [user, setUser] = useState<User | null>(null);
+  const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
   const [gameteamId, setgameteamId] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
@@ -30,22 +31,15 @@ const Dashboard = () => {
   const [currentUsername, setcurrentUsername] = useState('User');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
-      if (currentUser) {
-        setUser(currentUser);
-        setUid(currentUser.uid);
-        localStorage.setItem('currentuid', currentUser.uid);
-      } else {
-        setUser(null);
-        setUid(null);
-        localStorage.removeItem('currentuid');
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+    if (currentUser) {
+      setUid(currentUser.uid);
+      localStorage.setItem('currentuid', currentUser.uid);
+    } else {
+      setUid(null);
+      localStorage.removeItem('currentuid');
+    }
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+    const updateUsername = async () => {
       if (currentUser) {
         try {
           const q = query(
@@ -67,10 +61,10 @@ const Dashboard = () => {
       } else {
         console.log('No user signed in');
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    updateUsername();
+  }, [currentUser]);
 
   useEffect(() => {
     const checkUserClan = async () => {
@@ -117,7 +111,7 @@ const Dashboard = () => {
   };
 
   const handleLeaveClan = async () => {
-    if (!user || !userClan) return;
+    if (!currentUser || !userClan) return;
 
     try {
       const clanRef = doc(db, 'clans', userClan.id);
@@ -157,9 +151,9 @@ const Dashboard = () => {
   };
 
   const handleGetJwt = async () => {
-    if (auth.currentUser) {
+    if (currentUser) {
       try {
-        const token = await auth.currentUser.getIdToken(true);
+        const token = await currentUser.getIdToken(true);
         setJwt(token);
         localStorage.setItem('token', jwt);
         setShowJwt(true);
@@ -174,7 +168,7 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+    const updateGameId = async () => {
       if (currentUser) {
         try {
           const teamsRef = collection(db, 'teams');
@@ -204,10 +198,8 @@ const Dashboard = () => {
       } else {
         setgameteamId(null);
       }
-    });
-
-    // Cleanup the auth listener when the component unmounts
-    return () => unsubscribe();
+    };
+    updateGameId();
   }, [auth, db]);
 
   const handleGoToJoin = () => {
