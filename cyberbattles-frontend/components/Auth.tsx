@@ -14,11 +14,10 @@ import {useRouter, usePathname} from 'next/navigation';
 
 const protectedRoutes = [
   '/dashboard',
-  '/leaderboard',
-  '/learn',
   '/network-traffic',
   '/shell',
   '/profile',
+  '/settings',
 ];
 
 interface AuthContextType {
