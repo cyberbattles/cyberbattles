@@ -12,41 +12,37 @@ import {
   query,
   getDocs,
 } from 'firebase/firestore';
-import {auth, db} from '@/lib/firebase';
-import {onAuthStateChanged, User} from 'firebase/auth';
+import {db} from '@/lib/firebase';
+import {useAuth} from '@/components/Auth';
 
 const JoinClan = () => {
   const router = useRouter();
   const [clanId, setClanId] = useState('');
   const [joinMessage, setJoinMessage] = useState({type: '', text: ''});
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [isInClan, setIsInClan] = useState(false);
   const [uid, setUid] = useState<string | null>(null);
-  const [clanLoading, setClanLoading] = useState(true);
+  const {currentUser} = useAuth();
 
   // Monitor auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
+    const fetchUid = async () => {
       if (currentUser) {
-        setUser(currentUser);
         setUid(currentUser.uid);
         localStorage.setItem('currentuid', currentUser.uid);
       } else {
-        setUser(null);
         setUid(null);
         localStorage.removeItem('currentuid');
       }
-    });
-    return () => unsubscribe();
-  }, []);
+    };
+
+    fetchUid();
+  }, [currentUser]);
 
   useEffect(() => {
     const checkUserClan = async () => {
       if (!uid) {
         setIsInClan(false);
-        setClanLoading(false);
         return;
       }
 
@@ -60,8 +56,6 @@ const JoinClan = () => {
       } catch (error) {
         console.error('Error checking user clan:', error);
         setIsInClan(false);
-      } finally {
-        setClanLoading(false);
       }
     };
 
@@ -78,7 +72,7 @@ const JoinClan = () => {
       return;
     }
 
-    if (!user) {
+    if (!currentUser) {
       setJoinMessage({
         type: 'error',
         text: 'You must be logged in to join a team.',
@@ -105,7 +99,10 @@ const JoinClan = () => {
         const clanData = docSnap.data();
 
         // Check if user is already a member
-        if (clanData.memberIds && clanData.memberIds.includes(user.uid)) {
+        if (
+          clanData.memberIds &&
+          clanData.memberIds.includes(currentUser.uid)
+        ) {
           setJoinMessage({
             type: 'error',
             text: 'You are already a member of this team.',
@@ -118,7 +115,7 @@ const JoinClan = () => {
 
         // Add the user's UID to the memberIds array
         await updateDoc(teamRef, {
-          memberIds: arrayUnion(user.uid),
+          memberIds: arrayUnion(currentUser.uid),
         });
 
         setJoinMessage({
@@ -127,7 +124,7 @@ const JoinClan = () => {
         });
         setClanId('');
 
-        const userRef = doc(db, 'login', user.uid);
+        const userRef = doc(db, 'login', currentUser.uid);
         await updateDoc(userRef, {
           inClan: true,
         });
@@ -191,7 +188,7 @@ const JoinClan = () => {
               <button
                 className="w-80 py-4 px-8 bg-green-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleJoinTeam}
-                disabled={isLoading || !user}
+                disabled={isLoading || !currentUser}
               >
                 {isLoading ? 'Joining...' : 'Join Clan'}
               </button>
@@ -211,11 +208,6 @@ const JoinClan = () => {
                   }`}
                 >
                   {joinMessage.text}
-                </p>
-              )}
-              {!user && !authLoading && (
-                <p className="mt-3 text-sm text-yellow-400">
-                  Please log in to join a clan.
                 </p>
               )}
             </div>

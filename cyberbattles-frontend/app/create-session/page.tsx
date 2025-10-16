@@ -3,14 +3,12 @@
 
 import React, {useState, useEffect} from 'react';
 import {useRouter} from 'next/navigation';
-
 import Select, {SingleValue} from 'react-select';
-
 import {getDocs, collection} from 'firebase/firestore';
-import {auth, db} from '@/lib/firebase';
-import {onAuthStateChanged, User} from 'firebase/auth';
+import {db} from '@/lib/firebase';
 
 import ApiClient from '@/components/ApiClient';
+import {useAuth} from '@/components/Auth';
 
 interface ScenarioOption {
   value: string;
@@ -19,7 +17,6 @@ interface ScenarioOption {
 
 const CreateSession = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [scenarios, setScenarios] = useState<
@@ -37,6 +34,7 @@ const CreateSession = () => {
   const [numTeams, setNumberTeams] = useState(2);
   const [numMembersPerTeam, setPlayersPerTeam] = useState(1);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
+  const {currentUser} = useAuth();
 
   const options = scenarios.map(s => ({
     value: s.id,
@@ -57,7 +55,6 @@ const CreateSession = () => {
 
     const getScenarios = async () => {
       try {
-        setLoading(true);
         const scenariosRef = collection(db, 'scenarios');
         const querySnapshot = await getDocs(scenariosRef);
 
@@ -78,8 +75,6 @@ const CreateSession = () => {
         }));
 
         setScenarios(data);
-        console.log(data);
-        setLoading(false);
       } catch (error) {
         console.error('Failed to get scenarios', error);
       }
@@ -89,10 +84,10 @@ const CreateSession = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
-      if (user) {
+    const fetchJwt = async () => {
+      if (currentUser) {
         try {
-          const token = await user.getIdToken(true);
+          const token = await currentUser.getIdToken(true);
           setJwt(token);
           localStorage.setItem('token', token);
           setShowJwt(true);
@@ -106,11 +101,10 @@ const CreateSession = () => {
         setJwt(null);
         setShowJwt(false);
       }
-    });
+    };
 
-    // Cleanup subscription when component unmounts
-    return () => unsubscribe();
-  }, []);
+    fetchJwt();
+  }, [currentUser]);
 
   async function createSession() {
     const response = await ApiClient.post('/session', {

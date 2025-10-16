@@ -7,7 +7,6 @@ import React, {useEffect, useState, useRef} from 'react';
 import {db} from '../../lib/firebase';
 import {
   getAuth,
-  onAuthStateChanged,
   deleteUser,
   reauthenticateWithCredential,
   signOut,
@@ -33,6 +32,7 @@ import ReactCrop, {
 import 'react-image-crop/dist/ReactCrop.css';
 import {canvasPreview} from '../../components/canvasPreview';
 import {useDebounceEffect} from '../../components/useDebounceEffect';
+import {useAuth} from '@/components/Auth';
 
 export default function ProfilePage() {
   const learnItems = [
@@ -43,7 +43,7 @@ export default function ProfilePage() {
   const auth = getAuth();
   const storage = getStorage();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const {currentUser} = useAuth();
   const [photoURL, setPhotoURL] = useState(
     'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png',
   );
@@ -75,16 +75,12 @@ export default function ProfilePage() {
   // Check if the user auth state has changed. If so update the currentUser
   useEffect(() => {
     try {
-      onAuthStateChanged(auth, user => {
-        if (user && !currentUser) {
-          setCurrentUser(user);
-          if (user.photoURL) {
-            setPhotoURL(user.photoURL);
-          }
+      if (currentUser) {
+        if (currentUser.photoURL) {
+          setPhotoURL(currentUser.photoURL);
         }
-      });
+      }
     } catch (error) {
-      setCurrentUser(null);
       console.error('Failed:', error);
     }
   }, [currentUser, auth]);
@@ -153,11 +149,13 @@ export default function ProfilePage() {
   );
 
   const handleUpload = async (e: React.FormEvent) => {
+    if (!currentUser) return;
+
     e.preventDefault();
     const image = imgRef.current;
     const previewCanvas = previewCanvasRef.current;
 
-    if (!currentUser || !completedCrop || !image || !previewCanvas) {
+    if (!completedCrop || !image || !previewCanvas) {
       // If there's no new image, but there's a username, just update that
       if (username) {
         setLoading(true);
@@ -251,6 +249,7 @@ export default function ProfilePage() {
   };
 
   const handleDelete = async () => {
+    if (!currentUser) return;
     setLoading(true);
 
     const credential = EmailAuthProvider.credential(email, password);

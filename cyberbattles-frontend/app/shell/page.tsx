@@ -7,14 +7,15 @@
 // REF: https://chatgpt.com/c/68b93e97-0f38-832f-a207-b02b0dc4eef6
 // REF: https://chatgpt.com/share/68d9cb25-aecc-8008-91cb-1ce122b78793
 
-import {auth, db} from '@/lib/firebase';
-import {onAuthStateChanged, User} from 'firebase/auth';
+import {db} from '@/lib/firebase';
+import {User} from 'firebase/auth';
 import React, {useEffect, useRef, useState} from 'react';
 import {Terminal, IDisposable} from 'xterm';
 import {FitAddon} from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import FlagPopup from '@/components/FlagPopup';
 import {collection, doc, getDoc, getDocs} from 'firebase/firestore';
+import {useAuth} from '@/components/Auth';
 
 export default function Shell() {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -22,11 +23,11 @@ export default function Shell() {
   const wsRef = useRef<WebSocket | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isTerminalInitialized, setIsTerminalInitialized] = useState(false);
   const isMountedRef = useRef(false);
-  const [jwt, setJwt] = useState<string | null>(null);
+  const [, setJwt] = useState<string | null>(null);
   const [gameteamId, setgameteamId] = useState<string>('');
+  const {currentUser} = useAuth();
 
   // Admin related states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -67,12 +68,10 @@ export default function Shell() {
   }, [currentUser?.uid]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (user && isMountedRef.current) {
-        setCurrentUser(user);
-
+    const checkUser = async () => {
+      if (currentUser && isMountedRef.current) {
         try {
-          const token = await user.getIdToken();
+          const token = await currentUser.getIdToken();
           setJwt(token);
           localStorage.setItem('token', token);
 
@@ -83,7 +82,7 @@ export default function Shell() {
             const teamData = teamDoc.data();
             if (
               Array.isArray(teamData.memberIds) &&
-              teamData.memberIds.includes(user.uid)
+              teamData.memberIds.includes(currentUser.uid)
             ) {
               userTeamId = teamDoc.id;
               break;
@@ -102,15 +101,16 @@ export default function Shell() {
         }
       } else {
         // User is signed out or component is unmounted
-        setCurrentUser(null);
         setJwt(null);
         setgameteamId('');
         setIsAdmin(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []); // Check if the user is the session admin
+    checkUser();
+  }, []);
+
+  // Check if the user is the session admin
   const checkIfUserIsAdmin = async (userUid: string) => {
     const sessionId = localStorage.getItem('sessionId') || '';
 

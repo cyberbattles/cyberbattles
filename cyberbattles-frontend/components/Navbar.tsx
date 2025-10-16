@@ -2,19 +2,16 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter, usePathname} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 import logo from '../public/images/logo.png';
 import {IoMenu} from 'react-icons/io5';
-import avatarPlaceholder from '../public/images/avatar_placeholder.png';
 import React, {useEffect, useState} from 'react';
-import {onAuthStateChanged} from 'firebase/auth';
-import {auth} from '@/lib/firebase';
-
-import type {User} from 'firebase/auth';
+import {useAuth} from '@/components/Auth';
 
 function Navbar() {
   const router = useRouter();
-  const pathname = usePathname();
+
+  const pfpPlaceholder = '/images/avatar_placeholder.png';
   const genericItems = ['Home', 'Leaderboard', 'Lab'];
   const genericLinks = ['/', '/leaderboard', '/lab'];
   const userItems = ['Dashboard', 'Leaderboard', 'Learn', 'Traffic', 'Shell'];
@@ -27,8 +24,8 @@ function Navbar() {
   ];
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [photoURL, setPhotoURL] = useState('');
+  const {currentUser} = useAuth();
+  const [photoURL, setPhotoURL] = useState(pfpPlaceholder);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -37,41 +34,16 @@ function Navbar() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user && !currentUser) {
-        setCurrentUser(user);
-        if (user.photoURL) {
-          setPhotoURL(user.photoURL);
-        }
-        setItems([userItems, userLinks]);
-      } else {
-        setCurrentUser(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
     if (currentUser) {
       setItems([userItems, userLinks]);
+      if (currentUser.photoURL) {
+        setPhotoURL(currentUser.photoURL);
+      }
     } else {
       setItems([genericItems, genericLinks]);
+      setPhotoURL(pfpPlaceholder); // Clear photoURL on logout
     }
   }, [currentUser]);
-
-  // Redirect logged out users trying to access protected routes
-  useEffect(() => {
-    if (currentUser === null) {
-      const isProtectedRoute = userLinks.some(link =>
-        pathname.startsWith(link),
-      );
-
-      if (isProtectedRoute) {
-        router.push('/');
-      }
-    }
-  }, [currentUser, pathname, router, userLinks]);
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -154,22 +126,14 @@ function Navbar() {
             )}
           </div>
           {currentUser && (
-            <Link href="/account" className="w-16 h-16 sm:w-24 sm:h-24">
-              {currentUser.photoURL ? (
-                <Image
-                  src={photoURL}
-                  width="100"
-                  height="100"
-                  alt="avatar"
-                  className="rounded-full"
-                />
-              ) : (
-                <Image
-                  src={avatarPlaceholder}
-                  alt="avatar"
-                  className="rounded-full"
-                />
-              )}
+            <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
+              <Image
+                src={photoURL}
+                width="100"
+                height="100"
+                alt="avatar"
+                className="rounded-full"
+              />
             </Link>
           )}
         </div>

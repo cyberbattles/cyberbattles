@@ -30,11 +30,7 @@ export default function LoginPage() {
           setError('Passwords do not match');
           return;
         }
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password,
-        );
+        await createUserWithEmailAndPassword(auth, email, password);
 
         if (auth.currentUser) {
           await updateProfile(auth.currentUser, {
