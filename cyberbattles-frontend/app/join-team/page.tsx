@@ -41,6 +41,18 @@ const JoinTeam = () => {
       if (docSnap.exists()) {
         const teamData = docSnap.data();
 
+        // Check if joining would exceed team limit
+        if (
+          teamData.memberIds &&
+          teamData.memberIds.length >= teamData.numMembers
+        ) {
+          setJoinMessage({
+            type: 'error',
+            text: 'This team is already full. Please join another team.',
+          });
+          return;
+        }
+
         // Check if user is already a member
         if (
           teamData.memberIds &&
