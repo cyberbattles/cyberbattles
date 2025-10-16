@@ -17,7 +17,7 @@ const protectedRoutes = [
   '/network-traffic',
   '/shell',
   '/profile',
-  '/settings',
+  '/account',
 ];
 
 interface AuthContextType {
