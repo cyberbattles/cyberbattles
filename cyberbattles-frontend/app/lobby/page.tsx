@@ -25,6 +25,7 @@ const Lobby = () => {
 
   const [team, setTeam] = useState<any>(null);
   const {currentUser} = useAuth();
+  const [isKicked, setIsKicked] = useState(false);
 
   // Get the current scenario information
   async function getScenario() {
@@ -191,6 +192,12 @@ const Lobby = () => {
     router.push('/dashboard');
   };
 
+  const handleKicked = async () => {
+    setIsKicked(true);
+    await delay(3000);
+    router.push("/dashboard");
+  }
+
   const handleStartGame = async () => {
     setGameStatus('starting');
     await delay(3000);
@@ -237,6 +244,43 @@ const Lobby = () => {
       }
     };
   }, [team, gameStatus]);
+
+  // checking the memberIds array useEffect
+  useEffect(() => {
+    let unsubscribe = null;
+    if (team && teamId && currentUser){
+      let unsubscribe = onSnapshot(doc(db, "teams", teamId), (doc) => {
+        if (doc.exists()) {
+          players.clear();
+          let kick = true;
+          let memberIds:string[] = doc.data().memberIds;
+          memberIds.forEach((id) => {
+            // Refresh each users value in the players map
+            const userObj = getUser(id);
+              userObj.then((value: any) => {
+                players.set(id, value);
+                setPlayers(new Map(players));
+              });
+            // Check if the current user id is in the array
+            if (currentUser.uid == id){
+              kick = false;
+            }
+          })
+          // If didnt find uid then they have been kicked
+          if (kick) {
+            handleKicked();
+          }
+        }
+      });
+  }
+    return () => {
+      if (unsubscribe) {
+        unsubscribe;
+      }
+    };
+  }, [team, teamId, currentUser]);
+
+  // ------------- End useEffects ---------------
 
   return (
     <>
@@ -304,6 +348,15 @@ const Lobby = () => {
             </div>
           </header>
 
+          {isKicked && (
+            <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
+                <span className="text-red-400 font-semibold">You have been kicked ...</span>
+              </div>
+            </div>
+          )}
+
           {/* Lobby Content */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Scenario */}
@@ -347,22 +400,18 @@ const Lobby = () => {
                   <h2 className="text-xl font-semibold ">Team members</h2>
                 </div>
 
-                <div className="flex flex-col gap-5">
-                  {players.size != 0 &&
-                    team.memberIds.map((uid: string) => (
-                      <div
-                        className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
-                        key={uid}
-                      >
-                        {/* Player name */}
-                        <div>
-                          {players &&
-                            players.get(uid) &&
-                            players.get(uid).userName}
-                        </div>
-                      </div>
-                    ))}
-                </div>
+              <div className="flex flex-col gap-5">
+                {players.size != 0 &&
+                  Array.from(players.values()).map((player) => (
+                    <div
+                      className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
+                      key={player.UID}
+                    >
+                      {/* Player name */}
+                        <div>{player.userName}</div>                   
+                    </div>
+                  ))}
+              </div>
 
                 <div className="flex h-full align-bottom items-end">
                   <div className="flex flex-row px-2 pt-3 w-full justify-between border-t">
