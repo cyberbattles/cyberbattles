@@ -5,15 +5,12 @@ import {User, onAuthStateChanged, signOut} from 'firebase/auth';
 import {FaRegCopy} from 'react-icons/fa';
 import {
   doc,
-  getDoc,
   updateDoc,
-  arrayUnion,
   collection,
   where,
   query,
   getDocs,
   arrayRemove,
-  Firestore,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
@@ -31,10 +28,6 @@ const Dashboard = () => {
   const [uid, setUid] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currentUsername, setcurrentUsername] = useState('User');
-
-  // New state for the team join feature
-  const [teamId, setTeamId] = useState('');
-  const [joinMessage, setJoinMessage] = useState({type: '', text: ''});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, currentUser => {
@@ -249,58 +242,6 @@ const Dashboard = () => {
     }
   };
 
-  /**
-   * Handles the logic for a user to join a team.
-   */
-  const handleJoinTeam = async () => {
-    // Basic validation
-    if (!teamId) {
-      setJoinMessage({type: 'error', text: 'Please enter a Team ID.'});
-      return;
-    }
-    if (!auth.currentUser) {
-      setJoinMessage({
-        type: 'error',
-        text: 'You must be logged in to join a team.',
-      });
-      return;
-    }
-
-    // Clear previous messages and get user UID
-    setJoinMessage({type: '', text: ''});
-    const uid = auth.currentUser.uid;
-    const teamRef = doc(db, 'teams', teamId);
-
-    // Try to find and update the team document
-    try {
-      const docSnap = await getDoc(teamRef);
-
-      if (docSnap.exists()) {
-        // Team was found, add the user's UID to the memberIds array
-        await updateDoc(teamRef, {
-          memberIds: arrayUnion(uid),
-        });
-        setJoinMessage({
-          type: 'success',
-          text: `Successfully joined team: ${docSnap.data().name}!`,
-        });
-        setTeamId('');
-      } else {
-        // Team with the given ID was not found
-        setJoinMessage({
-          type: 'error',
-          text: 'Team not found. Please check the ID and try again.',
-        });
-      }
-    } catch (error) {
-      console.error('Error joining team:', error);
-      setJoinMessage({
-        type: 'error',
-        text: 'Could not join team. Please try again later.',
-      });
-    }
-  };
-
   return (
     <>
       {/* Fixed Navbar */}
@@ -373,17 +314,6 @@ const Dashboard = () => {
                   Create a Game
                 </button>
               </div>
-              {joinMessage.text && (
-                <p
-                  className={`mt-3 text-sm ${
-                    joinMessage.type === 'success'
-                      ? 'text-green-400'
-                      : 'text-red-400'
-                  }`}
-                >
-                  {joinMessage.text}
-                </p>
-              )}
               <h3 className="text-lg font-semibold mb-2">
                 <br />
                 Already a session admin?
@@ -396,17 +326,6 @@ const Dashboard = () => {
                   Game Lobby Information
                 </button>
               </div>
-              {joinMessage.text && (
-                <p
-                  className={`mt-3 text-sm ${
-                    joinMessage.type === 'success'
-                      ? 'text-green-400'
-                      : 'text-red-400'
-                  }`}
-                >
-                  {joinMessage.text}
-                </p>
-              )}
               {gameteamId && (
                 <div>
                   <h3 className="text-lg font-semibold mb-2">
@@ -530,17 +449,6 @@ const Dashboard = () => {
                   >
                     Join or Create Clan
                   </button>
-                  {joinMessage.text && (
-                    <p
-                      className={`mt-3 text-sm ${
-                        joinMessage.type === 'success'
-                          ? 'text-green-400'
-                          : 'text-red-400'
-                      }`}
-                    >
-                      {joinMessage.text}
-                    </p>
-                  )}
                 </div>
               )}
             </div>
