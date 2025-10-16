@@ -330,8 +330,8 @@ const Dashboard = () => {
                 </a>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400">
-                  Settings
+                <a href="account" className="hover:text-blue-400">
+                  Account
                 </a>
               </li>
             </ul>

@@ -141,7 +141,7 @@ function Navbar() {
         <div className="flex items-center pr-10 gap-5">
           <div className="">
             {currentUser && (
-              <Link href="/profile">
+              <Link href="/account">
                 <p className="flex text-2xl">{currentUser.displayName}</p>
               </Link>
             )}
@@ -154,7 +154,7 @@ function Navbar() {
             )}
           </div>
           {currentUser && (
-            <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
+            <Link href="/account" className="w-16 h-16 sm:w-24 sm:h-24">
               {currentUser.photoURL ? (
                 <Image
                   src={photoURL}
