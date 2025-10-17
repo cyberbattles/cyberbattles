@@ -240,9 +240,9 @@ const Dashboard = () => {
       {/* Fixed Navbar */}
 
       {/* Dashboard Layout */}
-      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+      <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
-        <aside className="w-64 bg-[#1e1e1e] shadow-md">
+        <aside className="w-full md:w-64 bg-[#1e1e1e] shadow-md flex-shrink-0">
           <div className="p-6 text-xl font-bold border-b border-gray-700">
             Dashboard
           </div>
@@ -273,9 +273,9 @@ const Dashboard = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {/* Header */}
-          <header className="flex justify-between items-center mb-8">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-2xl font-bold">Welcome, {currentUsername}!</h1>
             <div className="flex gap-4">
               <button
@@ -325,8 +325,8 @@ const Dashboard = () => {
               )}
 
               {gameTeamId !== '' && (
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
                     <h3 className="text-lg font-semibold">Current Team ID</h3>
                     <div className="bg-[#2f2f2f] p-4 rounded-xl">
                       <div className="flex justify-between items-center gap-4">
