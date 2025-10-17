@@ -6,32 +6,20 @@ import {useRouter} from 'next/navigation';
 import PcapViewer from '@/components/PcapViewer';
 import {
   collection,
-  query,
-  where,
-  doc,
-  getDoc,
   getDocs,
-  onSnapshot,
 } from 'firebase/firestore';
 
-import ApiClient from '@/components/ApiClient';
 import {useAuth} from '@/components/Auth';
 
 
 
 // REF: Utilised Claude.
-// https://claude.ai/chat/127e4c5b-7157-442a-b689-8faa363fa40d
+// https://claude.ai/chat/92008305-ecf4-4191-b9b8-9b415c0ada4d
 
 
 const NetworkTraffic = () => {
   const router = useRouter();
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [fileUrl, setFileUrl] = useState(null);
-  const [pcapFiles, setPcapFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('upload'); // 'upload' or 'viewer'
+  const [fileUrl, setFileUrl] = useState('');
   const [, setJwt] = useState<string | null>(null);
   const {currentUser} = useAuth();
   const [teamId, setTeamId] = useState<string>('');
@@ -57,7 +45,7 @@ const NetworkTraffic = () => {
         return null;
       }
     } else {
-      console.log("No user is signed in.");
+      console.log("No user is signed in...");
       setJwt(null);
       return null;
     }
@@ -82,6 +70,7 @@ const NetworkTraffic = () => {
         setTeamId(userTeamId);
         if (!userTeamId) {
           console.warn("User not found in any team");
+          alert("Error: You must join a game first.")
         }
         return userTeamId;
       } catch (error) {
@@ -95,13 +84,12 @@ const NetworkTraffic = () => {
     }
   };
 
- const fetchPcapFiles = async (id) => {
+ const fetchPcapFiles = async (id: string) => {
   if (!id) {
     console.warn("Cannot fetch PCAP files: teamId is empty");
     return;
   }
   
-  setLoading(true);
   try {
     const jwt = localStorage.getItem('token');
     if (!jwt) {
@@ -137,19 +125,16 @@ const NetworkTraffic = () => {
       }
     } else {
       console.error("Failed to fetch PCAP files:", response.status);
-      setError(`Failed to fetch PCAP files: ${response.status}`);
     }
   } catch (error) {
     console.error("Error fetching PCAP files:", error);
-    setError("Error fetching PCAP files");
   } finally {
-    setLoading(false);
+    return;
   }
 };
 
   // Run all fetches in sequence
   const runFetches = async () => {
-    const token = await fetchJwt();
     const teamIdResult = await fetchTeamId();
     if (teamIdResult) {
       await fetchPcapFiles(teamIdResult);
@@ -157,77 +142,7 @@ const NetworkTraffic = () => {
   };
 
   runFetches();
-}, [currentUser]); // Only depend on currentUser
-
-  async function getUser(uid:any) {
-    let ret = null;
-    try {
-      const docRef = doc(db, 'login', 'uid');
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        ret = docSnap.data();
-      }
-    }
-    catch (error) {
-      console.log('Failed', error);
-    }
-    return ret;
-  }  
-
-  const handleFileSelect = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.name.endsWith('.pcap')) {
-        setError('Please select a valid .pcap file');
-        return;
-      }
-      setError(null);
-      setSelectedFile(file);
-
-      // Create blob URL for immediate preview
-      const url = URL.createObjectURL(file);
-      setFileUrl(url);
-      setActiveView('viewer');
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    setLoading(true);
-    setUploadProgress(0);
-    setError(null);
-
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-
-    try {
-      const response = await fetch('/api/upload-pcap', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (response.ok) {
-        setUploadProgress(100);
-        fetchPcapFiles();
-        setTimeout(() => setUploadProgress(0), 1000);
-      } else {
-        setError('Upload failed. Please try again.');
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-      setError('Upload failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSelectFromList = (file) => {
-    setError(null);
-    setFileUrl(file.url);
-    setSelectedFile({name: file.name});
-    setActiveView('viewer');
-  };
+}, [currentUser]);  
 
   const handleLogout = async () => {
     try {
@@ -240,89 +155,14 @@ const NetworkTraffic = () => {
 
   return (
     <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
-      {/* Sidebar */}
-      <div className="w-80 bg-[#1e1e1e] shadow-md flex flex-col">
-
-
-        <nav className="p-6 space-y-4 flex-1 overflow-auto">
-          {/* Upload Section */}
-          <div className="space-y-3">
-            <div className="text-sm text-gray-400 mb-2">Upload PCAP File</div>
-
-            <label className="block">
-              <div className="flex items-center justify-center w-full h-32 px-4 transition bg-[#2f2f2f] border-2 border-gray-600 border-dashed rounded-lg cursor-pointer hover:border-blue-500">
-                <div className="text-center">
-                  <svg
-                    className="w-8 h-8 mx-auto text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    />
-                  </svg>
-                  <p className="mt-2 text-sm text-gray-400">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-xs text-gray-500">.pcap files only</p>
-                </div>
-              </div>
-              <input
-                type="file"
-                accept=".pcap"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
-
-            {selectedFile && (
-              <div className="text-sm text-gray-300 bg-[#2f2f2f] p-2 rounded">
-                Selected: {selectedFile.name}
-              </div>
-            )}
-
-            {uploadProgress > 0 && (
-              <div className="w-full bg-gray-700 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{width: `${uploadProgress}%`}}
-                />
-              </div>
-            )}
-
-            {error && <div className="text-sm text-red-400">{error}</div>}
-
-            {selectedFile && !fileUrl && (
-              <button
-                onClick={handleUpload}
-                disabled={loading}
-                className="w-full px-4 py-2 bg-blue-600 rounded-lg hover:opacity-90 transition font-semibold disabled:opacity-50"
-              >
-                {loading ? 'Uploading...' : 'Upload to Server'}
-              </button>
-            )}
-          </div>
-
-          {/* Available Files */}
-          
-        </nav>
-      </div>
-
+      
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header className="flex justify-between items-center p-6 border-b border-gray-700">
           <div>
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
-            {selectedFile && (
-              <p className="text-sm text-gray-400 mt-1">
-                Viewing: {selectedFile.name}
-              </p>
-            )}
+            
           </div>
           <div className="flex gap-4 items-center">
             
@@ -364,10 +204,7 @@ const NetworkTraffic = () => {
                   />
                 </svg>
                 <div className="text-xl font-semibold mb-2">
-                  No PCAP File Selected
-                </div>
-                <div className="text-sm">
-                  Select a session to view traffic.
+                  Traffic overview loading...
                 </div>
               </div>
             </div>

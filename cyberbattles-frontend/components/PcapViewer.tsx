@@ -37,7 +37,8 @@ export default function PcapViewer({
           {...(enableHexToggle && { enablehextoggle: '' })}
           {...(showFullscreenBtn && { showfullscreenbtn: '' })}
           {...(useCanvas && { usecanvas: 'true' })}
-        />
+        /> 
+        // im unsure how to get rid of this error tbh. it works tho
       ) : (
         <div className="p-4 text-gray-500">Loading PCAP viewer...</div>
       )}
