@@ -12,15 +12,15 @@ function Navbar() {
   const router = useRouter();
 
   const pfpPlaceholder = '/images/avatar_placeholder.png';
-  const genericItems = ['Home', 'Leaderboard', 'Lab'];
-  const genericLinks = ['/', '/leaderboard', '/lab'];
-  const userItems = ['Dashboard', 'Leaderboard', 'Learn', 'Traffic', 'Shell'];
+  const genericItems = ['Home', 'Leaderboard', 'Learn'];
+  const genericLinks = ['/', '/leaderboard', '/learn'];
+  const userItems = ['Dashboard', 'Traffic', 'Shell', 'Leaderboard', 'Learn'];
   const userLinks = [
     '/dashboard',
-    '/leaderboard',
-    '/learn',
     '/network-traffic',
     '/shell',
+    '/leaderboard',
+    '/learn',
   ];
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
