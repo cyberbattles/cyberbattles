@@ -141,6 +141,20 @@ const NetworkTraffic = () => {
   runFetches();
 }, [currentUser]);  
 
+  const handlePcapDownload = () => {
+  if (!pcapBlobUrl) {
+    console.warn("No PCAP file available");
+    return;
+  }
+
+  const link = document.createElement('a');
+  link.href = pcapBlobUrl;
+  link.download = 'capture.pcap';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
   return (
     <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
       
@@ -152,7 +166,15 @@ const NetworkTraffic = () => {
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
             
           </div>
-          
+          <div className="flex gap-4 items-center">
+            
+            <button
+              onClick={handlePcapDownload}
+              className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+            >
+              Download .pcap file
+            </button>
+          </div>
         </header>
 
         {/* Content Area */}
