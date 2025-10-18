@@ -19,6 +19,15 @@
   }
 }
 
+pcap-element {
+  --color-dark: #000000;
+  --color-gray: #000000;
+  --color-light: #000000;
+  --color-dark-text: #000000;
+  --color-light-text: #000000;
+  color: #000000;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
