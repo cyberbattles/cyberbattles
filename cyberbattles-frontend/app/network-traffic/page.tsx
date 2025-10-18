@@ -141,15 +141,6 @@ const NetworkTraffic = () => {
   runFetches();
 }, [currentUser]);  
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.push('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
   return (
     <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
       
@@ -161,15 +152,7 @@ const NetworkTraffic = () => {
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
             
           </div>
-          <div className="flex gap-4 items-center">
-            
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-            >
-              Logout
-            </button>
-          </div>
+          
         </header>
 
         {/* Content Area */}
