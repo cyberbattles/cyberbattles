@@ -10,6 +10,7 @@ import {
   deleteUser,
   reauthenticateWithCredential,
   signOut,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import {updateProfile, EmailAuthProvider, updatePassword} from 'firebase/auth';
 import {
@@ -282,6 +283,20 @@ export default function ProfilePage() {
     setLoading(false);
   };
 
+  const handlePasswordReset = async () => {
+    if (!currentUser?.email) {
+      alert('No user email found.');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, currentUser.email);
+      alert('Password reset email sent!');
+    } catch (error: any) {
+      alert(`Error sending password reset email: ${error.message}`);
+    }
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError('');
@@ -432,9 +447,16 @@ export default function ProfilePage() {
                           <button
                             type="button"
                             onClick={() => setIsChangingPassword(true)}
-                            className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                            className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold mr-5"
                           >
                             Change Password
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePasswordReset}
+                            className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                          >
+                            Reset Password
                           </button>
                         </div>
                       ) : (
