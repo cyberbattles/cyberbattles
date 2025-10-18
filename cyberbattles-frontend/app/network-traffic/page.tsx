@@ -10,11 +10,14 @@ import {
 } from 'firebase/firestore';
 
 import {useAuth} from '@/components/Auth';
+import Image from 'next/image';
+
+import WarningIcon from "@/public/images/warning.png";
 
 
 
 // REF: Utilised Claude.
-// https://claude.ai/chat/92008305-ecf4-4191-b9b8-9b415c0ada4d
+// https://claude.ai/share/501c44f9-ec4a-4796-98af-d68a16c36f78
 
 
 const NetworkTraffic = () => {
@@ -70,7 +73,6 @@ const NetworkTraffic = () => {
         setTeamId(userTeamId);
         if (!userTeamId) {
           console.warn("User not found in any team");
-          alert("Error: You must join a game first.")
         }
         return userTeamId;
       } catch (error) {
@@ -105,11 +107,6 @@ const NetworkTraffic = () => {
       // Check the response type to handle blob or JSON
       const contentType = response.headers.get('content-type');
       
-      if (contentType?.includes('application/json')) {
-        // If it's JSON, parse and set files list
-        const data = await response.json();
-        setPcapFiles(data.files || data || []);
-      } else {
         // If it's a blob (the actual PCAP file), create object URL
         const pcapBlob = await response.blob();
         
@@ -122,7 +119,7 @@ const NetworkTraffic = () => {
         const newBlobUrl = URL.createObjectURL(pcapBlob);
         setPcapBlobUrl(newBlobUrl);
         setFileUrl(newBlobUrl);
-      }
+      
     } else {
       console.error("Failed to fetch PCAP files:", response.status);
     }
@@ -189,22 +186,11 @@ const NetworkTraffic = () => {
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center text-gray-400 p-8 max-w-md">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <div className="text-xl font-semibold mb-2">
-                  Traffic overview loading...
+              <div className="text-center text-gray-400 p-8 w-100">
+                <Image src={WarningIcon}
+                alt = "Triangular warning icon"/>
+                <div className="text-xl font-semibold mb-2 text-[#c12f2f]">
+                  Unable to get network traffic. Ensure you are in an active game.
                 </div>
               </div>
             </div>
