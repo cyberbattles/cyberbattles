@@ -1,7 +1,8 @@
 'use client';
 import {IoIosClose, IoIosRefresh} from 'react-icons/io';
 import React, {useState, useEffect} from 'react';
-import {auth, db} from '@/lib/firebase';
+import {useRouter} from 'next/navigation';
+import {db} from '@/lib/firebase';
 import {
   collection,
   query,
@@ -10,6 +11,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 import Navbar from '@/components/Navbar';
 import ApiClient from '@/components/ApiClient';
@@ -27,12 +29,35 @@ interface StartSessionResult {
   teamsAndMembers?: {[key: string]: string[]};
 }
 
+/**
+ * An interface representing a team in the session.
+ */
+export interface Team {
+  /** The name of the team. */
+  name: string;
+  /** The number of members in the team. */
+  numMembers: number;
+  /** The user ids of each member of the team. */
+  memberIds: string[];
+  /** The UID of the team leader. */
+  teamLeaderUid: string;
+  /** The Docker containerId associated with the team. */
+  containerId: string;
+  /** A unique identifier for the team. */
+  id: string;
+  /** The session ID of the session this team belongs to. */
+  sessionId: string;
+  /** The IP address assigned to the team's container, on the WireGuard network. */
+  ipAddress: string | null;
+}
+
 const Admin = () => {
   const [sessionIds, setSessionIds] = useState<string[]>([]);
   const [sessionId, setSessionId] = useState('');
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState<any | null>(null);
   const [gameStatus, setGameStatus] = useState('waiting'); // waiting, starting, active
+  const router = useRouter();
 
   const [teams, setTeams] = useState(new Map());
   const {currentUser} = useAuth();
@@ -113,24 +138,35 @@ const Admin = () => {
   }
 
   // Populate the players hook with map (uid, player doc)
-  async function getPlayers() {
-    teams.forEach(async (team, _) => {
-      // Find the player doc and add (pid, player doc) to the players map
-      const playerArr = team.memberIds;
-      playerArr.forEach((pid: string) => {
-        getUser(pid)
-          .then(value => {
-            if (!players.has(pid)) {
-              players.set(pid, value);
-              setPlayers(new Map(players));
-            }
-          })
-          .catch(error => {
-            console.log('Unable to find player', error);
-          });
-      });
+  const getPlayers = async () => {
+    const allPlayerIds = new Set<string>();
+    teams.forEach(team => {
+      team.memberIds.forEach((id: string) => allPlayerIds.add(id));
     });
-  }
+
+    if (allPlayerIds.size === 0) {
+      setPlayers(new Map());
+      return;
+    }
+
+    const playerPromises = Array.from(allPlayerIds).map(id => getUser(id));
+
+    try {
+      const playerDocs = await Promise.all(playerPromises);
+
+      const newPlayers = new Map();
+      playerDocs.forEach((playerDoc, index) => {
+        if (playerDoc) {
+          const playerId = Array.from(allPlayerIds)[index];
+          newPlayers.set(playerId, playerDoc);
+        }
+      });
+
+      setPlayers(newPlayers);
+    } catch (error) {
+      console.error('Failed to fetch all players:', error);
+    }
+  };
 
   // Get the document object associated with given uid
   async function getUser(uid: string) {
@@ -170,12 +206,6 @@ const Admin = () => {
       .catch((error: any) => {
         console.error('Error updating document: ', error);
       });
-
-    setTeams(new Map());
-    setPlayers(new Map());
-
-    getTeams();
-    getPlayers();
   };
 
   const refreshTeams = async () => {
@@ -187,6 +217,34 @@ const Admin = () => {
     getTeams();
     getPlayers();
   };
+
+  // Listen for changes to docs in the teams collection with the current sessionId
+  useEffect(() => {
+    if (!sessionId) {
+      setTeams(new Map());
+      setPlayers(new Map());
+      return;
+    }
+
+    const teamsQuery = query(
+      collection(db, 'teams'),
+      where('sessionId', '==', sessionId),
+    );
+
+    const unsubscribe = onSnapshot(teamsQuery, querySnapshot => {
+      const newTeams = new Map<string, Team>();
+      querySnapshot.forEach(doc => {
+        const teamData = {...doc.data(), id: doc.id} as Team;
+        newTeams.set(doc.id, teamData);
+      });
+
+      setTeams(newTeams);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser, sessionId]);
 
   // Get the current scenario information
   async function getScenario() {
@@ -263,6 +321,8 @@ const Admin = () => {
 
   // Cleanup the session
   async function cleanupSession() {
+    if (!currentUser) return false;
+
     // Create the api request url
     const token = await currentUser.getIdToken(true);
     const request = '/cleanup/' + sessionId + '/' + token;
@@ -323,8 +383,7 @@ const Admin = () => {
     }
     setGameStatus('ending');
     await cleanupSession();
-    setGameStatus('waiting');
-    window.location.reload();
+    router.push('/dashboard');
   };
 
   // Set the teams, players, and scenario hooks
@@ -342,9 +401,6 @@ const Admin = () => {
 
   return (
     <>
-      {/* Fixed Navbar */}
-      <Navbar />
-
       {/* Lobby Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
