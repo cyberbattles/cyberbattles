@@ -1,7 +1,7 @@
 'use client';
 import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
-import {signOut} from 'firebase/auth';
+import {onAuthStateChanged, signOut} from 'firebase/auth';
 import {FaRegCopy} from 'react-icons/fa';
 import {
   doc,
@@ -12,9 +12,17 @@ import {
   getDocs,
   arrayRemove,
   onSnapshot,
+  getDoc,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -25,11 +33,32 @@ const Dashboard = () => {
   const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
   const [gameTeamId, setGameTeamId] = useState<string>('');
+  const [gameSessionId, setSessionId] = useState<string>('');
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currentUsername, setcurrentUsername] = useState('User');
+  const [gameopponentIp, setgameopponenentIp] = useState<any>(null);
+  const [gameteamIp, setgameteamIp] = useState<any>(null);
+
+  function createData(
+    teamname: string,
+    cyberBattles: string,
+    cyberBank: string,
+    cyberUni: string,
+    cyberFreeRam: string
+  ) {
+    return { teamname, cyberBattles, cyberBank, cyberUni, cyberFreeRam };
+  }
+
+  const rows = [
+    createData('CyberNote', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
+    createData('CyberBank', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
+    createData('CyberUni', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
+    createData('CyberFreeRam', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
+  ];
+  
 
   useEffect(() => {
     if (currentUser) {
@@ -99,10 +128,10 @@ const Dashboard = () => {
     checkUserClan();
   }, [uid]);
 
-  const handleCopy = async () => {
+  const handleCopy = async (text:string) => {
     if (gameTeamId) {
       try {
-        await navigator.clipboard.writeText(gameTeamId);
+        await navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
@@ -110,6 +139,81 @@ const Dashboard = () => {
       }
     }
   };
+
+
+  {/* Use Effect function set up for getting team and opponnent IP*/}
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, "teams");
+          const teamsSnap = await getDocs(teamsRef);
+          const userId = currentUser.uid;
+  
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+  
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(userId)
+            ) {
+              const ip = teamData.ipAddress;
+              setgameteamIp(ip);
+              return;
+            }
+          }
+  
+          console.warn("User not found in any team");
+          setgameteamIp(null);
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+          setgameteamIp(null);
+        }
+      } else {
+        setgameteamIp(null);
+      }
+    });
+  
+    // Cleanup the auth listener when the component unmounts
+    return () => unsubscribe();
+  }, [auth, db]);
+
+  
+  useEffect(() => {
+    if (!auth.currentUser || !gameTeamId) return; // wait until both are ready
+  
+    const fetchOpponentIp = async () => {
+      try {
+        const sessionRef = collection(db, "sessions");
+        const sessionSnap = await getDocs(sessionRef);
+        const teamId = gameTeamId;
+  
+        for (const sessionDoc of sessionSnap.docs) {
+          const sessionData = sessionDoc.data();
+  
+          if (sessionData.teamIds.includes(teamId) && sessionData.started) {
+            const opponentTeamId = sessionData.teamIds.find((id: any) => id !== teamId);
+  
+            const opponentTeamRef = doc(db, "teams", opponentTeamId);
+            const opponentTeamSnap = await getDoc(opponentTeamRef);
+  
+            if (opponentTeamSnap.exists()) {
+              const opponentData = opponentTeamSnap.data();
+              setgameopponenentIp(opponentData.ipAddress ?? null);
+              return;
+            }
+          }
+        }
+  
+        setgameopponenentIp(null);
+      } catch (error) {
+        console.error("Error fetching opponent IP:", error);
+        setgameopponenentIp(null);
+      }
+    };
+  
+    fetchOpponentIp();
+  }, [auth.currentUser, gameTeamId]); 
 
   const handleLeaveClan = async () => {
     if (!currentUser || !userClan) return;
@@ -167,6 +271,58 @@ const Dashboard = () => {
       console.error('No user is signed in.');
     }
   };
+  {/* Download Config Function */}
+  {/* https://stackoverflow.com/questions/50694881/how-to-download-file-in-react-js */}
+  const handleDownloadConfig = async () => {
+    if (!currentUser) {
+      console.error("User not signed in.");
+      return;
+    }
+  
+    try {
+      const token = await currentUser.getIdToken();
+      const sessionId = gameSessionId;
+      const teamId = gameTeamId;
+      const userId = uid;
+  
+      if (!sessionId || !teamId || !userId) {
+        console.error("Missing required IDs for config download.");
+        return;
+      }
+  
+      const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${userId}/${token}`;
+  
+      const response = await fetch(url, { method: "GET" });
+  
+      if (!response.ok) {
+        console.error(`Failed to fetch config file: ${response.status}`);
+        return;
+      }
+  
+      const data = await response.json();
+      const configText = data.config;
+  
+      // Create a Blob so the browser can download it
+      const blob = new Blob([configText], { type: "text/plain" });
+      const blobUrl = window.URL.createObjectURL(blob);
+  
+      // Create a hidden <a> element to trigger the download
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${data.username || "vpn-config"}.conf`;
+      document.body.appendChild(a);
+      a.click();
+  
+      // Cleanup
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+  
+      console.log("Config downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading config:", error);
+    }
+  };
+  
 
   // Listen for changes to the user's team document
   useEffect(() => {
@@ -194,6 +350,27 @@ const Dashboard = () => {
       unsubscribe();
     };
   }, [currentUser]);
+
+  useEffect(() => {
+    const sessionQuery = query(
+      collection(db, 'sessions'),
+      where('teamIds', 'array-contains', gameTeamId),
+    );
+
+    const unsubscribe = onSnapshot(sessionQuery, querySnapshot => {
+      if (!querySnapshot.empty) {
+        const sessionDoc = querySnapshot.docs[0];
+        console.log("User's team updated:", sessionDoc.id);
+        setSessionId(sessionDoc.id);
+      } else {
+        console.log('User is not currently in a team.');
+        setSessionId('');
+      }
+    });
+  
+  return () => unsubscribe();
+  }, [gameTeamId]);
+
 
   const handleGoToJoin = () => {
     try {
@@ -298,13 +475,13 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleGoToJoin}
-                      className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
+                      className="group px-6 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 rounded-lg hover:from-orange-500 hover:to-orange-400 transition-all duration-200 font-semibold shadow-lg shadow-orange-900/30 hover:shadow-orange-900/50 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       Join a Game
                     </button>
                     <button
                       onClick={handleGoToCreation}
-                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       Create a Game
                     </button>
@@ -316,50 +493,137 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleGoToAdmin}
-                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
                     >
                       Game Lobby Information
                     </button>
                   </div>
                 </>
               )}
-
               {gameTeamId !== '' && (
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4">
-                    <h3 className="text-lg font-semibold">Current Team ID</h3>
-                    <div className="bg-[#2f2f2f] p-4 rounded-xl">
-                      <div className="flex justify-between items-center gap-4">
-                        <div>
-                          <h4 className="text-l font-bold text-green-600">
-                            {gameTeamId}
-                          </h4>
-                        </div>
-                        <button
-                          onClick={handleCopy}
-                          className="text-gray-300 hover:text-white transition-colors"
-                          title="Copy Game ID"
-                        >
-                          <FaRegCopy />
-                        </button>
-                      </div>
-                      {copied && (
-                        <p className="text-sm text-green-400 mt-2">
-                          Copied to clipboard!
-                        </p>
-                      )}
-                    </div>
+                <div className="space-y-4">
+                  {/* Header with CTA */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-gray-700">
+                    <h3 className="text-xl font-bold bg-white bg-clip-text text-transparent">
+                      Game Details
+                    </h3>
+                    <button
+                      onClick={handleGoToLobby}
+                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="flex items-center gap-2">
+                        Go to Game Lobby
+                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </span>
+                    </button>
                   </div>
 
-                  <button
-                    onClick={handleGoToLobby}
-                    className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                  >
-                    Go to Game Lobby
-                  </button>
+                  {/* Info Cards Grid */}
+                  <div className="grid gap-3">
+                    {/* Team ID Card */}
+                    <div className="group bg-gradient-to-br from-[#2a2a2a] to-[#252525] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-400 mb-1">Team ID</p>
+                          <p className="text-lg font-mono font-bold text-green-500 truncate">
+                            {gameTeamId}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleCopy(gameTeamId)}
+                          className="flex-shrink-0 p-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                          title="Copy Team ID"
+                        >
+                          <FaRegCopy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Team IP Card */}
+                    <div className="group bg-gradient-to-br from-[#2a2a2a] to-[#252525] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-400 mb-1">Team IP Address</p>
+                          <p className="text-lg font-mono font-bold text-green-500 truncate">
+                            {gameteamIp}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleCopy(gameteamIp)}
+                          className="flex-shrink-0 p-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                          title="Copy Team IP"
+                        >
+                          <FaRegCopy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Opponent IP Card */}
+                    <div className="group bg-gradient-to-br from-[#2a2a2a] to-[#252525] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-400 mb-1">Opponent IP Address</p>
+                          <p className="text-lg font-mono font-bold text-green-500 truncate">
+                            {gameopponentIp}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleCopy(gameopponentIp)}
+                          className="flex-shrink-0 p-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                          title="Copy Opponent IP"
+                        >
+                          <FaRegCopy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
+
+            {/* Table for game ips */}
+            {gameTeamId !== '' && (
+            <TableContainer component={Paper} className="mt-6">
+              <Table sx={{ minWidth: 650, backgroundColor: 'black', color: 'white' }} aria-label="Game IP Table">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: '#111111' }}>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Team Name</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team One</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team Two</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team Three</TableCell>
+                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team Four</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow
+                      key={row.teamname}
+                      sx={{ 
+                        '&:last-child td, &:last-child th': { border: 0 },
+                        backgroundColor: '#2a2a2a', 
+                        color: 'white',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      <TableCell component="th" scope="row" sx={{ color: 'white' }}>
+                        {row.teamname}
+                      </TableCell>
+                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberBattles}</TableCell>
+                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberBank}</TableCell>
+                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberUni}</TableCell>
+                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberFreeRam}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            )}
+
+              
             </div>
+
+            
 
             {/* JWT Display Widget */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
@@ -368,7 +632,7 @@ const Dashboard = () => {
               </h3>
               <button
                 onClick={handleGetJwt}
-                className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
+                className="group px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:from-green-500 hover:to-green-400 transition-all duration-200 font-semibold shadow-lg shadow-green-900/30 hover:shadow-green-900/50 hover:scale-[1.02] active:scale-[0.98]"
               >
                 Click to Reveal
               </button>
@@ -379,7 +643,22 @@ const Dashboard = () => {
                   value={jwt}
                 />
               )}
-            </div>
+               {gameSessionId && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2 mt-5">
+              Download VPN Configuration
+            </h3>
+            <button
+              onClick={handleDownloadConfig}
+              className="group px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:from-green-500 hover:to-green-400 transition-all duration-200 font-semibold shadow-lg shadow-green-900/30 hover:shadow-green-900/50 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Download
+            </button>
+          </div>
+        )}
+        </div>
+        
+            
 
             {/* Join a clan */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
@@ -421,7 +700,7 @@ const Dashboard = () => {
                   </div>
                   <button
                     onClick={handleLeaveClan}
-                    className="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 transition font-bold"
+                    className="group px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-500 rounded-lg hover:from-red-500 hover:to-red-400 transition-all duration-200 font-semibold shadow-lg shadow-red-900/30 hover:shadow-red-900/50 hover:scale-[1.02] active:scale-[0.98]"
                   >
                     Leave Clan
                   </button>
@@ -460,3 +739,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
