@@ -77,10 +77,10 @@ const JoinTeam = () => {
         if (userSnap.exists()) {
           const userData = userSnap.data();
 
-          if (userData.teamId != "") {
+          if (userData.teamId != '') {
             setJoinMessage({
-            type: 'error',
-            text: 'You are already in another team.',
+              type: 'error',
+              text: 'You are already in another team.',
             });
             setIsLoading(false);
             return;
@@ -96,8 +96,8 @@ const JoinTeam = () => {
           // Check if session has started
           if (sessionData.started) {
             setJoinMessage({
-            type: 'error',
-            text: 'This team\'s session has already started. Please join another team.',
+              type: 'error',
+              text: "This team's session has already started. Please join another team.",
             });
             setIsLoading(false);
             return;
@@ -106,8 +106,8 @@ const JoinTeam = () => {
           // Check if the joining user is the session admin
           if (sessionData.adminUid == currentUser.uid) {
             setJoinMessage({
-            type: 'error',
-            text: 'Session admin cannot join their teams. Please join another team.',
+              type: 'error',
+              text: 'Session admins cannot join their own teams.',
             });
             setIsLoading(false);
             return;
@@ -123,7 +123,7 @@ const JoinTeam = () => {
         await updateDoc(userRef, {
           teamId: teamId,
         });
-        
+
         setJoinMessage({
           type: 'success',
           text: `Successfully joined team: ${teamData.name}!`,
