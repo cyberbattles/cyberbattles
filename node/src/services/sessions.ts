@@ -69,7 +69,6 @@ export async function createTeam(
       name,
       numMembers,
       memberIds: [],
-      teamLeaderUid: '',
       containerId,
       id: teamId,
       sessionId,

@@ -24,8 +24,6 @@ export interface Team {
   numMembers: number;
   /** The user ids of each member of the team. */
   memberIds: string[];
-  /** The UID of the team leader. */
-  teamLeaderUid: string;
   /** The Docker containerId associated with the team. */
   containerId: string;
   /** A unique identifier for the team. */
