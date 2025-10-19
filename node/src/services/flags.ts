@@ -69,30 +69,31 @@ async function updateDown(teamId: string): Promise<void> {
 // Loop permanently sending in a flag every 2-3mins.
 // Only concern is that a flag could inject and fail to check not updating it in firebase.
 export async function main(
-  endPoint: string,
+  endPoints: Array<string>,
   teamId: string,
   ip: string,
   port: string,
 ): Promise<void> {
   let index = 0;
   while (true) {
+    for (const endPoint of endPoints) {
+      let flag = genFlag('cybrbtls', false);
+      console.log(`Send team: ${teamId}, flag: ${flag}`);
+
+      try {
+        let response = await sendFlag(endPoint, flag, ip, port);
+
+        console.log(`Flag injection succesful for: ${teamId}, flag: ${flag}`);
+        sendFlag(endPoint, flag, ip, port);
+        updateFlag(teamId, index % 3, flag);
+        index += 1;
+      } catch (error) {
+        console.error(`Flag injection FAILED for: ${teamId}, flag: ${flag}`);
+
+        updateDown(teamId);
+      }
+    }
     const delay = Math.floor(Math.random() * (180000 - 120000)) + 120000;
     await sleep(delay);
-
-    let flag = genFlag('cybrbtls', false);
-    console.log(`Send team: ${teamId}, flag: ${flag}`);
-
-    try {
-      let response = await sendFlag(endPoint, flag, ip, port);
-
-      console.log(`Flag injection succesful for: ${teamId}, flag: ${flag}`);
-      sendFlag(endPoint, flag, ip, port);
-      updateFlag(teamId, index % 3, flag);
-      index += 1;
-    } catch (error) {
-      console.error(`Flag injection FAILED for: ${teamId}, flag: ${flag}`);
-
-      updateDown(teamId);
-    }
   }
 }
