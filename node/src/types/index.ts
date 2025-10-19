@@ -64,6 +64,8 @@ export interface Session {
   wgPort: number;
   /** The allocaed virtual subnet for this session. */
   subnet: string;
+  /** The ID of the scoring container for this session. */
+  scoringContainerId: string;
   /** A unique identifier for the session. */
   id: string;
   /** The timestamp when the session was created. */
