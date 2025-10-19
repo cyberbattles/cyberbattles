@@ -3,6 +3,35 @@ import {serverTimestamp} from 'firebase/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import axios from 'axios';
 
+/**
+ * An interface representing a team in the session.
+ */
+export interface Team {
+  /** The name of the team. */
+  name: string;
+  /** The number of members in the team. */
+  numMembers: number;
+  /** The user ids of each member of the team. */
+  memberIds: string[];
+  /** The UID of the team leader. */
+  teamLeaderUid: string;
+  /** The Docker containerId associated with the team. */
+  containerId: string;
+  /** A unique identifier for the team. */
+  id: string;
+  /** The session ID of the session this team belongs to. */
+  sessionId: string;
+  /** The IP address assigned to the team's container, on the WireGuard network. */
+  ipAddress: string;
+}
+
+/**
+ * Generates a random flag string with an optional prefix and base64 encoding.
+ * Flag is always 8 chars long.
+ * @param {string} prefix - A string to prepend to flag. genFlag will wrap it in curly braces, e.g., "prefix{random_part}".
+ * @param {boolean} base64 - If true, the final flag string will be base64 encoded.
+ * @returns {string} The generated flag string.
+ */
 export function genFlag(prefix: string, base64: boolean): string {
   const characters =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -23,6 +52,14 @@ export function genFlag(prefix: string, base64: boolean): string {
   return flag;
 }
 
+/** Sends a flag to a specified API endpoint using an HTTP POST request.
+ * @param {string} endPoint - The URL of the API endpoint to send flag.
+ * @param {string} flag - The flag to send.
+ * @param {string} ip - The IP address to include in the request payload.
+ * @param {string} port - The port number to include in the request payload.
+ * @returns {Promise<any>} A promise that resolves with the data from the API response.
+ * @throws {Error} Throws an error if the HTTP request fails.
+ */
 async function sendFlag(
   endPoint: string,
   flag: string,
@@ -35,16 +72,35 @@ async function sendFlag(
       port: port,
       flag: flag,
     });
-    return response.data;
+
+    if (response.data && response.data.status === 'success') {
+      return response.data;
+    } else {
+      const errMessage = response.data?.message;
+      throw new Error(errMessage);
+    }
   } catch (error) {
     throw error;
   }
 }
 
+/**
+ * Emulates a typical sleep function.
+ * @param {number} ms - The number of milliseconds to wait.
+ * @returns {Promise<void>} A promise that resolves after the specified delay.
+ */
 async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * Updates team's flag at <index> in firebase.
+ * Also updates the `lastUpdated` timestamp.
+ * @param {string} teamId - The ID of the team document in Firestore.
+ * @param {number} index - The index within the `activeFlags` array to update.
+ * @param {string} flag - The new flag string to set.
+ * @returns {Promise<void>} A promise that resolves once the database update is complete.
+ */
 async function updateFlag(
   teamId: string,
   index: number,
@@ -58,39 +114,53 @@ async function updateFlag(
   });
 }
 
+/**
+ * Increments the `downCount` in firebase to indicate a failed flag injection.
+ * @param {string} teamId - The ID of the team.
+ * @returns {Promise<void>} A promise that resolves once the database update is complete.
+ */
 async function updateDown(teamId: string): Promise<void> {
   const teamRef = db.doc(`teams/${teamId}`);
 
   await teamRef.update({
-    downCounts: FieldValue.increment(1),
+    downCount: FieldValue.increment(1),
   });
 }
 
-// Loop permanently sending in a flag every 2-3mins.
-// Only concern is that a flag could inject and fail to check not updating it in firebase.
-export async function main(
-  endPoints: Array<string>,
-  teamId: string,
-  ip: string,
-  port: string,
-): Promise<void> {
-  let index = 0;
+/**
+ * The main execution loop. This function runs indefinitely, performing the following steps:
+ * 1. Iterates through a list of endpoints.
+ * 2. For each endpoint, generates a new flag.
+ * 3. Attempts to inject the flag at the endpoint.
+ * 4. If successful, it updates the valid flags in Firestore.
+ * 5. If it fails, it increments the team's downCount in Firestore.
+ * 6. Waits for a random delay between 2 to 3 minutes before repeating the process.
+ * @param {Array<Team>} teams - An array of Team interfaces.
+ * @returns {Promise<void>} This function runs in an infinite loop and does not resolve.
+ */
+export async function main(teams: Array<Team>): Promise<void> {
+  const indexes = new Map<string, number>();
+
   while (true) {
-    for (const endPoint of endPoints) {
+    for (const team of teams) {
       let flag = genFlag('cybrbtls', false);
-      console.log(`Send team: ${teamId}, flag: ${flag}`);
+      console.log(`Send team: ${team.id}, flag: ${flag}`);
 
       try {
-        let response = await sendFlag(endPoint, flag, ip, port);
+        const endPoint = team.ipAddress + '/inject';
+        const port = '5000';
+        let response = await sendFlag(endPoint, flag, team.ipAddress, port);
 
-        console.log(`Flag injection succesful for: ${teamId}, flag: ${flag}`);
-        sendFlag(endPoint, flag, ip, port);
-        updateFlag(teamId, index % 3, flag);
-        index += 1;
+        console.log(`Flag injection succesful for: ${team.id}, flag: ${flag}`);
+        sendFlag(endPoint, flag, team.ipAddress, port);
+
+        const currentIndex = indexes.get(team.id) || 0;
+        updateFlag(team.id, currentIndex % 3, flag);
+        indexes.set(team.id, currentIndex + 1);
       } catch (error) {
-        console.error(`Flag injection FAILED for: ${teamId}, flag: ${flag}`);
+        console.error(`Flag injection FAILED for: ${team.id}, flag: ${flag}`);
 
-        updateDown(teamId);
+        updateDown(team.id);
       }
     }
     const delay = Math.floor(Math.random() * (180000 - 120000)) + 120000;
