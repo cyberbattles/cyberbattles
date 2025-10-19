@@ -10,6 +10,8 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  updateDoc,
+  arrayRemove,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
@@ -60,6 +62,30 @@ const Lobby = () => {
       }
     } catch (error) {
       console.log('Failed', error);
+    }
+  }
+
+  async function removeFromTeam() {
+    if (!currentUser) return;
+  
+    const teamsQuery = query(
+      collection(db, "teams"),
+      where("memberIds", "array-contains", currentUser.uid)
+    );
+  
+    const querySnapshot = await getDocs(teamsQuery);
+  
+    if (!querySnapshot.empty) {
+      const teamDoc = querySnapshot.docs[0];
+      const teamRef = doc(db, "teams", teamDoc.id);
+  
+      await updateDoc(teamRef, {
+        memberIds: arrayRemove(currentUser.uid),
+      });
+  
+      console.log("Successfully removed from team:", teamDoc.id);
+    } else {
+      console.log("User is not currently in a team.");
     }
   }
 
@@ -189,6 +215,7 @@ const Lobby = () => {
   };
 
   const handleLeaveLobby = () => {
+    removeFromTeam();
     router.push('/dashboard');
   };
 
