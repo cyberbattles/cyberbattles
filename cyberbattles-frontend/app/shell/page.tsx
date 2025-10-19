@@ -14,7 +14,7 @@ import {Terminal, IDisposable} from 'xterm';
 import {FitAddon} from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import FlagPopup from '@/components/FlagPopup';
-import {collection, doc, getDoc, getDocs} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs, onSnapshot} from 'firebase/firestore';
 import {useAuth} from '@/components/Auth';
 
 export default function Shell() {
@@ -495,6 +495,24 @@ export default function Shell() {
       clearTimeout(initialFitTimeout);
     };
   }, [isTerminalInitialized]);
+
+  // Monitor if the session has ended
+  useEffect(() => {
+    const sessionId = localStorage.getItem('sessionId') || '';
+    const sessionRef = doc(db, 'sessions', sessionId);
+    const unsubscribe = onSnapshot(sessionRef, sessionDoc => {
+      if (!sessionDoc.exists()) {
+        return;
+      }
+      const session = sessionDoc.data();
+      if (session.started) {
+        alert("session has ended")
+      }
+    });
+    return () => {
+      unsubscribe();
+    }
+  }, []);
 
   return (
     <div className="h-screen w-full flex flex-col bg-[#1a1a1a] font-sans pt-25 sm:pt-45">
