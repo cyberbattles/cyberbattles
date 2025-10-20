@@ -1,29 +1,8 @@
 import {db} from './firebase';
+import {Team} from '../types';
 import {serverTimestamp} from 'firebase/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
 import axios from 'axios';
-
-/**
- * An interface representing a team in the session.
- */
-export interface Team {
-  /** The name of the team. */
-  name: string;
-  /** The number of members in the team. */
-  numMembers: number;
-  /** The user ids of each member of the team. */
-  memberIds: string[];
-  /** The UID of the team leader. */
-  teamLeaderUid: string;
-  /** The Docker containerId associated with the team. */
-  containerId: string;
-  /** A unique identifier for the team. */
-  id: string;
-  /** The session ID of the session this team belongs to. */
-  sessionId: string;
-  /** The IP address assigned to the team's container, on the WireGuard network. */
-  ipAddress: string;
-}
 
 /**
  * Generates a random flag string with an optional prefix and base64 encoding.
@@ -147,9 +126,17 @@ export async function main(teams: Array<Team>): Promise<void> {
       console.log(`Send team: ${team.id}, flag: ${flag}`);
 
       try {
+        if (!team.ipAddress) {
+          throw new Error('No IP address');
+        }
         const endPoint = team.ipAddress + '/inject';
         const port = '5000';
         let response = await sendFlag(endPoint, flag, team.ipAddress, port);
+
+        if (response.status !== 'success') {
+          updateDown(team.id);
+          throw new Error('Flag injection faile', response?.message);
+        }
 
         console.log(`Flag injection succesful for: ${team.id}, flag: ${flag}`);
         sendFlag(endPoint, flag, team.ipAddress, port);
