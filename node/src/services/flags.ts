@@ -133,14 +133,12 @@ export async function flagService(
     return;
   }
 
-  const indexes = new Map<string, number>();
   const endPoint = `http://${scoringBotIp}:8080/inject`;
 
   console.log('Flag service started');
   while (await isSessionActive(teams[0].sessionId)) {
     for (const team of teams) {
       let flag = genFlag('cybrbtls', false);
-      console.log(`Send team: ${team.id}, flag: ${flag}`);
 
       try {
         if (!team.ipAddress) {
@@ -151,12 +149,9 @@ export async function flagService(
           throw new Error('Flag injection failed');
         }
 
-        console.log(`Flag injection succesful for: ${team.id}, flag: ${flag}`);
-        sendFlag(endPoint, flag, team.ipAddress, port);
+        console.log(`Flag injection SUCCESSFUL for: ${team.id}, flag: ${flag}`);
 
-        const currentIndex = indexes.get(team.id) || 0;
         updateFlag(team.id, flag);
-        indexes.set(team.id, currentIndex + 1);
       } catch (error) {
         console.error(
           `Flag injection FAILED for: ${team.id}, flag: ${flag}. Error: ${error}`,
@@ -168,5 +163,4 @@ export async function flagService(
     const delay = Math.floor(Math.random() * (180000 - 120000)) + 120000;
     await sleep(delay);
   }
-  console.log('Flag service ended');
 }
