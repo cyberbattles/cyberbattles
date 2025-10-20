@@ -199,17 +199,15 @@ const NetworkTraffic = () => {
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
             
           </div>
-          <div className="flex gap-4 items-center">
-            
+
+          <div className="flex gap-8 items-center">
+
             <button
               onClick={handlePcapDownload}
               className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
             >
               Download .pcap file
             </button>
-          </div>
-
-          <div className="flex gap-4 items-center">
             
             <button
               onClick={handleRefresh}
