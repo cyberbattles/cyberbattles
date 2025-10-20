@@ -18,6 +18,8 @@ import WarningIcon from "@/public/images/warning.png";
 
 // REF: Utilised Claude.
 // https://claude.ai/share/501c44f9-ec4a-4796-98af-d68a16c36f78
+// https://claude.ai/share/33adf08e-559c-4409-9267-2454ba3bbebf
+
 
 
 const NetworkTraffic = () => {
@@ -27,6 +29,7 @@ const NetworkTraffic = () => {
   const {currentUser} = useAuth();
   const [teamId, setTeamId] = useState<string>('');
   const [pcapBlobUrl, setPcapBlobUrl] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   
   // TODO: call firebase get teamid and token of user. 
@@ -86,55 +89,45 @@ const NetworkTraffic = () => {
     }
   };
 
- const fetchPcapFiles = async (id: string) => {
-  if (!id) {
-    console.warn("Cannot fetch PCAP files: teamId is empty");
-    return;
-  }
-  
-  try {
-    const jwt = localStorage.getItem('token');
-    if (!jwt) {
-      console.warn("No JWT token available");
-      return;
-    }
-    
-    const response = await fetch(
-      `https://cyberbattl.es/api/captures/${id}/${jwt}?t=${new Date().getTime()}`
-    );
-    
-    if (response.ok) {
-      // Check the response type to handle blob or JSON
-      const contentType = response.headers.get('content-type');
-      
-        // If it's a blob (the actual PCAP file), create object URL
-        const pcapBlob = await response.blob();
-        
-        // Revoke old URL if it exists
-        if (pcapBlobUrl) {
-          URL.revokeObjectURL(pcapBlobUrl);
-        }
-        
-        // Create new URL and set it
-        const newBlobUrl = URL.createObjectURL(pcapBlob);
-        setPcapBlobUrl(newBlobUrl);
-        setFileUrl(newBlobUrl);
-      
-    } else {
-      console.error("Failed to fetch PCAP files:", response.status);
-    }
-  } catch (error) {
-    console.error("Error fetching PCAP files:", error);
-  } finally {
-    return;
-  }
-};
+
 
   // Run all fetches in sequence
   const runFetches = async () => {
     const teamIdResult = await fetchTeamId();
     if (teamIdResult) {
-      await fetchPcapFiles(teamIdResult);
+      setTeamId(teamIdResult);
+      if (!teamIdResult) {
+        console.warn("Cannot fetch PCAP files: teamId is empty");
+        return;
+      }
+      
+      try {
+        const jwt = localStorage.getItem('token');
+        if (!jwt) {
+          console.warn("No JWT token available");
+          return;
+        }
+        
+        const response = await fetch(
+          `https://cyberbattl.es/api/captures/${teamIdResult}/${jwt}?t=${new Date().getTime()}`
+        );
+        
+        if (response.ok) {
+          const pcapBlob = await response.blob();
+          
+          if (pcapBlobUrl) {
+            URL.revokeObjectURL(pcapBlobUrl);
+          }
+          
+          const newBlobUrl = URL.createObjectURL(pcapBlob);
+          setPcapBlobUrl(newBlobUrl);
+          setFileUrl(newBlobUrl);
+        } else {
+          console.error("Failed to fetch PCAP files:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching PCAP files:", error);
+      }
     }
   };
 
@@ -154,6 +147,46 @@ const NetworkTraffic = () => {
   link.click();
   document.body.removeChild(link);
 };
+
+  const handleRefresh = async () => {
+    if (!teamId) {
+      console.warn("Cannot refresh: teamId is empty");
+      return;
+    }
+    
+    try {
+      const jwt = localStorage.getItem('token');
+      if (!jwt) {
+        console.warn("No JWT token available");
+        return;
+      }
+      
+      const response = await fetch(
+        `https://cyberbattl.es/api/captures/${teamId}/${jwt}?t=${new Date().getTime()}`
+      );
+      
+      if (response.ok) {
+        const pcapBlob = await response.blob();
+        
+        if (pcapBlobUrl) {
+          URL.revokeObjectURL(pcapBlobUrl);
+        }
+        
+        const newBlobUrl = URL.createObjectURL(pcapBlob);
+        setPcapBlobUrl(newBlobUrl);
+        setFileUrl(newBlobUrl);
+        setRefreshKey(prev => prev + 1);
+      } else {
+        setFileUrl('');
+        console.error("Failed to fetch PCAP files:", response.status);
+      }
+    } catch (error) {
+      setFileUrl('');
+      console.error("Error fetching PCAP files:", error);
+    }
+  };
+
+  
 
   return (
     <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
@@ -175,6 +208,17 @@ const NetworkTraffic = () => {
               Download .pcap file
             </button>
           </div>
+
+          <div className="flex gap-4 items-center">
+            
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-blue-500 rounded-xl hover:opacity-90 transition font-bold"
+            >
+              Refresh
+            </button>
+          </div>
+
         </header>
 
         {/* Content Area */}
@@ -182,6 +226,7 @@ const NetworkTraffic = () => {
           {fileUrl ? (
             <div className="h-full overflow-auto p-6">
               <PcapViewer
+                key={refreshKey}
                 src={fileUrl}
                 lang="en-us"
                 enableHexToggle
