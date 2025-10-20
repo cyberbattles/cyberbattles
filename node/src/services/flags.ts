@@ -2,7 +2,7 @@ import {db} from './firebase';
 import {Team} from '../types';
 import {serverTimestamp} from 'firebase/firestore';
 import {FieldValue} from 'firebase-admin/firestore';
-import axios from 'axios';
+import * as axios from 'axios';
 
 /**
  * Generates a random flag string with an optional prefix and base64 encoding.
@@ -52,11 +52,10 @@ async function sendFlag(
       flag: flag,
     });
 
-    if (response.data && response.data.status === 'success') {
+    if (response.status === 200) {
       return response.data;
     } else {
-      const errMessage = response.data?.message;
-      throw new Error(errMessage);
+      throw new Error('Failed to send flag: ' + response.statusText);
     }
   } catch (error) {
     throw error;
@@ -131,12 +130,7 @@ export async function main(teams: Array<Team>): Promise<void> {
         }
         const endPoint = team.ipAddress + '/inject';
         const port = '5000';
-        let response = await sendFlag(endPoint, flag, team.ipAddress, port);
-
-        if (response.status !== 'success') {
-          updateDown(team.id);
-          throw new Error('Flag injection faile', response?.message);
-        }
+        await sendFlag(endPoint, flag, team.ipAddress, port);
 
         console.log(`Flag injection succesful for: ${team.id}, flag: ${flag}`);
         sendFlag(endPoint, flag, team.ipAddress, port);
