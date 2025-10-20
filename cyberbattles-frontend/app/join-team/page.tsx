@@ -68,9 +68,60 @@ const JoinTeam = () => {
           return;
         }
 
+        // Check if the user is already in another team
+        // NOTE:  This is commented out because currently the teamId value of
+        //        user docs does not get updated. This should happen here somewhere.
+
+        const userRef = doc(db, 'login', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+
+          if (userData.teamId != '') {
+            setJoinMessage({
+              type: 'error',
+              text: 'You are already in another team.',
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Check the session values
+        const sessionRef = doc(db, 'sessions', teamData.sessionId);
+        const sessionSnap = await getDoc(sessionRef);
+        if (sessionSnap.exists()) {
+          const sessionData = sessionSnap.data();
+
+          // Check if session has started
+          if (sessionData.started) {
+            setJoinMessage({
+              type: 'error',
+              text: "This team's session has already started. Please join another team.",
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          // Check if the joining user is the session admin
+          if (sessionData.adminUid == currentUser.uid) {
+            setJoinMessage({
+              type: 'error',
+              text: 'Session admins cannot join their own teams.',
+            });
+            setIsLoading(false);
+            return;
+          }
+        }
+
         // Add the user's UID to the memberIds array
         await updateDoc(teamRef, {
           memberIds: arrayUnion(currentUser.uid),
+        });
+
+        // Add the team ID to the user's doc
+        await updateDoc(userRef, {
+          teamId: teamId,
         });
 
         setJoinMessage({
