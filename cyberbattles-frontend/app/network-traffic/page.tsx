@@ -1,7 +1,6 @@
 'use client';
 import React, {useState, useEffect} from 'react';
 import {db} from '@/lib/firebase';
-import {useRouter} from 'next/navigation';
 import PcapViewer from '@/components/PcapViewer';
 import {
   collection,
@@ -98,6 +97,7 @@ const NetworkTraffic = () => {
         const jwt = localStorage.getItem('token');
         if (!jwt) {
           console.warn("No JWT token available");
+          await fetchJwt();
           return;
         }
         
