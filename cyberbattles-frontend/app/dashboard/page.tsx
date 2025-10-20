@@ -437,7 +437,7 @@ const Dashboard = () => {
         <li>
           <a 
             href="shell" 
-            className="flex items-center px-4 py-3 rounded-l text-white font-bold transition-all duration-200 hover:bg-gray-800"
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
           >
             <span className="text-lg"></span>
             Shell
@@ -446,7 +446,7 @@ const Dashboard = () => {
         <li>
           <a 
             href="network-traffic" 
-            className="flex items-center px-4 py-3 rounded-l text-white font-bold transition-all duration-200 hover:bg-gray-800"
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
           >
             <span className="text-lg"></span>
             Traffic
