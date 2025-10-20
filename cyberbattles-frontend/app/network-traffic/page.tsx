@@ -31,13 +31,7 @@ const NetworkTraffic = () => {
   const [teamId, setTeamId] = useState<string>('');
   const [pcapBlobUrl, setPcapBlobUrl] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-
   
-  // TODO: call firebase get teamid and token of user. 
-  // TODO: call api to get pcap file on page refresh. 
-  // if it doesnt work we need to enforce only loading once the file exists? i.e. when game ends maybe?
-  
-
  useEffect(() => {
   const fetchJwt = async () => {
     if (currentUser) {
