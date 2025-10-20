@@ -473,7 +473,6 @@ export async function getContainerIpAddress(
   containerId: string,
 ): Promise<string | null> {
   try {
-    console.log(`Inspecting container: ${containerId}...`);
     const container = docker.getContainer(containerId);
 
     const data = await container.inspect();
@@ -486,7 +485,6 @@ export async function getContainerIpAddress(
       return networkDetails[0].IPAddress;
     }
 
-    console.log('No IP address found for the container.');
     return null;
   } catch (error) {
     console.error(`Error inspecting container '${containerId}':`);
