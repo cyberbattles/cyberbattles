@@ -74,6 +74,8 @@ export async function createTeam(
       id: teamId,
       sessionId,
       ipAddress: null,
+      downCount: 0,
+      activeFlags: [],
     };
   } catch (error) {
     throw new Error(

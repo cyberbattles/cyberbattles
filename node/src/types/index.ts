@@ -34,6 +34,10 @@ export interface Team {
   sessionId: string;
   /** The IP address assigned to the team's container, on the WireGuard network. */
   ipAddress: string | null;
+  /** How many times the flag bot has failed to submit flags for this team. */
+  downCount: number;
+  /** The list of active flags for this team. */
+  activeFlags: string[];
 }
 
 /**
