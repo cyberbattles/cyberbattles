@@ -727,31 +727,40 @@ const Dashboard = () => {
                 <textarea
                   readOnly
                   value={vpnConfig}
-                  className="flex-1 p-4  border-gray-700 rounded-md font-mono text-sm text-yellow-400 focus:outline-none"
-                  rows={15}
+                  className="flex-1 p-5  border-gray-700 rounded-md font-mono text-sm text-yellow-400 focus:outline-none"
+                  rows={16}
                 />
-                <div className="flex-1 flex items-center justify-center p-4 rounded-md">
-                  <QRCode value={vpnConfig} />
+                
+                <div className='font-mono text-xs text-green-300'>
+                <div className="flex items-center justify-center p-5 mt-5 rounded-md">
+                  <QRCode value={vpnConfig} size={200}/>
+                </div>
+                Install wireguard if you haven't already.<br />
+                sudo wg-quick up ~/Downloads/wgl.conf<br />
+                ssh -o StrictHostKeyChecking=no \ <br />
+                -o UserKnownHostsFile=/dev/null<br />
+                me2@10.12.0.3<br />
                 </div>
               </div>
 
               {/* Download Config Button underneath */}
-              <div className="flex justify-center">
+              <div className="flex justify-center gap-x-4">
                 <button
                   className="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700 font-bold"
                   onClick={handleDownloadConfig}
                 >
                   Download Config
                 </button>
-              </div>
-
-              {/* Close button */}
+                {/* Close button */}
               <button
-                className="absolute top-4 right-4 px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 font-bold"
+                className="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 font-bold"
                 onClick={() => setVpnConfig(null)}
               >
                 Close
               </button>
+              </div>
+
+              
             </div>
           </div>
         )}
