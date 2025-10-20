@@ -14,11 +14,9 @@ function Navbar() {
   const pfpPlaceholder = '/images/avatar_placeholder.png';
   const genericItems = ['Home', 'Leaderboard', 'Learn'];
   const genericLinks = ['/', '/leaderboard', '/learn'];
-  const userItems = ['Dashboard', 'Traffic', 'Shell', 'Leaderboard', 'Learn'];
+  const userItems = ['Dashboard','Leaderboard', 'Learn'];
   const userLinks = [
     '/dashboard',
-    '/network-traffic',
-    '/shell',
     '/leaderboard',
     '/learn',
   ];

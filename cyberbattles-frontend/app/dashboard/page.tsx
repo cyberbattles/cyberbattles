@@ -417,37 +417,71 @@ const Dashboard = () => {
       {/* Fixed Navbar */}
 
       {/* Dashboard Layout */}
-      <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-[#1e1e1e] shadow-md flex-shrink-0">
-          <div className="p-6 text-xl font-bold border-b border-gray-700">
-            Dashboard
-          </div>
-          <nav className="p-6">
-            <ul className="space-y-4">
-              <li>
-                <a href="#" className="hover:text-blue-400">
-                  Overview
-                </a>
-              </li>
-              <li>
-                <a href="reports" className="hover:text-blue-400">
-                  Game Reports
-                </a>
-              </li>
-              <li>
-                <a href="analytics" className="hover:text-blue-400">
-                  Analytics
-                </a>
-              </li>
-              <li>
-                <a href="account" className="hover:text-blue-400">
-                  Account
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </aside>
+<div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
+  {/* Sidebar */}
+  <aside className="w-full md:w-72 bg-[#1e1e1e] shadow-2xl flex-shrink-0 border-r border-gray-800">
+    <div className="p-8 text-2xl font-bold border-b border-gray-700/50 tracking-tight">
+      Dashboard
+    </div>
+    <nav className="p-6">
+      <ul className="space-y-2">
+        <li>
+          <a 
+            href="#" 
+            className="flex items-center px-4 py-3 rounded-lg bg-blue-600 text-white font-bold transition-all duration-200 hover:bg-blue-500"
+          >
+            <span className="text-lg"></span>
+            Overview
+          </a>
+        </li>
+        <li>
+          <a 
+            href="shell" 
+            className="flex items-center px-4 py-3 rounded-l text-white font-bold transition-all duration-200 hover:bg-gray-800"
+          >
+            <span className="text-lg"></span>
+            Shell
+          </a>
+        </li>
+        <li>
+          <a 
+            href="network-traffic" 
+            className="flex items-center px-4 py-3 rounded-l text-white font-bold transition-all duration-200 hover:bg-gray-800"
+          >
+            <span className="text-lg"></span>
+            Traffic
+          </a>
+        </li>
+        <li>
+          <a 
+            href="reports" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800 hover:text-white"
+          >
+            <span className="text-lg opacity-0"></span>
+            Game Reports
+          </a>
+        </li>
+        <li>
+          <a 
+            href="analytics" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800 hover:text-white"
+          >
+            <span className="text-lg opacity-0"></span>
+            Analytics
+          </a>
+        </li>
+        <li>
+          <a 
+            href="account" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800 hover:text-white"
+          >
+            <span className="text-lg opacity-0"></span>
+            Account Details
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </aside>
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
