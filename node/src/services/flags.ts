@@ -1,6 +1,6 @@
 import {db} from './firebase';
-import {Team} from '../types';
-import {serverTimestamp} from 'firebase/firestore';
+import {Team, FlagResponse} from '../types';
+import {isSessionActive} from './sessions';
 import {FieldValue} from 'firebase-admin/firestore';
 import * as axios from 'axios';
 
@@ -44,18 +44,20 @@ async function sendFlag(
   flag: string,
   ip: string,
   port: string,
-): Promise<any> {
+): Promise<boolean> {
   try {
-    const response = await axios.post(endPoint, {
+    const response = await axios.post<FlagResponse>(endPoint, {
       ip: ip,
       port: port,
       flag: flag,
     });
 
-    if (response.status === 200) {
-      return response.data;
+    if (response.status === 200 && response.data.status === 'success') {
+      return true;
+    } else if (response.status === 200 && response.data.status === 'failure') {
+      return false;
     } else {
-      throw new Error('Failed to send flag: ' + response.statusText);
+      return false;
     }
   } catch (error) {
     throw error;
@@ -72,23 +74,26 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Updates team's flag at <index> in firebase.
- * Also updates the `lastUpdated` timestamp.
+ * Updates team's flag array in Firebase, keeping only the 3 newest flags.
  * @param {string} teamId - The ID of the team document in Firestore.
- * @param {number} index - The index within the `activeFlags` array to update.
  * @param {string} flag - The new flag string to set.
  * @returns {Promise<void>} A promise that resolves once the database update is complete.
  */
-async function updateFlag(
-  teamId: string,
-  index: number,
-  flag: string,
-): Promise<void> {
+async function updateFlag(teamId: string, flag: string): Promise<void> {
   const teamRef = db.doc(`teams/${teamId}`);
 
-  await teamRef.update({
-    [`activeFlags.${index}`]: flag,
-    lastUpdated: serverTimestamp(),
+  await db.runTransaction(async transaction => {
+    const doc = await transaction.get(teamRef);
+    if (!doc.exists) {
+      throw 'Document does not exist!';
+    }
+
+    const activeFlags = doc.data()?.activeFlags || [];
+
+    activeFlags.push(flag);
+    const updatedFlags = activeFlags.slice(-3); // Keeps the 3 newest flags
+
+    transaction.update(teamRef, {activeFlags: updatedFlags});
   });
 }
 
@@ -116,10 +121,23 @@ async function updateDown(teamId: string): Promise<void> {
  * @param {Array<Team>} teams - An array of Team interfaces.
  * @returns {Promise<void>} This function runs in an infinite loop and does not resolve.
  */
-export async function main(teams: Array<Team>): Promise<void> {
-  const indexes = new Map<string, number>();
+export async function flagService(
+  teams: Array<Team>,
+  scoringBotIp: string | null,
+): Promise<void> {
+  // Early exit conditions
+  if (teams.length === 0) {
+    return;
+  }
+  if (!scoringBotIp) {
+    return;
+  }
 
-  while (true) {
+  const indexes = new Map<string, number>();
+  const endPoint = `http://${scoringBotIp}:8080/inject`;
+
+  console.log('Flag service started');
+  while (await isSessionActive(teams[0].sessionId)) {
     for (const team of teams) {
       let flag = genFlag('cybrbtls', false);
       console.log(`Send team: ${team.id}, flag: ${flag}`);
@@ -128,18 +146,21 @@ export async function main(teams: Array<Team>): Promise<void> {
         if (!team.ipAddress) {
           throw new Error('No IP address');
         }
-        const endPoint = team.ipAddress + '/inject';
         const port = '5000';
-        await sendFlag(endPoint, flag, team.ipAddress, port);
+        if (!(await sendFlag(endPoint, flag, team.ipAddress, port))) {
+          throw new Error('Flag injection failed');
+        }
 
         console.log(`Flag injection succesful for: ${team.id}, flag: ${flag}`);
         sendFlag(endPoint, flag, team.ipAddress, port);
 
         const currentIndex = indexes.get(team.id) || 0;
-        updateFlag(team.id, currentIndex % 3, flag);
+        updateFlag(team.id, flag);
         indexes.set(team.id, currentIndex + 1);
       } catch (error) {
-        console.error(`Flag injection FAILED for: ${team.id}, flag: ${flag}`);
+        console.error(
+          `Flag injection FAILED for: ${team.id}, flag: ${flag}. Error: ${error}`,
+        );
 
         updateDown(team.id);
       }
@@ -147,4 +168,5 @@ export async function main(teams: Array<Team>): Promise<void> {
     const delay = Math.floor(Math.random() * (180000 - 120000)) + 120000;
     await sleep(delay);
   }
+  console.log('Flag service ended');
 }
