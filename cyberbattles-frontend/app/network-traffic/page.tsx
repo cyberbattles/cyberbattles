@@ -13,7 +13,8 @@ import {useAuth} from '@/components/Auth';
 import Image from 'next/image';
 
 import WarningIcon from "@/public/images/warning.png";
-
+import SyncIcon from "@/public/images/sync.png"
+import DownloadIcon from "@/public/images/download.png";
 
 
 // REF: Utilised Claude.
@@ -204,16 +205,18 @@ const NetworkTraffic = () => {
 
             <button
               onClick={handlePcapDownload}
-              className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+            className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
             >
-              Download .pcap file
+              Download
+              <Image src={DownloadIcon} alt="download icon" width={20} height={20}/>
             </button>
             
             <button
-              onClick={handleRefresh}
-              className="px-4 py-2 bg-blue-500 rounded-xl hover:opacity-90 transition font-bold"
+            onClick={handleRefresh}
+            className="px-4 py-2 bg-blue-400 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
             >
               Refresh
+              <Image src={SyncIcon} alt="refresh icon" width={20} height={20}/>
             </button>
           </div>
 
