@@ -23,6 +23,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import QRCode from 'react-qr-code';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -32,32 +33,17 @@ const Dashboard = () => {
   // For clan
   const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
-  const [gameTeamId, setGameTeamId] = useState<string>('');
+  const [gameTeamId, setGameTeamId] = useState<any>(null);
   const [gameSessionId, setSessionId] = useState<string>('');
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currentUsername, setcurrentUsername] = useState('User');
-  const [gameopponentIp, setgameopponenentIp] = useState<any>(null);
+  const [gameopponentIps, setgameopponenentIps] = useState<any>(null);
+  const [gameopponentIds, setgameopponenentIds] = useState<any>(null);
   const [gameteamIp, setgameteamIp] = useState<any>(null);
-
-  function createData(
-    teamname: string,
-    cyberBattles: string,
-    cyberBank: string,
-    cyberUni: string,
-    cyberFreeRam: string
-  ) {
-    return { teamname, cyberBattles, cyberBank, cyberUni, cyberFreeRam };
-  }
-
-  const rows = [
-    createData('CyberNote', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
-    createData('CyberBank', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
-    createData('CyberUni', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
-    createData('CyberFreeRam', '0.0.0.0', '0.0.0.0', '0.0.0.0', '0.0.0.0'),
-  ];
+  const [vpnConfig, setVpnConfig] = useState<string | null>(null);
   
 
   useEffect(() => {
@@ -144,76 +130,85 @@ const Dashboard = () => {
   {/* Use Effect function set up for getting team and opponnent IP*/}
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          const teamsRef = collection(db, "teams");
-          const teamsSnap = await getDocs(teamsRef);
-          const userId = currentUser.uid;
+      if (!currentUser) {
+        setgameteamIp(null);
+        setGameTeamId(null);
+        return;
+      }
   
-          for (const teamDoc of teamsSnap.docs) {
-            const teamData = teamDoc.data();
+      try {
+        // Fetch user's team
+        const teamsRef = collection(db, "teams");
+        const teamsSnap = await getDocs(teamsRef);
+        const userId = currentUser.uid;
   
-            if (
-              Array.isArray(teamData.memberIds) &&
-              teamData.memberIds.includes(userId)
-            ) {
-              const ip = teamData.ipAddress;
-              setgameteamIp(ip);
-              return;
-            }
+        for (const teamDoc of teamsSnap.docs) {
+          const teamData = teamDoc.data();
+  
+          if (
+            Array.isArray(teamData.memberIds) &&
+            teamData.memberIds.includes(userId)
+          ) {
+            const ip = teamData.ipAddress ?? null;
+            const id = teamDoc.id;
+  
+            setgameteamIp(ip);
+            setGameTeamId(id);
+            break;
           }
+        }
   
+        if (!gameTeamId) {
           console.warn("User not found in any team");
           setgameteamIp(null);
-        } catch (error) {
-          console.error("Error fetching teams:", error);
-          setgameteamIp(null);
+          return;
         }
-      } else {
-        setgameteamIp(null);
-      }
-    });
   
-    // Cleanup the auth listener when the component unmounts
-    return () => unsubscribe();
-  }, [auth, db]);
-
-  
-  useEffect(() => {
-    if (!auth.currentUser || !gameTeamId) return; // wait until both are ready
-  
-    const fetchOpponentIp = async () => {
-      try {
+        // Fetch opponent teams in the same session
         const sessionRef = collection(db, "sessions");
         const sessionSnap = await getDocs(sessionRef);
-        const teamId = gameTeamId;
   
         for (const sessionDoc of sessionSnap.docs) {
           const sessionData = sessionDoc.data();
   
-          if (sessionData.teamIds.includes(teamId) && sessionData.started) {
-            const opponentTeamId = sessionData.teamIds.find((id: any) => id !== teamId);
+          if (sessionData.teamIds?.includes(gameTeamId) && sessionData.started) {
+            const opponentIds = sessionData.teamIds.filter(
+              (id: string) => id !== gameTeamId
+            );
   
-            const opponentTeamRef = doc(db, "teams", opponentTeamId);
-            const opponentTeamSnap = await getDoc(opponentTeamRef);
+            const opponentIps: string[] = [];
   
-            if (opponentTeamSnap.exists()) {
-              const opponentData = opponentTeamSnap.data();
-              setgameopponenentIp(opponentData.ipAddress ?? null);
-              return;
+            for (const opponentId of opponentIds) {
+              const opponentTeamRef = doc(db, "teams", opponentId);
+              const opponentTeamSnap = await getDoc(opponentTeamRef);
+  
+              if (opponentTeamSnap.exists()) {
+                const opponentData = opponentTeamSnap.data();
+                if (opponentData.ipAddress) {
+                  opponentIps.push(opponentData.ipAddress);
+                }
+              }
             }
+  
+            setgameopponenentIds(opponentIds);
+            setgameopponenentIps(opponentIps);
+            return;
           }
         }
   
-        setgameopponenentIp(null);
+        // No session found
+        setgameopponenentIds([]);
+        setgameopponenentIps([]);
       } catch (error) {
-        console.error("Error fetching opponent IP:", error);
-        setgameopponenentIp(null);
+        console.error("Error fetching team or opponent data:", error);
+        setgameteamIp(null);
+        setgameopponenentIds([]);
+        setgameopponenentIps([]);
       }
-    };
+    });
   
-    fetchOpponentIp();
-  }, [auth.currentUser, gameTeamId]); 
+    return () => unsubscribe();
+  }, [auth.currentUser, gameTeamId]);
 
   const handleLeaveClan = async () => {
     if (!currentUser || !userClan) return;
@@ -278,6 +273,56 @@ const Dashboard = () => {
       console.error("User not signed in.");
       return;
     }
+
+    try {
+      const token = await currentUser.getIdToken();
+      const sessionId = gameSessionId;
+      const teamId = gameTeamId;
+      const userId = uid;
+
+      if (!sessionId || !teamId || !userId) {
+        console.error("Missing required IDs for config download.");
+        return;
+      }
+
+      const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${userId}/${token}`;
+
+      const response = await fetch(url, { method: "GET" });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch config file: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+      const configText = data.config;
+
+      // Create a Blob so the browser can download it
+      const blob = new Blob([configText], { type: "text/plain" });
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // Create a hidden <a> element to trigger the download
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${data.username || "vpn-config"}.conf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+
+      console.log("Config downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading config:", error);
+    }
+  };
+
+  const showDownloadConfig = async () => {
+    if (!currentUser) {
+      console.error("User not signed in.");
+      return;
+    }
   
     try {
       const token = await currentUser.getIdToken();
@@ -286,13 +331,12 @@ const Dashboard = () => {
       const userId = uid;
   
       if (!sessionId || !teamId || !userId) {
-        console.error("Missing required IDs for config download.");
+        console.error("Missing required IDs for config.");
         return;
       }
   
       const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${userId}/${token}`;
-  
-      const response = await fetch(url, { method: "GET" });
+      const response = await fetch(url);
   
       if (!response.ok) {
         console.error(`Failed to fetch config file: ${response.status}`);
@@ -300,26 +344,9 @@ const Dashboard = () => {
       }
   
       const data = await response.json();
-      const configText = data.config;
-  
-      // Create a Blob so the browser can download it
-      const blob = new Blob([configText], { type: "text/plain" });
-      const blobUrl = window.URL.createObjectURL(blob);
-  
-      // Create a hidden <a> element to trigger the download
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `${data.username || "vpn-config"}.conf`;
-      document.body.appendChild(a);
-      a.click();
-  
-      // Cleanup
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(blobUrl);
-  
-      console.log("Config downloaded successfully!");
+      setVpnConfig(data.config); // store config text in state
     } catch (error) {
-      console.error("Error downloading config:", error);
+      console.error("Error fetching VPN config:", error);
     }
   };
   
@@ -411,6 +438,59 @@ const Dashboard = () => {
       console.error('Navigation failed:', error);
     }
   };
+
+  {/* Used https://chatgpt.com/c/68f5c5b3-a4bc-8321-a7e6-7f4cd853bb37 to assist with managing ips.*/}
+  interface GameIpTableProps {
+    gameTeamId: string | null;
+    gameTeamIp: string | null;
+    gameOpponentIps: string[];
+  }
+  
+  const GameIpTable: React.FC<GameIpTableProps> = ({
+    gameTeamId,
+    gameTeamIp,
+    gameOpponentIps,
+  }) => {
+    if (!gameTeamId) return null;
+  
+    const allTeamIps = [gameTeamIp, ...gameOpponentIps].filter(Boolean);
+    const systems = ["CyberNote", "CyberBank", "CyberUni", "CyberFreeRam"];
+  
+    const rows = systems.map((systemName) => ({
+      system: systemName,
+      teamIps: allTeamIps.map((ip) => ip || "0.0.0.0"),
+    }));
+  
+    return (
+      <TableContainer component={Paper} className="mt-6">
+        <Table sx={{ minWidth: 650, backgroundColor: "black", color: "white" }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: "#111111" }}>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>System Name</TableCell>
+              {allTeamIps.map((_: any, index: number) => (
+                <TableCell key={index} align="right" sx={{ color: "white", fontWeight: "bold" }}>
+                  {index === 0 ? "Your Team" : `Team ${index + 1}`}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row, rowIndex) => (
+              <TableRow key={rowIndex} sx={{ backgroundColor: "#2a2a2a" }}>
+                <TableCell sx={{ color: "white" }}>{row.system}</TableCell>
+                {row.teamIps.map((ip, colIndex) => (
+                  <TableCell key={colIndex} align="right" sx={{ color: "white" }}>
+                    {ip}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+  
 
   return (
     <>
@@ -593,71 +673,21 @@ const Dashboard = () => {
                         </button>
                       </div>
                     </div>
-
-                    {/* Opponent IP Card */}
-                    <div className="group bg-gradient-to-br from-[#2a2a2a] to-[#252525] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-400 mb-1">Opponent IP Address</p>
-                          <p className="text-lg font-mono font-bold text-green-500 truncate">
-                            {gameopponentIp}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleCopy(gameopponentIp)}
-                          className="flex-shrink-0 p-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 active:scale-95"
-                          title="Copy Opponent IP"
-                        >
-                          <FaRegCopy className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
 
             {/* Table for game ips */}
-            {gameTeamId !== '' && (
-            <TableContainer component={Paper} className="mt-6">
-              <Table sx={{ minWidth: 650, backgroundColor: 'black', color: 'white' }} aria-label="Game IP Table">
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: '#111111' }}>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }}>Team Name</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team One</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team Two</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team Three</TableCell>
-                    <TableCell sx={{ color: 'white', fontWeight: 'bold' }} align="right">Team Four</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rows.map((row) => (
-                    <TableRow
-                      key={row.teamname}
-                      sx={{ 
-                        '&:last-child td, &:last-child th': { border: 0 },
-                        backgroundColor: '#2a2a2a', 
-                        color: 'white',
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      <TableCell component="th" scope="row" sx={{ color: 'white' }}>
-                        {row.teamname}
-                      </TableCell>
-                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberBattles}</TableCell>
-                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberBank}</TableCell>
-                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberUni}</TableCell>
-                      <TableCell align="right" sx={{ color: 'white' }}>{row.cyberFreeRam}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            {gameTeamId && (
+              <GameIpTable
+                gameTeamId={gameTeamId}
+                gameTeamIp={gameteamIp}
+                gameOpponentIps={gameopponentIps || []}
+              />
             )}
-
-              
+                  
             </div>
 
-            
 
             {/* JWT Display Widget */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
@@ -683,16 +713,51 @@ const Dashboard = () => {
               Download VPN Configuration
             </h3>
             <button
-              onClick={handleDownloadConfig}
+              onClick={showDownloadConfig}
               className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
             >
-              Download
+              Show VPN Config
             </button>
+            {vpnConfig && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-[#1e1e1e] text-white p-6 rounded-xl w-11/12 max-w-4xl relative flex flex-col gap-6">
+              
+              {/* Top section: textarea + QR code */}
+              <div className="flex flex-col md:flex-row gap-0">
+                <textarea
+                  readOnly
+                  value={vpnConfig}
+                  className="flex-1 p-4  border-gray-700 rounded-md font-mono text-sm text-yellow-400 focus:outline-none"
+                  rows={15}
+                />
+                <div className="flex-1 flex items-center justify-center p-4 rounded-md">
+                  <QRCode value={vpnConfig} />
+                </div>
+              </div>
+
+              {/* Download Config Button underneath */}
+              <div className="flex justify-center">
+                <button
+                  className="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700 font-bold"
+                  onClick={handleDownloadConfig}
+                >
+                  Download Config
+                </button>
+              </div>
+
+              {/* Close button */}
+              <button
+                className="absolute top-4 right-4 px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 font-bold"
+                onClick={() => setVpnConfig(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
           </div>
         )}
         </div>
-        
-            
 
             {/* Join a clan */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
@@ -773,4 +838,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
