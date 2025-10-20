@@ -98,6 +98,18 @@ async function updateFlag(teamId: string, flag: string): Promise<void> {
 }
 
 /**
+ * Increments the total number of flags injections attempted for a team in Firebase.
+ * @param {string} teamId - The ID of the team.
+ * @returns {Promise<void>} A promise that resolves once the database update is complete.
+ */
+async function updateTotal(teamId: string): Promise<void> {
+  const teamRef = db.doc(`teams/${teamId}`);
+  await teamRef.update({
+    totalCount: FieldValue.increment(1),
+  });
+}
+
+/**
  * Increments the `downCount` in firebase to indicate a failed flag injection.
  * @param {string} teamId - The ID of the team.
  * @returns {Promise<void>} A promise that resolves once the database update is complete.
@@ -114,10 +126,11 @@ async function updateDown(teamId: string): Promise<void> {
  * The main execution loop. This function runs indefinitely, performing the following steps:
  * 1. Iterates through a list of endpoints.
  * 2. For each endpoint, generates a new flag.
- * 3. Attempts to inject the flag at the endpoint.
- * 4. If successful, it updates the valid flags in Firestore.
- * 5. If it fails, it increments the team's downCount in Firestore.
- * 6. Waits for a random delay between 2 to 3 minutes before repeating the process.
+ * 3. Updates the total flag injection attempts in Firestore.
+ * 4. Attempts to inject the flag at the endpoint.
+ * 5. If successful, it updates the valid flags in Firestore.
+ * 6. If it fails, it increments the team's downCount in Firestore.
+ * 7. Waits for a random delay between 2 to 3 minutes before repeating the process.
  * @param {Array<Team>} teams - An array of Team interfaces.
  * @returns {Promise<void>} This function runs in an infinite loop and does not resolve.
  */
@@ -134,8 +147,9 @@ export async function flagService(
   }
 
   const endPoint = `http://${scoringBotIp}:8080/inject`;
+  const port = '5000';
 
-  console.log('Flag service started');
+  console.log('Flag service started for', teams[0].sessionId);
   while (await isSessionActive(teams[0].sessionId)) {
     for (const team of teams) {
       let flag = genFlag('cybrbtls', false);
@@ -144,7 +158,8 @@ export async function flagService(
         if (!team.ipAddress) {
           throw new Error('No IP address');
         }
-        const port = '5000';
+
+        await updateTotal(team.id);
         if (!(await sendFlag(endPoint, flag, team.ipAddress, port))) {
           throw new Error('Flag injection failed');
         }

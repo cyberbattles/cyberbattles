@@ -34,6 +34,10 @@ export interface Team {
   ipAddress: string | null;
   /** How many times the flag bot has failed to submit flags for this team. */
   downCount: number;
+  /** The total number of times the flag bot has tried to insert flags for this team. */
+  totalCount: number;
+  /** The total score of the team. */
+  totalScore: number;
   /** The list of active flags for this team. */
   activeFlags: string[];
 }
@@ -124,6 +128,8 @@ export interface DockerHealth {
  * An interface representing the response from a flag submission request.
  */
 export interface FlagResponse {
+  /** Whether the flag insertion was successful or not. */
   status: string;
+  /** If the flag insertion failed, the reason for the failure. */
   message: string | null;
 }
