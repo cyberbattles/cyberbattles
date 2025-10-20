@@ -456,7 +456,7 @@ const Dashboard = () => {
             <h1 className="text-2xl font-bold">Welcome, {currentUsername}!</h1>
             <div className="flex gap-4">
               <button
-                className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-450 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                 onClick={handleLogout}
               >
                 Logout
@@ -475,13 +475,13 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleGoToJoin}
-                      className="group px-6 py-2.5 bg-gradient-to-r from-orange-600 to-orange-500 rounded-lg hover:from-orange-500 hover:to-orange-450 transition-all duration-200 font-semibold shadow-lg shadow-orange-900/30 hover:shadow-orange-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                      className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
                     >
                       Join a Game
                     </button>
                     <button
                       onClick={handleGoToCreation}
-                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-450 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                     >
                       Create a Game
                     </button>
@@ -493,7 +493,7 @@ const Dashboard = () => {
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleGoToAdmin}
-                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-450 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                     >
                       Game Lobby Information
                     </button>
@@ -509,7 +509,7 @@ const Dashboard = () => {
                     </h3>
                     <button
                       onClick={handleGoToLobby}
-                      className="group px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg hover:from-blue-500 hover:to-blue-450 transition-all duration-200 font-semibold shadow-lg shadow-blue-900/30 hover:shadow-blue-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
                     >
                       <span className="flex items-center gap-2">
                         Go to Game Lobby
@@ -632,7 +632,7 @@ const Dashboard = () => {
               </h3>
               <button
                 onClick={handleGetJwt}
-                className="group px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:from-green-500 hover:to-green-450 transition-all duration-200 font-semibold shadow-lg shadow-green-900/30 hover:shadow-green-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
               >
                 Click to Reveal
               </button>
@@ -650,7 +650,7 @@ const Dashboard = () => {
             </h3>
             <button
               onClick={handleDownloadConfig}
-              className="group px-6 py-2.5 bg-gradient-to-r from-green-600 to-green-500 rounded-lg hover:from-green-500 hover:to-green-450 transition-all duration-200 font-semibold shadow-lg shadow-green-900/30 hover:shadow-green-900/50 hover:scale-[1.02] active:scale-[0.98]"
+              className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
             >
               Download
             </button>
@@ -700,7 +700,7 @@ const Dashboard = () => {
                   </div>
                   <button
                     onClick={handleLeaveClan}
-                    className="group px-6 py-2.5 bg-gradient-to-r from-red-600 to-red-500 rounded-lg hover:from-red-500 hover:to-red-450 transition-all duration-200 font-semibold shadow-lg shadow-red-900/30 hover:shadow-red-900/50 hover:scale-[1.02] active:scale-[0.98]"
+                    className="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 transition font-bold"
                   >
                     Leave Clan
                   </button>
