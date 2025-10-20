@@ -1,7 +1,6 @@
 'use client';
 import React, {useState, useEffect} from 'react';
-import {auth,db} from '@/lib/firebase';
-import {signOut} from 'firebase/auth';
+import {db} from '@/lib/firebase';
 import {useRouter} from 'next/navigation';
 import PcapViewer from '@/components/PcapViewer';
 import {
@@ -24,7 +23,6 @@ import DownloadIcon from "@/public/images/download.png";
 
 
 const NetworkTraffic = () => {
-  const router = useRouter();
   const [fileUrl, setFileUrl] = useState('');
   const [, setJwt] = useState<string | null>(null);
   const {currentUser} = useAuth();
