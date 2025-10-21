@@ -183,14 +183,14 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const snapshot = await getDocs(collection(db, 'leaderboard'));
+      const snapshot = await getDocs(collection(db, 'clans'));
       const data = snapshot.docs.map(doc => {
         const d = doc.data();
         return {
           id: doc.id,
-          teamName: d.teamName,
+          teamName: d.clanTag,
           country: d.country,
-          points: d.totalPoints,
+          points: d.totalPoints || 0,
           playedMatches: d.playedMatches,
         };
       });
