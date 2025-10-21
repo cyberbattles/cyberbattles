@@ -120,6 +120,11 @@ const JoinTeam = () => {
           memberIds: arrayUnion(currentUser.uid),
         });
 
+        // Add the team ID to the user's doc
+        await updateDoc(userRef, {
+          teamId: teamId,
+        });
+
         setJoinMessage({
           type: 'success',
           text: `Successfully joined team: ${teamData.name}!`,

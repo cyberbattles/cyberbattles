@@ -126,7 +126,7 @@ function Navbar() {
             )}
           </div>
           {currentUser && (
-            <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
+            <Link href="/account" className="w-16 h-16 sm:w-24 sm:h-24">
               <Image
                 src={photoURL}
                 width="100"
