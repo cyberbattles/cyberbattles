@@ -739,7 +739,7 @@ const Dashboard = () => {
                 sudo wg-quick up ~/Downloads/{currentUsername || "vpn-config"}.conf<br />
                 ssh -o StrictHostKeyChecking=no \ <br />
                 -o UserKnownHostsFile=/dev/null<br />
-                me2@10.12.0.3<br />
+                {currentUsername || "null"}@10.12.0.3<br />
                 </div>
               </div>
 
