@@ -14,15 +14,14 @@ def getDb():
 
 def checkUserCookie():
     username = request.cookies.get("username")
-    password = request.cookies.get("password")
 
-    if not username or not password:
+    if not username:
         return False
     
-    sql = "SELECT id FROM users WHERE id = ? AND passwd = ?"
+    sql = "SELECT id FROM users WHERE id = ?"
     con = getDb()
     cur = con.cursor()
-    result = cur.execute(sql, [username, password]).fetchone()
+    result = cur.execute(sql, [username]).fetchone()
     con.close()
     
     return result is not None
@@ -72,7 +71,14 @@ def signupPage():
             """
 
         # TODO check valid character 
-        whitelist = "abcdefg"
+        whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+        
+        if not all(c in whitelist for c in user):
+            con.close()
+            return """
+                <p>Username must be letters, ('-' and '_' are allowed)</p>
+                <a href="/signup"><button type="button">back</button></a>
+            """
 
         sql = "insert into users (id, passwd, note) values (?, ?, ?)"
         cur.execute(sql, [user, passwd, ""])
@@ -92,16 +98,39 @@ def signupPage():
             <label>Password: </lable>
             <input type=text name=passwd><br>
             <input type="submit" name="signup" value="Signup"> 
+            <a href="/">back</a>
         </form>
     """
 
 @app.route("/home", methods=["POST", "GET"])
 def home():
+
+    def home_page(username):
+        return f"""
+            <div style="display:flex; flex-direction: column; margin: 5rem;">
+
+                <div style="padding: 15px;display:flex; flex-direction: row; align-items: center"> 
+                    <div style="margin-right: 20px;">
+                        <h1> {username}'s note </h1>
+                    </div>
+                    <a href="/logout"><input type="button" value="logout"></a>
+                </div>
+                <div style="box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px; padding: 2rem;">
+                    <form action="/note" method="post" style="margin:0px;"> 
+                        <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
+
+                        <br><br>
+                    
+                        <input type="submit" name="save" value="Save"> 
+                    </form>
+                </div>
+            </div>
+        """
+
+
     if request.method == "POST":
         username = request.form.get("user")
         passwd = request.form.get("passwd")
-
-        print(username, passwd)
 
         sql = "SELECT note FROM users WHERE id = '%s' AND passwd = '%s'" % (username, passwd)
 
@@ -117,19 +146,8 @@ def home():
             """
         
         note = result['note']
-        print("note: ", note)
 
-        page = f"""
-            <h1> {username}'s note </h1>
-            <form action="/note" method="post"> 
-                <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
-
-                <br><br>
-            
-                <input type="submit" name="save" value="Save"> 
-            </form>
-        """
-
+        page = home_page(username)
         response = make_response(page)
         response.set_cookie("username", username)
         response.set_cookie("password", passwd)
@@ -139,28 +157,26 @@ def home():
             return redirect("/")
 
         username = request.cookies.get("username")
-        password = request.cookies.get("password")
+        # password = request.cookies.get("password")
 
-        sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"
+        # sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"
+        sql = "SELECT note FROM users WHERE id = ?"
         con = getDb()
         cur = con.cursor()
-        result = cur.execute(sql, [username, password]).fetchone()
+        result = cur.execute(sql, [username]).fetchone()
         con.close()
         note = result['note'] if result is not None else ""
-        print(note)
 
-        page = f"""
-            <h1> {username}'s note </h1>
-            <form action="/note" method="post"> 
-                <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
-
-                <br><br>
-            
-                <input type="submit" name="save" value="Save"> 
-            </form>
-        """
+        page = home_page(username)
         response = make_response(page)
         return response
+
+@app.route("/logout")
+def logout():
+    response = make_response(redirect('/'))
+    response.set_cookie("username", '', expires = 0)
+    response.set_cookie("password", '', expires = 0)
+    return response
 
 @app.route("/note", methods=["POST"])
 def insertNote():
