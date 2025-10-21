@@ -126,6 +126,7 @@ const CreateClan = () => {
         memberIds: [currentUser.uid], // Creator is automatically a member
         createdAt: new Date(),
         createdBy: currentUser.uid,
+        totalScore: 0,
       };
 
       // Write the clan document to Firestore
