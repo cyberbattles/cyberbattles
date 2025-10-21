@@ -15,9 +15,9 @@ interface PcapViewerProps {
 export default function PcapViewer({
   src,
   lang = 'en-us',
-  enableHexToggle = false,
+  enableHexToggle = true,
   showFullscreenBtn = false,
-  useCanvas = false
+  useCanvas = true
 }: PcapViewerProps) {
   const [isReady, setIsReady] = useState(false)
 
