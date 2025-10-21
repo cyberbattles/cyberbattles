@@ -71,17 +71,21 @@ const JoinTeam = () => {
         // Check if the user is already in another team
         const teamsRef = collection(db, 'teams');
         const teamsSnap = await getDocs(teamsRef);
+        let found = false;
         teamsSnap.forEach((teamDoc) => {
-          const teamData = teamDoc.data()
+          let teamData = teamDoc.data()
           if (teamData.memberIds.includes(currentUser.uid)) {
             setJoinMessage({
               type: 'error',
               text: 'You are already in another team.',
             });
-            setIsLoading(false);
-            return;
+            found = true;
           }
         });
+        if (found) {
+          setIsLoading(false);
+          return;
+        }
 
         // Check the session values
         const sessionRef = doc(db, 'sessions', teamData.sessionId);
