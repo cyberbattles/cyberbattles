@@ -45,7 +45,7 @@ const Lobby = () => {
 
         console.log('getting sceneario');
 
-        // Check if the session has started
+        // Check if the session has started/ended
         if (sessionSnap.data().started) {
           console.log('session has already started');
           setGameStatus('started');

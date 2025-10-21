@@ -384,7 +384,7 @@ const Admin = () => {
     }
     setGameStatus('ending');
     await cleanupSession();
-    router.push('/dashboard');
+    setGameStatus('ended')
   };
 
   // Set the teams, players, and scenario hooks
@@ -431,7 +431,7 @@ const Admin = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : gameStatus === 'ending'
+                        : (gameStatus === 'ending' || gameStatus === 'ended')
                           ? 'text-red-400'
                           : 'text-green-400'
                   }`}
