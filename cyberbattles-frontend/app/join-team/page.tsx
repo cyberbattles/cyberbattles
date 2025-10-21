@@ -2,7 +2,7 @@
 
 import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
-import {doc, getDoc, updateDoc, arrayUnion} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs, updateDoc, arrayUnion} from 'firebase/firestore';
 import {db} from '@/lib/firebase';
 import {useAuth} from '@/components/Auth';
 
@@ -68,6 +68,53 @@ const JoinTeam = () => {
           return;
         }
 
+        // Check if the user is already in another team
+        const teamsRef = collection(db, 'teams');
+        const teamsSnap = await getDocs(teamsRef);
+        let found = false;
+        teamsSnap.forEach((teamDoc) => {
+          let teamData = teamDoc.data()
+          if (teamData.memberIds.includes(currentUser.uid)) {
+            setJoinMessage({
+              type: 'error',
+              text: 'You are already in another team.',
+            });
+            found = true;
+          }
+        });
+        if (found) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Check the session values
+        const sessionRef = doc(db, 'sessions', teamData.sessionId);
+        const sessionSnap = await getDoc(sessionRef);
+        if (sessionSnap.exists()) {
+          const sessionData = sessionSnap.data();
+
+          // Check if session has started
+          if (sessionData.started) {
+            setJoinMessage({
+              type: 'error',
+              text: "This team's session has already started. Please join another team.",
+            });
+            setIsLoading(false);
+            return;
+          }
+
+          // Check if the joining user is the session admin
+          if (sessionData.adminUid == currentUser.uid) {
+            setJoinMessage({
+              type: 'error',
+              text: 'Session admins cannot join their own teams.',
+            });
+            setIsLoading(false);
+            return;
+          }
+          
+        }
+
         // Add the user's UID to the memberIds array
         await updateDoc(teamRef, {
           memberIds: arrayUnion(currentUser.uid),
@@ -77,6 +124,7 @@ const JoinTeam = () => {
           type: 'success',
           text: `Successfully joined team: ${teamData.name}!`,
         });
+        localStorage.setItem('sessionId', teamData.sessionId);
         setTeamId('');
 
         // Redirects to lobby page after join team
