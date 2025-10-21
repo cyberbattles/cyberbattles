@@ -4,6 +4,8 @@ import {auth} from '@/lib/firebase';
 import {signOut} from 'firebase/auth';
 import {useRouter} from 'next/navigation';
 
+import FlagPopup from '@/components/FlagPopup';
+
 const NetworkTraffic = () => {
   // TODO: Integrate the API
 
@@ -200,7 +202,7 @@ const NetworkTraffic = () => {
               </div>
             ) : (
               <div className="w-96 bg-[#1e1e1e] border-l border-gray-700 flex items-center justify-center">
-                <div className="text-center text-gray-400 p-8">
+                <div className="tPulledext-center text-gray-400 p-8">
                   <div className="text-lg font-semibold mb-2">
                     No Packet Selected
                   </div>
@@ -212,6 +214,9 @@ const NetworkTraffic = () => {
             )}
           </div>
         </main>
+        <div>
+          <FlagPopup />
+        </div>
       </div>
     </>
   );
