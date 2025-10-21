@@ -25,10 +25,12 @@
   },
   "homepage": "https://github.com/cyberbattles/cyberbattles#readme",
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/cors": "^2.8.19",
     "@types/jsbn": "^1.2.33",
     "@types/jszip": "^3.4.0",
     "@types/random-words": "^1.1.4",
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dockerode": "^4.0.7",
     "express": "^5.1.0",

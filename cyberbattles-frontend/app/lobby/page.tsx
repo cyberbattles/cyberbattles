@@ -10,6 +10,8 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  updateDoc,
+  arrayRemove,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
@@ -60,6 +62,30 @@ const Lobby = () => {
       }
     } catch (error) {
       console.log('Failed', error);
+    }
+  }
+
+  async function removeFromTeam() {
+    if (!currentUser) return;
+  
+    const teamsQuery = query(
+      collection(db, "teams"),
+      where("memberIds", "array-contains", currentUser.uid)
+    );
+  
+    const querySnapshot = await getDocs(teamsQuery);
+  
+    if (!querySnapshot.empty) {
+      const teamDoc = querySnapshot.docs[0];
+      const teamRef = doc(db, "teams", teamDoc.id);
+  
+      await updateDoc(teamRef, {
+        memberIds: arrayRemove(currentUser.uid),
+      });
+  
+      console.log("Successfully removed from team:", teamDoc.id);
+    } else {
+      console.log("User is not currently in a team.");
     }
   }
 
@@ -188,7 +214,24 @@ const Lobby = () => {
     }
   };
 
+  const handlePushShell = async () => {
+    try {
+      router.push('/shell');
+    } catch (error) {
+      console.error('Shell push failed:', error);
+    }
+  };
+
+  const handlePushTraffic = async () => {
+    try {
+      router.push('/network-traffic');
+    } catch (error) {
+      console.error('Network push failed:', error);
+    }
+  };
+
   const handleLeaveLobby = () => {
+    removeFromTeam();
     router.push('/dashboard');
   };
 
@@ -388,7 +431,7 @@ const Lobby = () => {
 
             {/* Teams */}
             <div className="p-6 rounded-2xl col-span-2 ">
-              <h2 className="text-2xl font-semibold text-green-400">
+              <h2 className=" text-2xl font-semibold text-green-400 -ml-5">
                 {teamId && team.name}
               </h2>
             </div>
@@ -397,7 +440,7 @@ const Lobby = () => {
             {team && (
               <div className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-2">
                 <div className="flex flex-row justify-between items-center">
-                  <h2 className="text-xl font-semibold ">Team members</h2>
+                  <h2 className="text-xl font-semibold ">Team Members</h2>
                 </div>
 
               <div className="flex flex-col gap-5">
@@ -423,6 +466,18 @@ const Lobby = () => {
                 </div>
               </div>
             )}
+            <button
+                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
+                onClick={handlePushShell}
+              >
+                Shell
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
+                onClick={handlePushTraffic}
+              >
+                Network Traffic
+              </button>
           </section>
         </main>
       </div>
