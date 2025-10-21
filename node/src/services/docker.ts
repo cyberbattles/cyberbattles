@@ -278,7 +278,6 @@ export async function createTeamContainer(
       },
       Binds: [
         `${path.resolve(__dirname, `../../../wg-configs/${sessionId}/container-${teamId}/wg0.conf`)}:/etc/wireguard/wg0.conf:ro,z`,
-        `${path.resolve(__dirname, '../../../challenge-setup-script/supervisord.conf')}:/etc/supervisord.conf:ro,z`,
       ],
       RestartPolicy: {Name: 'unless-stopped'},
     },
@@ -463,4 +462,32 @@ export async function getDockerHealth(): Promise<DockerHealth> {
   } catch (_) {}
 
   return result;
+}
+
+/**
+ * Retrieves the internal IP address of a given container.
+ * @param containerId The ID of the container.
+ * @returns The IP address of the first network found, or null if not found.
+ */
+export async function getContainerIpAddress(
+  containerId: string,
+): Promise<string | null> {
+  try {
+    const container = docker.getContainer(containerId);
+
+    const data = await container.inspect();
+
+    const networks = data.NetworkSettings.Networks;
+
+    const networkDetails = Object.values(networks);
+
+    if (networkDetails.length > 0 && networkDetails[0]?.IPAddress) {
+      return networkDetails[0].IPAddress;
+    }
+
+    return null;
+  } catch (error) {
+    console.error(`Error inspecting container '${containerId}':`);
+    return null;
+  }
 }
