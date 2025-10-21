@@ -1,21 +1,29 @@
 'use client';
 import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
-import {User, onAuthStateChanged, signOut} from 'firebase/auth';
+import {onAuthStateChanged, signOut} from 'firebase/auth';
 import {FaRegCopy} from 'react-icons/fa';
 import {
   doc,
-  getDoc,
   updateDoc,
-  arrayUnion,
   collection,
   where,
   query,
   getDocs,
   arrayRemove,
-  Firestore,
+  onSnapshot,
+  getDoc,
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
+import {useAuth} from '@/components/Auth';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import QRCode from 'react-qr-code';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -23,36 +31,31 @@ const Dashboard = () => {
   const [showJwt, setShowJwt] = useState(false);
 
   // For clan
-  const [user, setUser] = useState<User | null>(null);
+  const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
-  const [gameteamId, setgameteamId] = useState<any>(null);
+  const [gameTeamId, setGameTeamId] = useState<any>(null);
+  const [gameSessionId, setSessionId] = useState<string>('');
   const [clanLoading, setClanLoading] = useState(true);
   const [leaveMessage, setLeaveMessage] = useState({type: '', text: ''});
   const [uid, setUid] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [currentUsername, setcurrentUsername] = useState('User');
-
-  // New state for the team join feature
-  const [teamId, setTeamId] = useState('');
-  const [joinMessage, setJoinMessage] = useState({type: '', text: ''});
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, currentUser => {
-      if (currentUser) {
-        setUser(currentUser);
-        setUid(currentUser.uid);
-        localStorage.setItem('currentuid', currentUser.uid);
-      } else {
-        setUser(null);
-        setUid(null);
-        localStorage.removeItem('currentuid');
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  const [gameopponentIps, setgameopponenentIps] = useState<any>(null);
+  const [gameopponentIds, setgameopponenentIds] = useState<any>(null);
+  const [gameteamIp, setgameteamIp] = useState<any>(null);
+  const [vpnConfig, setVpnConfig] = useState<string | null>(null);
+  
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
+    if (currentUser) {
+      setUid(currentUser.uid);
+      localStorage.setItem('currentuid', currentUser.uid);
+    } else {
+      setUid(null);
+      localStorage.removeItem('currentuid');
+    }
+
+    const updateUsername = async () => {
       if (currentUser) {
         try {
           const q = query(
@@ -74,10 +77,10 @@ const Dashboard = () => {
       } else {
         console.log('No user signed in');
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    updateUsername();
+  }, [currentUser]);
 
   useEffect(() => {
     const checkUserClan = async () => {
@@ -111,10 +114,10 @@ const Dashboard = () => {
     checkUserClan();
   }, [uid]);
 
-  const handleCopy = async () => {
-    if (gameteamId) {
+  const handleCopy = async (text:string) => {
+    if (gameTeamId) {
       try {
-        await navigator.clipboard.writeText(gameteamId);
+        await navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } catch (error) {
@@ -123,8 +126,92 @@ const Dashboard = () => {
     }
   };
 
+
+  {/* Use Effect function set up for getting team and opponnent IP*/}
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        setgameteamIp(null);
+        setGameTeamId(null);
+        return;
+      }
+  
+      try {
+        // Fetch user's team
+        const teamsRef = collection(db, "teams");
+        const teamsSnap = await getDocs(teamsRef);
+        const userId = currentUser.uid;
+  
+        for (const teamDoc of teamsSnap.docs) {
+          const teamData = teamDoc.data();
+  
+          if (
+            Array.isArray(teamData.memberIds) &&
+            teamData.memberIds.includes(userId)
+          ) {
+            const ip = teamData.ipAddress ?? null;
+            const id = teamDoc.id;
+  
+            setgameteamIp(ip);
+            setGameTeamId(id);
+            break;
+          }
+        }
+  
+        if (!gameTeamId) {
+          console.warn("User not found in any team");
+          setgameteamIp(null);
+          return;
+        }
+  
+        // Fetch opponent teams in the same session
+        const sessionRef = collection(db, "sessions");
+        const sessionSnap = await getDocs(sessionRef);
+  
+        for (const sessionDoc of sessionSnap.docs) {
+          const sessionData = sessionDoc.data();
+  
+          if (sessionData.teamIds?.includes(gameTeamId) && sessionData.started) {
+            const opponentIds = sessionData.teamIds.filter(
+              (id: string) => id !== gameTeamId
+            );
+  
+            const opponentIps: string[] = [];
+  
+            for (const opponentId of opponentIds) {
+              const opponentTeamRef = doc(db, "teams", opponentId);
+              const opponentTeamSnap = await getDoc(opponentTeamRef);
+  
+              if (opponentTeamSnap.exists()) {
+                const opponentData = opponentTeamSnap.data();
+                if (opponentData.ipAddress) {
+                  opponentIps.push(opponentData.ipAddress);
+                }
+              }
+            }
+  
+            setgameopponenentIds(opponentIds);
+            setgameopponenentIps(opponentIps);
+            return;
+          }
+        }
+  
+        // No session found
+        setgameopponenentIds([]);
+        setgameopponenentIps([]);
+      } catch (error) {
+        console.error("Error fetching team or opponent data:", error);
+        setgameteamIp(null);
+        setgameopponenentIds([]);
+        setgameopponenentIps([]);
+      }
+    });
+  
+    return () => unsubscribe();
+  }, [auth.currentUser, gameTeamId]);
+
   const handleLeaveClan = async () => {
-    if (!user || !userClan) return;
+    if (!currentUser || !userClan) return;
 
     try {
       const clanRef = doc(db, 'clans', userClan.id);
@@ -164,9 +251,9 @@ const Dashboard = () => {
   };
 
   const handleGetJwt = async () => {
-    if (auth.currentUser) {
+    if (currentUser) {
       try {
-        const token = await auth.currentUser.getIdToken(true);
+        const token = await currentUser.getIdToken(true);
         setJwt(token);
         localStorage.setItem('token', jwt);
         setShowJwt(true);
@@ -179,43 +266,138 @@ const Dashboard = () => {
       console.error('No user is signed in.');
     }
   };
+  {/* Download Config Function */}
+  {/* https://stackoverflow.com/questions/50694881/how-to-download-file-in-react-js */}
+  const handleDownloadConfig = async () => {
+    if (!currentUser) {
+      console.error("User not signed in.");
+      return;
+    }
 
+    try {
+      const token = await currentUser.getIdToken();
+      const sessionId = gameSessionId;
+      const teamId = gameTeamId;
+      const userId = uid;
+
+      if (!sessionId || !teamId || !userId) {
+        console.error("Missing required IDs for config download.");
+        return;
+      }
+
+      const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${userId}/${token}`;
+
+      const response = await fetch(url, { method: "GET" });
+
+      if (!response.ok) {
+        console.error(`Failed to fetch config file: ${response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+      const configText = data.config;
+
+      // Create a Blob so the browser can download it
+      const blob = new Blob([configText], { type: "text/plain" });
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // Create a hidden <a> element to trigger the download
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${data.username || "vpn-config"}.conf`;
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(blobUrl);
+
+      console.log("Config downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading config:", error);
+    }
+  };
+
+  const showDownloadConfig = async () => {
+    if (!currentUser) {
+      console.error("User not signed in.");
+      return;
+    }
+  
+    try {
+      const token = await currentUser.getIdToken();
+      const sessionId = gameSessionId;
+      const teamId = gameTeamId;
+      const userId = uid;
+  
+      if (!sessionId || !teamId || !userId) {
+        console.error("Missing required IDs for config.");
+        return;
+      }
+  
+      const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${userId}/${token}`;
+      const response = await fetch(url);
+  
+      if (!response.ok) {
+        console.error(`Failed to fetch config file: ${response.status}`);
+        return;
+      }
+  
+      const data = await response.json();
+      setVpnConfig(data.config); // store config text in state
+    } catch (error) {
+      console.error("Error fetching VPN config:", error);
+    }
+  };
+  
+
+  // Listen for changes to the user's team document
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
-      if (currentUser) {
-        try {
-          const teamsRef = collection(db, 'teams');
-          const teamsSnap = await getDocs(teamsRef);
+    if (!currentUser) {
+      return;
+    }
 
-          const userId = currentUser.uid;
+    const teamsQuery = query(
+      collection(db, 'teams'),
+      where('memberIds', 'array-contains', currentUser.uid),
+    );
 
-          for (const teamDoc of teamsSnap.docs) {
-            const teamData = teamDoc.data();
-
-            if (
-              Array.isArray(teamData.memberIds) &&
-              teamData.memberIds.includes(userId)
-            ) {
-              console.log(`User found in team: ${teamData.name}`);
-              setgameteamId(teamDoc.id);
-              return;
-            }
-          }
-
-          console.warn('User not found in any team');
-          setgameteamId(null);
-        } catch (error) {
-          console.error('Error fetching teams:', error);
-          setgameteamId(null);
-        }
+    const unsubscribe = onSnapshot(teamsQuery, querySnapshot => {
+      if (!querySnapshot.empty) {
+        const teamDoc = querySnapshot.docs[0];
+        console.log("User's team updated:", teamDoc.id);
+        setGameTeamId(teamDoc.id);
       } else {
-        setgameteamId(null);
+        console.log('User is not currently in a team.');
+        setGameTeamId('');
       }
     });
 
-    // Cleanup the auth listener when the component unmounts
-    return () => unsubscribe();
-  }, [auth, db]);
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
+    const sessionQuery = query(
+      collection(db, 'sessions'),
+      where('teamIds', 'array-contains', gameTeamId),
+    );
+
+    const unsubscribe = onSnapshot(sessionQuery, querySnapshot => {
+      if (!querySnapshot.empty) {
+        const sessionDoc = querySnapshot.docs[0];
+        console.log("User's team updated:", sessionDoc.id);
+        setSessionId(sessionDoc.id);
+      } else {
+        console.log('User is not currently in a team.');
+        setSessionId('');
+      }
+    });
+  
+  return () => unsubscribe();
+  }, [gameTeamId]);
+
 
   const handleGoToJoin = () => {
     try {
@@ -249,99 +431,142 @@ const Dashboard = () => {
     }
   };
 
-  /**
-   * Handles the logic for a user to join a team.
-   */
-  const handleJoinTeam = async () => {
-    // Basic validation
-    if (!teamId) {
-      setJoinMessage({type: 'error', text: 'Please enter a Team ID.'});
-      return;
-    }
-    if (!auth.currentUser) {
-      setJoinMessage({
-        type: 'error',
-        text: 'You must be logged in to join a team.',
-      });
-      return;
-    }
-
-    // Clear previous messages and get user UID
-    setJoinMessage({type: '', text: ''});
-    const uid = auth.currentUser.uid;
-    const teamRef = doc(db, 'teams', teamId);
-
-    // Try to find and update the team document
+  const handleGoToLobby = () => {
     try {
-      const docSnap = await getDoc(teamRef);
-
-      if (docSnap.exists()) {
-        // Team was found, add the user's UID to the memberIds array
-        await updateDoc(teamRef, {
-          memberIds: arrayUnion(uid),
-        });
-        setJoinMessage({
-          type: 'success',
-          text: `Successfully joined team: ${docSnap.data().name}!`,
-        });
-        setTeamId('');
-      } else {
-        // Team with the given ID was not found
-        setJoinMessage({
-          type: 'error',
-          text: 'Team not found. Please check the ID and try again.',
-        });
-      }
+      router.push('/lobby');
     } catch (error) {
-      console.error('Error joining team:', error);
-      setJoinMessage({
-        type: 'error',
-        text: 'Could not join team. Please try again later.',
-      });
+      console.error('Navigation failed:', error);
     }
   };
+
+  {/* Used https://chatgpt.com/c/68f5c5b3-a4bc-8321-a7e6-7f4cd853bb37 to assist with managing ips.*/}
+  interface GameIpTableProps {
+    gameTeamId: string | null;
+    gameTeamIp: string | null;
+    gameOpponentIps: string[];
+  }
+  
+  const GameIpTable: React.FC<GameIpTableProps> = ({
+    gameTeamId,
+    gameTeamIp,
+    gameOpponentIps,
+  }) => {
+    if (!gameTeamId) return null;
+  
+    const allTeamIps = [gameTeamIp, ...gameOpponentIps].filter(Boolean);
+    const systems = ["CyberNote", "CyberBank", "CyberUni", "CyberFreeRam"];
+  
+    const rows = systems.map((systemName) => ({
+      system: systemName,
+      teamIps: allTeamIps.map((ip) => ip || "0.0.0.0"),
+    }));
+  
+    return (
+      <TableContainer component={Paper} className="mt-6">
+        <Table sx={{ minWidth: 650, backgroundColor: "black", color: "white" }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: "#111111" }}>
+              <TableCell sx={{ color: "white", fontWeight: "bold" }}>System Name</TableCell>
+              {allTeamIps.map((_: any, index: number) => (
+                <TableCell key={index} align="right" sx={{ color: "white", fontWeight: "bold" }}>
+                  {index === 0 ? "Your Team" : `Team ${index + 1}`}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((row, rowIndex) => (
+              <TableRow key={rowIndex} sx={{ backgroundColor: "#2a2a2a" }}>
+                <TableCell sx={{ color: "white" }}>{row.system}</TableCell>
+                {row.teamIps.map((ip, colIndex) => (
+                  <TableCell key={colIndex} align="right" sx={{ color: "white" }}>
+                    {ip}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+  
 
   return (
     <>
       {/* Fixed Navbar */}
 
       {/* Dashboard Layout */}
-      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
-        {/* Sidebar */}
-        <aside className="w-64 bg-[#1e1e1e] shadow-md">
-          <div className="p-6 text-xl font-bold border-b border-gray-700">
-            Dashboard
-          </div>
-          <nav className="p-6">
-            <ul className="space-y-4">
-              <li>
-                <a href="#" className="hover:text-blue-400">
-                  Overview
-                </a>
-              </li>
-              <li>
-                <a href="reports" className="hover:text-blue-400">
-                  Game Reports
-                </a>
-              </li>
-              <li>
-                <a href="analytics" className="hover:text-blue-400">
-                  Analytics
-                </a>
-              </li>
-              <li>
-                <a href="account" className="hover:text-blue-400">
-                  Account
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </aside>
+<div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
+  {/* Sidebar */}
+  <aside className="w-full md:w-72 bg-[#1e1e1e] shadow-2xl flex-shrink-0 border-r border-gray-800">
+    <div className="p-8 text-2xl font-bold border-b border-gray-700/50 tracking-tight">
+      Dashboard
+    </div>
+    <nav className="p-6">
+      <ul className="space-y-2">
+        <li>
+          <a 
+            href="#" 
+            className="flex items-center px-4 py-3 rounded-lg bg-blue-600 text-white font-bold transition-all duration-200 hover:bg-blue-500"
+          >
+            <span className="text-lg"></span>
+            Overview
+          </a>
+        </li>
+        <li>
+          <a 
+            href="shell" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
+          >
+            <span className="text-lg"></span>
+            Shell
+          </a>
+        </li>
+        <li>
+          <a 
+            href="network-traffic" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
+          >
+            <span className="text-lg"></span>
+            Traffic
+          </a>
+        </li>
+        <li>
+          <a 
+            href="reports" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800 hover:text-white"
+          >
+            <span className="text-lg opacity-0"></span>
+            Game Reports
+          </a>
+        </li>
+        <li>
+          <a 
+            href="analytics" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800 hover:text-white"
+          >
+            <span className="text-lg opacity-0"></span>
+            Analytics
+          </a>
+        </li>
+        <li>
+          <a 
+            href="account" 
+            className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800 hover:text-white"
+          >
+            <span className="text-lg opacity-0"></span>
+            Account Details
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8 overflow-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {/* Header */}
-          <header className="flex justify-between items-center mb-8">
+          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-2xl font-bold">Welcome, {currentUsername}!</h1>
             <div className="flex gap-4">
               <button
@@ -356,91 +581,113 @@ const Dashboard = () => {
           {/* Dashboard Widgets */}
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
-              <h3 className="text-lg font-semibold mb-2">
-                Join or Create Game
-              </h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={handleGoToJoin}
-                  className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
-                >
-                  Join a Game
-                </button>
-                <button
-                  onClick={handleGoToCreation}
-                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                >
-                  Create a Game
-                </button>
-              </div>
-              {joinMessage.text && (
-                <p
-                  className={`mt-3 text-sm ${
-                    joinMessage.type === 'success'
-                      ? 'text-green-400'
-                      : 'text-red-400'
-                  }`}
-                >
-                  {joinMessage.text}
-                </p>
-              )}
-              <h3 className="text-lg font-semibold mb-2">
-                <br />
-                Already a session admin?
-              </h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={handleGoToAdmin}
-                  className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-                >
-                  Game Lobby Information
-                </button>
-              </div>
-              {joinMessage.text && (
-                <p
-                  className={`mt-3 text-sm ${
-                    joinMessage.type === 'success'
-                      ? 'text-green-400'
-                      : 'text-red-400'
-                  }`}
-                >
-                  {joinMessage.text}
-                </p>
-              )}
-              {gameteamId && (
-                <div>
+              {gameTeamId === '' && (
+                <>
+                  <h3 className="text-lg font-semibold mb-2">
+                    Join or Create Game
+                  </h3>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleGoToJoin}
+                      className="px-4 py-2 bg-orange-700 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      Join a Game
+                    </button>
+                    <button
+                      onClick={handleGoToCreation}
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      Create a Game
+                    </button>
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">
                     <br />
-                    Current Team ID
+                    Already a session admin?
                   </h3>
-                  <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4 w-full max-w-[220px]">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="text-l font-bold text-green-600">
-                          {gameteamId}
-                        </h4>
-                      </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleGoToAdmin}
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      Game Lobby Information
+                    </button>
+                  </div>
+                </>
+              )}
+              {gameTeamId !== '' && (
+                <div className="space-y-4">
+                  {/* Header with CTA */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-gray-700">
+                    <h3 className="text-xl font-bold bg-white bg-clip-text text-transparent">
+                      Game Details
+                    </h3>
+                    <button
+                      onClick={handleGoToLobby}
+                      className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
+                    >
+                      <span className="flex items-center gap-2">
+                        Go to Game Lobby
+                        <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
 
-                      {gameteamId && (
+                  {/* Info Cards Grid */}
+                  <div className="grid gap-3">
+                    {/* Team ID Card */}
+                    <div className="group bg-gradient-to-br from-[#2a2a2a] to-[#252525] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-400 mb-1">Team ID</p>
+                          <p className="text-lg font-mono font-bold text-green-500 truncate">
+                            {gameTeamId}
+                          </p>
+                        </div>
                         <button
-                          onClick={handleCopy}
-                          className="text-gray-300 hover:text-white transition-colors"
-                          title="Copy Game ID"
+                          onClick={() => handleCopy(gameTeamId)}
+                          className="flex-shrink-0 p-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                          title="Copy Team ID"
                         >
-                          <FaRegCopy />
+                          <FaRegCopy className="w-4 h-4" />
                         </button>
-                      )}
+                      </div>
                     </div>
 
-                    {copied && (
-                      <p className="text-sm text-green-400 mt-2">
-                        Copied to clipboard!
-                      </p>
-                    )}
+                    {/* Team IP Card */}
+                    <div className="group bg-gradient-to-br from-[#2a2a2a] to-[#252525] p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-400 mb-1">Team IP Address</p>
+                          <p className="text-lg font-mono font-bold text-green-500 truncate">
+                            {gameteamIp}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleCopy(gameteamIp)}
+                          className="flex-shrink-0 p-2.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                          title="Copy Team IP"
+                        >
+                          <FaRegCopy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
+
+            {/* Table for game ips */}
+            {gameTeamId && (
+              <GameIpTable
+                gameTeamId={gameTeamId}
+                gameTeamIp={gameteamIp}
+                gameOpponentIps={gameopponentIps || []}
+              />
+            )}
+                  
             </div>
+
 
             {/* JWT Display Widget */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
@@ -460,7 +707,66 @@ const Dashboard = () => {
                   value={jwt}
                 />
               )}
+               {gameSessionId && (
+          <div>
+            <h3 className="text-lg font-semibold mb-2 mt-5">
+              Download VPN Configuration
+            </h3>
+            <button
+              onClick={showDownloadConfig}
+              className="px-4 py-2 bg-green-600 rounded-xl hover:opacity-90 transition font-bold mb-2"
+            >
+              Show VPN Config
+            </button>
+            {vpnConfig && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-[#1e1e1e] text-white p-6 rounded-xl w-11/12 max-w-4xl relative flex flex-col gap-6">
+              
+              {/* Top section: textarea + QR code */}
+              <div className="flex flex-col md:flex-row gap-0">
+                <textarea
+                  readOnly
+                  value={vpnConfig}
+                  className="flex-1 p-5  border-gray-700 rounded-md font-mono text-sm text-yellow-400 focus:outline-none"
+                  rows={16}
+                />
+                
+                <div className='font-mono text-xs text-green-300'>
+                <div className="flex items-center justify-center p-5 mt-5 rounded-md">
+                  <QRCode value={vpnConfig} size={200}/>
+                </div>
+                Install wireguard if you haven't already.<br />
+                sudo wg-quick up ~/Downloads/{currentUsername || "vpn-config"}.conf<br />
+                ssh -o StrictHostKeyChecking=no \ <br />
+                -o UserKnownHostsFile=/dev/null<br />
+                {currentUsername || "null"}@10.12.0.3<br />
+                </div>
+              </div>
+
+              {/* Download Config Button underneath */}
+              <div className="flex justify-center gap-x-4">
+                <button
+                  className="px-4 py-2 bg-green-600 rounded-xl hover:bg-green-700 font-bold"
+                  onClick={handleDownloadConfig}
+                >
+                  Download Config
+                </button>
+                {/* Close button */}
+              <button
+                className="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 font-bold"
+                onClick={() => setVpnConfig(null)}
+              >
+                Close
+              </button>
+              </div>
+
+              
             </div>
+          </div>
+        )}
+          </div>
+        )}
+        </div>
 
             {/* Join a clan */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 md:col-span-2 lg:col-span-3">
@@ -530,17 +836,6 @@ const Dashboard = () => {
                   >
                     Join or Create Clan
                   </button>
-                  {joinMessage.text && (
-                    <p
-                      className={`mt-3 text-sm ${
-                        joinMessage.type === 'success'
-                          ? 'text-green-400'
-                          : 'text-red-400'
-                      }`}
-                    >
-                      {joinMessage.text}
-                    </p>
-                  )}
                 </div>
               )}
             </div>

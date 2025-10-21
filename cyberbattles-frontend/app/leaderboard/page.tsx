@@ -183,14 +183,14 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      const snapshot = await getDocs(collection(db, 'leaderboard'));
+      const snapshot = await getDocs(collection(db, 'clans'));
       const data = snapshot.docs.map(doc => {
         const d = doc.data();
         return {
           id: doc.id,
-          teamName: d.teamName,
+          teamName: d.clanTag,
           country: d.country,
-          points: d.totalPoints,
+          points: d.totalPoints || 0,
           playedMatches: d.playedMatches,
         };
       });
@@ -237,7 +237,7 @@ export default function LeaderboardPage() {
               : 'translate-y-12 opacity-0'
           }`}
         >
-          <h1 className="text-6xl font-extrabold text-white mb-4 drop-shadow-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+          <h1 className="text-6xl font-extrabold text-white mb-4 drop-shadow-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-center">
             CyberBattles Leaderboard
           </h1>
           {/* <p className="text-xl text-gray-300 drop-shadow-lg italic font-medium text-center max-w-2xl">
