@@ -112,6 +112,7 @@ const JoinTeam = () => {
             setIsLoading(false);
             return;
           }
+          
         }
 
         // Add the user's UID to the memberIds array
@@ -128,6 +129,7 @@ const JoinTeam = () => {
           type: 'success',
           text: `Successfully joined team: ${teamData.name}!`,
         });
+        localStorage.setItem('sessionId', teamData.sessionId);
         setTeamId('');
 
         // Redirects to lobby page after join team
