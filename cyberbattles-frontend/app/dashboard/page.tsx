@@ -736,7 +736,7 @@ const Dashboard = () => {
                   <QRCode value={vpnConfig} size={200}/>
                 </div>
                 Install wireguard if you haven't already.<br />
-                sudo wg-quick up ~/Downloads/wgl.conf<br />
+                sudo wg-quick up ~/Downloads/{currentUsername || "vpn-config"}.conf<br />
                 ssh -o StrictHostKeyChecking=no \ <br />
                 -o UserKnownHostsFile=/dev/null<br />
                 me2@10.12.0.3<br />
