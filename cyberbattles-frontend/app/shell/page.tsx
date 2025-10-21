@@ -527,7 +527,7 @@ export default function Shell() {
   const handleGameOver = async () => {
     setGameOver(true);
     await delay(3000);
-    router.push("/dashboard");
+    router.push("/lobby");
   }
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 

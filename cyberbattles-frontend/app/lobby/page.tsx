@@ -21,7 +21,7 @@ const Lobby = () => {
   const [teamId, setTeamId] = useState(null);
   const [players, setPlayers] = useState(new Map());
   const [currentScenario, setCurrentScenario] = useState<any | null>(null);
-  const [gameStatus, setGameStatus] = useState(''); // waiting, starting, active
+  const [gameStatus, setGameStatus] = useState(''); // waiting, starting, started, ended
   const [, setIsHost] = useState(false);
   const [gameId, setgameId] = useState<any>(null);
 
@@ -49,6 +49,8 @@ const Lobby = () => {
         if (sessionSnap.data().started) {
           console.log('session has already started');
           setGameStatus('started');
+        } else if (!sessionSnap.data().started && localStorage.getItem('hasStarted') == 'true') {
+          setGameStatus('ended')
         } else {
           setGameStatus('waiting');
         }
@@ -110,6 +112,7 @@ const Lobby = () => {
       console.log('Failed', error);
     }
   }
+
 
   useEffect(() => {
     const updateTeams = async () => {
@@ -245,13 +248,14 @@ const Lobby = () => {
     setGameStatus('starting');
     await delay(3000);
     setGameStatus('started');
-    router.push('/shell');
+    localStorage.setItem('hasStarted', 'true');
+    handlePushShell();
   };
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+  // Populate the team hook and check if user is host
   useEffect(() => {
-    // Populate the team hook and check if user is host
     if (currentUser) {
       findTeam(currentUser.uid);
       if (team) {
@@ -262,66 +266,61 @@ const Lobby = () => {
     }
   }, [currentUser, team]);
 
+  // Monitor if the session has started (only in waiting state)
   useEffect(() => {
-    const unsubscribe = null;
-    if (team && gameStatus && gameStatus != 'started') {
-      const unsubscribe = onSnapshot(
-        doc(db, 'sessions', team.sessionId),
-        doc => {
-          if (doc.exists()) {
-            const started = doc.data().started;
-            if (started) {
-              console.log('Session has started');
-              handleStartGame();
-            } else {
-              console.log('Session has not started');
-              setGameStatus('waiting');
-            }
-          }
-        },
-      );
+    if (!team || gameStatus != 'waiting') {
+      return;
     }
-    return () => {
-      if (unsubscribe) {
-        unsubscribe;
+
+    const sessionRef = doc(db, 'sessions', team.sessionId);
+    const unsubscribe = onSnapshot(sessionRef, sessionDoc => {
+      if (!sessionDoc.exists()) {
+        return;
       }
+      const session = sessionDoc.data()
+      if (session.started) {
+        handleStartGame();
+      }
+    });
+    return () => {
+      unsubscribe();
     };
   }, [team, gameStatus]);
 
   // checking the memberIds array useEffect
   useEffect(() => {
-    let unsubscribe = null;
-    if (team && teamId && currentUser){
-      let unsubscribe = onSnapshot(doc(db, "teams", teamId), (doc) => {
-        if (doc.exists()) {
-          players.clear();
-          let kick = true;
-          let memberIds:string[] = doc.data().memberIds;
-          memberIds.forEach((id) => {
-            // Refresh each users value in the players map
-            const userObj = getUser(id);
-              userObj.then((value: any) => {
-                players.set(id, value);
-                setPlayers(new Map(players));
-              });
-            // Check if the current user id is in the array
-            if (currentUser.uid == id){
-              kick = false;
-            }
-          })
-          // If didnt find uid then they have been kicked
-          if (kick) {
-            handleKicked();
-          }
-        }
-      });
-  }
-    return () => {
-      if (unsubscribe) {
-        unsubscribe;
+    if (!team || !currentUser) {
+      return;
+    }
+    const teamRef = doc(db, "teams", team.id);
+    const unsubscribe = onSnapshot(teamRef, (teamDoc) => {
+      if (!teamDoc.exists()) {
+        return;
       }
+      players.clear();
+      let kick = true;
+      let memberIds:string[] = teamDoc.data().memberIds;
+      // Refresh each users value in the players map
+      memberIds.forEach((id) => {
+        const userObj = getUser(id);
+          userObj.then((value: any) => {
+            players.set(id, value);
+            setPlayers(new Map(players));
+          });
+        // Check if the current user id is in the array
+        if (currentUser.uid == id){
+          kick = false;
+        }
+      })
+      // If didnt find uid then they have been kicked
+      if (kick) {
+        handleKicked();
+      }
+    });
+    return () => {
+      unsubscribe;
     };
-  }, [team, teamId, currentUser]);
+  }, [team, currentUser]);
 
   // ------------- End useEffects ---------------
 
@@ -358,7 +357,7 @@ const Lobby = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : gameStatus === 'ending'
+                        : gameStatus === 'ended'
                           ? 'text-red-400'
                           : 'text-green-400'
                   }`}

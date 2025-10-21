@@ -368,6 +368,7 @@ const Admin = () => {
     await startSession().then(value => {
       if (value) {
         setGameStatus('started');
+        localStorage.setItem('hasStarted', 'true');
       } else {
         // Tell the user that something went wrong +++
         setGameStatus('waiting');
