@@ -32,6 +32,14 @@ export interface Team {
   sessionId: string;
   /** The IP address assigned to the team's container, on the WireGuard network. */
   ipAddress: string | null;
+  /** How many times the flag bot has failed to submit flags for this team. */
+  downCount: number;
+  /** The total number of times the flag bot has tried to insert flags for this team. */
+  totalCount: number;
+  /** The total score of the team. */
+  totalScore: number;
+  /** The list of active flags for this team. */
+  activeFlags: string[];
 }
 
 /**
@@ -96,13 +104,32 @@ export interface StartSessionResult {
  * An interface representing the health of the Docker server.
  */
 export interface DockerHealth {
+  /** Whether the Docker server is healthy or unhealthy. */
   status: 'healthy' | 'unhealthy';
+  /** The number of containers on the Docker server (total). */
   containers: number;
+  /** The number of running containers on the Docker server. */
   containersRunning: number;
+  /** The number of paused containers on the Docker server. */
   containersPaused: number;
+  /** The number of stopped containers on the Docker server. */
   containersStopped: number;
+  /** The number of images on the Docker server. */
   images: number;
+  /** The version of the Docker server. */
   serverVersion: string;
+  /** The total memory of the Docker server in bytes. */
   memTotal: number;
+  /** The number of CPU cores on the Docker server. */
   cpuCores: number;
+}
+
+/**
+ * An interface representing the response from a flag submission request.
+ */
+export interface FlagResponse {
+  /** Whether the flag insertion was successful or not. */
+  status: string;
+  /** If the flag insertion failed, the reason for the failure. */
+  message: string | null;
 }

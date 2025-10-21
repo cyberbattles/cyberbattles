@@ -17,6 +17,7 @@ import {
   createWgRouter,
   createUser,
   docker,
+  getContainerIpAddress,
 } from './docker';
 import {
   generateId,
@@ -27,6 +28,7 @@ import {
   getWgAddress,
 } from '../helpers';
 import {startTrafficCap} from './trafficcap';
+import {flagService} from './flags';
 
 // Get a unique ID for this server instance
 const serverId = machineIdSync();
@@ -73,6 +75,10 @@ export async function createTeam(
       id: teamId,
       sessionId,
       ipAddress: null,
+      downCount: 0,
+      totalCount: 0,
+      totalScore: 0,
+      activeFlags: [],
     };
   } catch (error) {
     throw new Error(
@@ -204,7 +210,7 @@ export async function createSession(
     scoringBotTeam = await createTeam(
       'scoring-bot',
       1,
-      '073cbbf5ef263e71', // CHANGE THIS when scoring bot container is finished
+      '82202c6ed1bf107e', // Currently hardcoded to the default scenario
       sessionId,
       networkName,
       scoringBotTeamId,
@@ -342,6 +348,14 @@ export async function startSession(
       );
     }
   }
+
+  // Get the IP Address of the scoring bot container
+  const scoringBotIp = await getContainerIpAddress(
+    sessionData.scoringContainerId,
+  );
+
+  // Start the flag service for the session
+  flagService(teams, scoringBotIp);
 
   // Update the session to mark it as started
   sessionData.started = true;
@@ -528,4 +542,14 @@ async function cleanupOldConfigs(): Promise<void> {
   } catch (_) {
     // We also don't care if this fails
   }
+}
+
+export async function isSessionActive(sessionId: string): Promise<boolean> {
+  const sessionRef = db.collection('sessions').doc(sessionId);
+  const sessionDoc = await sessionRef.get();
+
+  if (sessionDoc.exists) {
+    return true;
+  }
+  return false;
 }
