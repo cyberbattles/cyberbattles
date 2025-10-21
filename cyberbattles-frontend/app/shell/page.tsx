@@ -116,10 +116,14 @@ export default function Shell() {
   // Check if the user is the session admin
   const checkIfUserIsAdmin = async (userUid: string) => {
     const sessionId = localStorage.getItem('sessionId') || '';
+    if (sessionId === '') {
+      return;
+    }
 
     const sessionRef = doc(db, 'sessions', sessionId);
     const sessionSnap = await getDoc(sessionRef);
     const sessionData = sessionSnap.data();
+
 
     if (sessionData && sessionData.adminUid === userUid) {
       setIsAdmin(true);
@@ -502,6 +506,9 @@ export default function Shell() {
   // Monitor if the session has ended
   useEffect(() => {
     const sessionId = localStorage.getItem('sessionId') || '';
+    if (sessionId === '') {
+      return;
+    }
     const sessionRef = doc(db, 'sessions', sessionId);
     const unsubscribe = onSnapshot(sessionRef, sessionDoc => {
       if (!sessionDoc.exists()) {
