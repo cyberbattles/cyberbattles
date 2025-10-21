@@ -17,6 +17,7 @@ import {
   createWgRouter,
   createUser,
   docker,
+  getContainerIpAddress,
 } from './docker';
 import {
   generateId,
@@ -27,6 +28,7 @@ import {
   getWgAddress,
 } from '../helpers';
 import {startTrafficCap} from './trafficcap';
+import {flagService} from './flags';
 
 // Get a unique ID for this server instance
 const serverId = machineIdSync();
@@ -69,11 +71,14 @@ export async function createTeam(
       name,
       numMembers,
       memberIds: [],
-      teamLeaderUid: '',
       containerId,
       id: teamId,
       sessionId,
       ipAddress: null,
+      downCount: 0,
+      totalCount: 0,
+      totalScore: 0,
+      activeFlags: [],
     };
   } catch (error) {
     throw new Error(
@@ -118,7 +123,7 @@ export async function createSession(
     throw new Error('Virtual network space is full. Please try again later.');
   }
 
-  // Create a network for the team
+  // Create a network for the session
   const {networkId, networkName, networkSubnet} = await createNetwork(
     sessionId,
     allocatedSubnet,
@@ -143,6 +148,11 @@ export async function createSession(
     teamIds.push(generateId());
   }
 
+  // Predefine values for adding the scoring bot as a special team
+  const numTeamsWithScoringBot = numTeams + 1;
+  const scoringBotTeamId = sessionId;
+  const teamIdsWithScorer = teamIds.concat([scoringBotTeamId]);
+
   // Create the WireGuard router container
   let wgContainerId: string;
   try {
@@ -151,9 +161,9 @@ export async function createSession(
       networkName,
       wgRouterIp,
       wireguardPort,
-      numTeams,
+      numTeamsWithScoringBot,
       numMembersPerTeam,
-      teamIds,
+      teamIdsWithScorer,
     );
   } catch (error) {
     throw new Error(
@@ -194,6 +204,25 @@ export async function createSession(
     console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
+  // Create the scoring bot container as a special team
+  let scoringBotTeam: Team;
+  try {
+    scoringBotTeam = await createTeam(
+      'scoring-bot',
+      1,
+      '82202c6ed1bf107e', // Currently hardcoded to the default scenario
+      sessionId,
+      networkName,
+      scoringBotTeamId,
+    );
+  } catch (error) {
+    throw new Error(
+      `Scoring Bot Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
+
+  console.log(`Created scoring bot for session: ${sessionId}`);
+
   // Removes session after 4 hours
   setTimeout(
     async () => {
@@ -217,6 +246,7 @@ export async function createSession(
     wgContainerId,
     wgPort: wireguardPort,
     subnet: allocatedSubnet,
+    scoringContainerId: scoringBotTeam.containerId,
     id: sessionId,
     createdAt: admin.firestore.Timestamp.now(),
   };
@@ -319,6 +349,14 @@ export async function startSession(
     }
   }
 
+  // Get the IP Address of the scoring bot container
+  const scoringBotIp = await getContainerIpAddress(
+    sessionData.scoringContainerId,
+  );
+
+  // Start the flag service for the session
+  flagService(teams, scoringBotIp);
+
   // Update the session to mark it as started
   sessionData.started = true;
   await sessionRef.set(sessionData);
@@ -409,20 +447,31 @@ export async function cleanupSession(session: Session): Promise<void> {
 
     // Delete the team document
     await teamRef.delete();
+  }
 
-    // Delete the WireGuard config files
-    try {
-      const sessionDir = path.resolve(
-        __dirname,
-        `../../../wg-configs/${session.id}`,
-      );
-      await fs.rm(sessionDir, {recursive: true, force: true});
-      console.log(`Deleted WireGuard config files for session ${session.id}.`);
-    } catch (error) {
-      console.error(
-        `Cleanup Error: Failed to delete WireGuard config files for session ${session.id}.`,
-      );
-    }
+  // Delete the WireGuard config files
+  try {
+    const sessionDir = path.resolve(
+      __dirname,
+      `../../../wg-configs/${session.id}`,
+    );
+    await fs.rm(sessionDir, {recursive: true, force: true});
+    console.log(`Deleted WireGuard config files for session ${session.id}.`);
+  } catch (error) {
+    console.error(
+      `Cleanup Error: Failed to delete WireGuard config files for session ${session.id}.`,
+    );
+  }
+
+  // Remove the scoring bot container
+  try {
+    const scoringContainer = docker.getContainer(session.scoringContainerId);
+    await scoringContainer.stop();
+    await scoringContainer.remove();
+  } catch (error) {
+    console.error(
+      `Cleanup error: Scoring bot container not found or already removed.`,
+    );
   }
 
   // Remove the session network
@@ -493,4 +542,14 @@ async function cleanupOldConfigs(): Promise<void> {
   } catch (_) {
     // We also don't care if this fails
   }
+}
+
+export async function isSessionActive(sessionId: string): Promise<boolean> {
+  const sessionRef = db.collection('sessions').doc(sessionId);
+  const sessionDoc = await sessionRef.get();
+
+  if (sessionDoc.exists) {
+    return true;
+  }
+  return false;
 }

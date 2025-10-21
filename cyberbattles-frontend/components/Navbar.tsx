@@ -12,15 +12,13 @@ function Navbar() {
   const router = useRouter();
 
   const pfpPlaceholder = '/images/avatar_placeholder.png';
-  const genericItems = ['Home', 'Leaderboard', 'Lab'];
-  const genericLinks = ['/', '/leaderboard', '/lab'];
-  const userItems = ['Dashboard', 'Leaderboard', 'Learn', 'Traffic', 'Shell'];
+  const genericItems = ['Home', 'Leaderboard', 'Learn'];
+  const genericLinks = ['/', '/leaderboard', '/learn'];
+  const userItems = ['Dashboard','Leaderboard', 'Learn'];
   const userLinks = [
     '/dashboard',
     '/leaderboard',
     '/learn',
-    '/network-traffic',
-    '/shell',
   ];
 
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
@@ -47,6 +45,7 @@ function Navbar() {
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setIsOpen(!isOpen);
     if (window.location.pathname === '/') {
       e.preventDefault();
       router.replace('/');
@@ -89,7 +88,7 @@ function Navbar() {
                   <Link
                     key={index}
                     href={index === 0 ? '/' : links[index - 1]}
-                    onClick={index === 0 ? handleHomeClick : undefined}
+                    onClick={index === 0 ? handleHomeClick : handleClick}
                   >
                     <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
                       {item}
@@ -126,7 +125,7 @@ function Navbar() {
             )}
           </div>
           {currentUser && (
-            <Link href="/profile" className="w-16 h-16 sm:w-24 sm:h-24">
+            <Link href="/account" className="w-16 h-16 sm:w-24 sm:h-24">
               <Image
                 src={photoURL}
                 width="100"
