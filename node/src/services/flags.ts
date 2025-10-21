@@ -6,7 +6,7 @@ import * as axios from 'axios';
 
 /**
  * Generates a random flag string with an optional prefix and base64 encoding.
- * Flag is always 8 chars long.
+ * Flag is always 16 chars long.
  * @param {string} prefix - A string to prepend to flag. genFlag will wrap it in curly braces, e.g., "prefix{random_part}".
  * @param {boolean} base64 - If true, the final flag string will be base64 encoded.
  * @returns {string} The generated flag string.
@@ -16,7 +16,7 @@ export function genFlag(prefix: string, base64: boolean): string {
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let flag = '';
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 16; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length);
     flag += characters.charAt(randomIndex);
   }
