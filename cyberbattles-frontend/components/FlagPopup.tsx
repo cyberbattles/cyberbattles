@@ -1,5 +1,6 @@
 // REF: Adapted from https://vaul.emilkowal.ski/inputs
 // REF: Flag png is from https://fonts.google.com/icons
+// REF: Firebase logic from https://gemini.google.com/share/24a85125ff68
 
 import {Drawer} from 'vaul';
 import flagIcon from '../public/images/flag.png';
@@ -143,6 +144,11 @@ export default function FlagPopup() {
 
       setSuccessMsg('Flag captured! +100 points.');
       setFlag(''); // Clear input on success
+
+      // Clear success message after 5 seconds
+      Promise.resolve().then(() => {
+        setTimeout(() => setSuccessMsg(''), 5000);
+      });
     } catch (error) {
       console.error('Flag submission error:', error);
       if (error instanceof Error) {
@@ -150,6 +156,11 @@ export default function FlagPopup() {
       } else {
         setErrorMsg('An unknown error occurred.');
       }
+
+      // Clear error message after 15 seconds
+      Promise.resolve().then(() => {
+        setTimeout(() => setErrorMsg(''), 15000);
+      });
     } finally {
       setLoading(false);
     }
