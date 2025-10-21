@@ -1,224 +1,242 @@
 'use client';
-import React, {useState, useEffect, useRef} from 'react';
-import {auth} from '@/lib/firebase';
-import {signOut} from 'firebase/auth';
-import {useRouter} from 'next/navigation';
+import React, {useState, useEffect} from 'react';
+import {db} from '@/lib/firebase';
+import PcapViewer from '@/components/PcapViewer';
+import {collection, getDocs} from 'firebase/firestore';
 
 import FlagPopup from '@/components/FlagPopup';
 
+import {useAuth} from '@/components/Auth';
+import Image from 'next/image';
+
+import WarningIcon from '@/public/images/warning.png';
+import SyncIcon from '@/public/images/sync.png';
+import DownloadIcon from '@/public/images/download.png';
+
+// REF: Utilised Claude.
+// https://claude.ai/share/501c44f9-ec4a-4796-98af-d68a16c36f78
+// https://claude.ai/share/33adf08e-559c-4409-9267-2454ba3bbebf
+
 const NetworkTraffic = () => {
-  // TODO: Integrate the API
+  const [fileUrl, setFileUrl] = useState('');
+  const [, setJwt] = useState<string | null>(null);
+  const {currentUser} = useAuth();
+  const [teamId, setTeamId] = useState<string>('');
+  const [pcapBlobUrl, setPcapBlobUrl] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const router = useRouter();
-  const [packets, setPackets] = useState([]);
-  const [selectedPacket, setSelectedPacket] = useState(null);
-  const [isCapturing, setIsCapturing] = useState(true);
-  const [filter, setFilter] = useState('');
-  const [protocolFilter, setProtocolFilter] = useState('all');
-  const intervalRef = useRef(null);
+  useEffect(() => {
+    const fetchJwt = async () => {
+      if (currentUser) {
+        try {
+          const token = await currentUser.getIdToken(true);
+          setJwt(token);
+          localStorage.setItem('token', token);
+          return token;
+        } catch (error) {
+          console.error('Failed to get jwt:', error);
+          setJwt(null);
+          return null;
+        }
+      } else {
+        console.log('No user is signed in...');
+        setJwt(null);
+        return null;
+      }
+    };
 
-  const handleLogout = async () => {
+    const fetchTeamId = async () => {
+      if (currentUser) {
+        try {
+          const teamsRef = collection(db, 'teams');
+          const teamsSnap = await getDocs(teamsRef);
+          let userTeamId = '';
+
+          for (const teamDoc of teamsSnap.docs) {
+            const teamData = teamDoc.data();
+            if (
+              Array.isArray(teamData.memberIds) &&
+              teamData.memberIds.includes(currentUser.uid)
+            ) {
+              userTeamId = teamDoc.id;
+              break;
+            }
+          }
+
+          setTeamId(userTeamId);
+          if (!userTeamId) {
+            console.warn('User not found in any team');
+          }
+          return userTeamId;
+        } catch (error) {
+          console.error('Error fetching team:', error);
+          setTeamId('');
+          return null;
+        }
+      } else {
+        setTeamId('');
+        return null;
+      }
+    };
+
+    // Run all fetches in sequence
+    const runFetches = async () => {
+      const teamIdResult = await fetchTeamId();
+      if (teamIdResult) {
+        setTeamId(teamIdResult);
+        if (!teamIdResult) {
+          console.warn('Cannot fetch PCAP files: teamId is empty');
+          return;
+        }
+
+        try {
+          const jwt = localStorage.getItem('token');
+          if (!jwt) {
+            console.warn('No JWT token available');
+            await fetchJwt();
+            return;
+          }
+
+          const response = await fetch(
+            `https://cyberbattl.es/api/captures/${teamIdResult}/${jwt}?t=${new Date().getTime()}`,
+          );
+
+          if (response.ok) {
+            const pcapBlob = await response.blob();
+
+            if (pcapBlobUrl) {
+              URL.revokeObjectURL(pcapBlobUrl);
+            }
+
+            const newBlobUrl = URL.createObjectURL(pcapBlob);
+            setPcapBlobUrl(newBlobUrl);
+            setFileUrl(newBlobUrl);
+          } else {
+            console.error('Failed to fetch PCAP files:', response.status);
+          }
+        } catch (error) {
+          console.error('Error fetching PCAP files:', error);
+        }
+      }
+    };
+
+    runFetches();
+  }, [currentUser]);
+
+  const handlePcapDownload = () => {
+    if (!pcapBlobUrl) {
+      console.warn('No PCAP file available');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = pcapBlobUrl;
+    link.download = 'capture.pcap';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleRefresh = async () => {
+    if (!teamId) {
+      console.warn('Cannot refresh: teamId is empty');
+      return;
+    }
+
     try {
-      await signOut(auth);
-      router.push('/login');
+      const jwt = localStorage.getItem('token');
+      if (!jwt) {
+        console.warn('No JWT token available');
+        return;
+      }
+
+      const response = await fetch(
+        `https://cyberbattl.es/api/captures/${teamId}/${jwt}?t=${new Date().getTime()}`,
+      );
+
+      if (response.ok) {
+        const pcapBlob = await response.blob();
+
+        if (pcapBlobUrl) {
+          URL.revokeObjectURL(pcapBlobUrl);
+        }
+
+        const newBlobUrl = URL.createObjectURL(pcapBlob);
+        setPcapBlobUrl(newBlobUrl);
+        setFileUrl(newBlobUrl);
+        setRefreshKey(prev => prev + 1);
+      } else {
+        setFileUrl('');
+        console.error('Failed to fetch PCAP files:', response.status);
+      }
     } catch (error) {
-      console.error('Logout failed:', error);
+      setFileUrl('');
+      console.error('Error fetching PCAP files:', error);
     }
   };
 
   return (
-    <>
-      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
-        {/* Sidebar */}
-        <aside className="w-64 bg-[#1e1e1e] shadow-md">
-          <div className="p-6 text-xl font-bold border-b border-gray-700">
-            Network Monitor
-          </div>
-          <nav className="p-6 space-y-4">
-            <div>
-              <div className="text-sm text-gray-400 mb-2">Capture Status</div>
-              <div
-                className={`font-semibold ${isCapturing ? 'text-green-400' : 'text-red-400'}`}
-              >
-                {isCapturing ? 'Capturing' : 'Stopped'}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm text-gray-400 mb-2">Total Packets</div>
-            </div>
-
-            <div>
-              <div className="text-sm text-gray-400 mb-2">Filtered</div>
-            </div>
-
-            <div>
-              <div className="text-sm text-gray-400 mb-2">Protocol Filter</div>
-              <select
-                value={protocolFilter}
-                onChange={e => setProtocolFilter(e.target.value)}
-                className="w-full p-2 bg-[#2f2f2f] border border-gray-600 rounded text-white text-sm"
-              >
-                <option value="all">All Protocols</option>
-                <option value="TCP">TCP</option>
-                <option value="UDP">UDP</option>
-                <option value="HTTP">HTTP</option>
-                <option value="HTTPS">HTTPS</option>
-                <option value="DNS">DNS</option>
-                <option value="ICMP">ICMP</option>
-                <option value="ARP">ARP</option>
-                <option value="SSH">SSH</option>
-              </select>
-            </div>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <header className="flex justify-between items-center p-6 border-b border-gray-700">
+    <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="flex justify-between items-center p-6 border-b border-gray-700">
+          <div>
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
-            <div className="flex gap-4 items-center">
-              <input
-                type="text"
-                placeholder="Filter packets..."
-                value={filter}
-                onChange={e => setFilter(e.target.value)}
-                className="px-3 py-2 bg-[#1e1e1e] border border-gray-600 rounded-lg text-white placeholder-gray-400"
-              />
-              <button
-                onClick={() => setIsCapturing(!isCapturing)}
-                className={`px-4 py-2 rounded-xl font-bold transition ${
-                  isCapturing
-                    ? 'bg-red-600 hover:opacity-90'
-                    : 'bg-green-600 hover:opacity-90'
-                }`}
-              >
-                {isCapturing ? 'Stop Capture' : 'Start Capture'}
-              </button>
-              <button
-                onClick={() => setPackets([])}
-                className="px-4 py-2 bg-gray-600 rounded-xl hover:opacity-90 transition font-bold"
-              >
-                Clear
-              </button>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold"
-              >
-                Logout
-              </button>
-            </div>
-          </header>
-
-          <div className="flex-1 flex overflow-hidden">
-            {/* Packet List */}
-            <div className="flex-1 overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-[#1e1e1e] sticky top-0">
-                  <tr>
-                    <th className="p-3 text-left border-b border-gray-700">
-                      Time
-                    </th>
-                    <th className="p-3 text-left border-b border-gray-700">
-                      Source
-                    </th>
-                    <th className="p-3 text-left border-b border-gray-700">
-                      Destination
-                    </th>
-                    <th className="p-3 text-left border-b border-gray-700">
-                      Protocol
-                    </th>
-                    <th className="p-3 text-left border-b border-gray-700">
-                      Length
-                    </th>
-                    <th className="p-3 text-left border-b border-gray-700">
-                      Info
-                    </th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
-
-            {/* Packet Details */}
-            {selectedPacket ? (
-              <div className="w-96 bg-[#1e1e1e] border-l border-gray-700 overflow-auto">
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold mb-4 text-blue-400">
-                    Packet Details
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div className="bg-[#2f2f2f] p-3 rounded-lg">
-                      <h4 className="font-semibold text-green-400 mb-2">
-                        Frame Info
-                      </h4>
-                      <div className="text-sm space-y-1">
-                        <div>
-                          <span className="text-gray-400">Time:</span> 00:00:00
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Length:</span> 10
-                          bytes
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Protocol:</span> UDP
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#2f2f2f] p-3 rounded-lg">
-                      <h4 className="font-semibold text-yellow-400 mb-2">
-                        Network Layer
-                      </h4>
-                      <div className="text-sm space-y-1">
-                        <div>
-                          <span className="text-gray-400">Source:</span>{' '}
-                          10.0.0.1
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Destination:</span>{' '}
-                          10.0.0.2
-                        </div>
-                        <div>
-                          <span className="text-gray-400">Info:</span> Info and
-                          yeah
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-[#2f2f2f] p-3 rounded-lg">
-                      <h4 className="font-semibold text-purple-400 mb-2">
-                        Raw Data
-                      </h4>
-                      <div className="text-xs font-mono bg-black p-2 rounded overflow-x-auto">
-                        <pre className="text-green-400">
-                          x012901288398379832979
-                        </pre>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="w-96 bg-[#1e1e1e] border-l border-gray-700 flex items-center justify-center">
-                <div className="tPulledext-center text-gray-400 p-8">
-                  <div className="text-lg font-semibold mb-2">
-                    No Packet Selected
-                  </div>
-                  <div className="text-sm">
-                    Click on a packet to view detailed information
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
-        </main>
-        <div>
-          <FlagPopup />
+
+          <div className="flex gap-8 items-center">
+            <button
+              onClick={handlePcapDownload}
+              className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
+            >
+              Download
+              <Image
+                src={DownloadIcon}
+                alt="download icon"
+                width={20}
+                height={20}
+              />
+            </button>
+
+            <button
+              onClick={handleRefresh}
+              className="px-4 py-2 bg-blue-400 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
+            >
+              Refresh
+              <Image src={SyncIcon} alt="refresh icon" width={20} height={20} />
+            </button>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden">
+          {fileUrl ? (
+            <div className="h-full overflow-auto p-6">
+              <PcapViewer
+                key={refreshKey}
+                src={fileUrl}
+                lang="en-us"
+                enableHexToggle
+                showFullscreenBtn
+                useCanvas
+              />
+            </div>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center text-gray-400 p-8 w-100">
+                <Image src={WarningIcon} alt="Triangular warning icon" />
+                <div className="text-xl font-semibold mb-2 text-[#c12f2f]">
+                  Unable to get network traffic. Ensure you are in an active
+                  game.
+                </div>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
-    </>
+      </main>
+      <FlagPopup />
+    </div>
   );
 };
 
