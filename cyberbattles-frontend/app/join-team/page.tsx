@@ -2,7 +2,14 @@
 
 import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
-import {collection, doc, getDoc, getDocs, updateDoc, arrayUnion} from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  arrayUnion,
+} from 'firebase/firestore';
 import {db} from '@/lib/firebase';
 import {useAuth} from '@/components/Auth';
 
@@ -72,8 +79,8 @@ const JoinTeam = () => {
         const teamsRef = collection(db, 'teams');
         const teamsSnap = await getDocs(teamsRef);
         let found = false;
-        teamsSnap.forEach((teamDoc) => {
-          let teamData = teamDoc.data()
+        teamsSnap.forEach(teamDoc => {
+          const teamData = teamDoc.data();
           if (teamData.memberIds.includes(currentUser.uid)) {
             setJoinMessage({
               type: 'error',
@@ -112,17 +119,11 @@ const JoinTeam = () => {
             setIsLoading(false);
             return;
           }
-          
         }
 
         // Add the user's UID to the memberIds array
         await updateDoc(teamRef, {
           memberIds: arrayUnion(currentUser.uid),
-        });
-
-        // Add the team ID to the user's doc
-        await updateDoc(userRef, {
-          teamId: teamId,
         });
 
         setJoinMessage({
