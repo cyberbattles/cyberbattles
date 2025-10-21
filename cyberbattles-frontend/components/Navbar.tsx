@@ -47,6 +47,7 @@ function Navbar() {
 
   // Forces a reload when clicking onto the homepage from the homepage
   const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    setIsOpen(!isOpen);
     if (window.location.pathname === '/') {
       e.preventDefault();
       router.replace('/');
@@ -89,7 +90,7 @@ function Navbar() {
                   <Link
                     key={index}
                     href={index === 0 ? '/' : links[index - 1]}
-                    onClick={index === 0 ? handleHomeClick : undefined}
+                    onClick={index === 0 ? handleHomeClick : handleClick}
                   >
                     <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
                       {item}
