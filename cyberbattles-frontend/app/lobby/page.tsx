@@ -290,13 +290,13 @@ const Lobby = () => {
 
   // checking the memberIds array useEffect
   useEffect(() => {
-    let unsubscribe = null;
+    const unsubscribe = null;
     if (team && teamId && currentUser){
-      let unsubscribe = onSnapshot(doc(db, "teams", teamId), (doc) => {
+      const unsubscribe = onSnapshot(doc(db, "teams", teamId), (doc) => {
         if (doc.exists()) {
           players.clear();
           let kick = true;
-          let memberIds:string[] = doc.data().memberIds;
+          const memberIds:string[] = doc.data().memberIds;
           memberIds.forEach((id) => {
             // Refresh each users value in the players map
             const userObj = getUser(id);
