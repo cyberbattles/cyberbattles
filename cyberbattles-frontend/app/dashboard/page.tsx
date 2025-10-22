@@ -219,14 +219,14 @@ const Dashboard = () => {
                   Game Reports
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/analytics"
-                  className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
-                >
-                  Analytics
-                </Link>
-              </li>
+              {/* <li> */}
+              {/*   <Link */}
+              {/*     href="/analytics" */}
+              {/*     className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800" */}
+              {/*   > */}
+              {/*     Analytics */}
+              {/*   </Link> */}
+              {/* </li> */}
               <li>
                 <Link
                   href="/account"
