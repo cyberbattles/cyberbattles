@@ -43,7 +43,17 @@ export default function LoginPage() {
         console.log('Logged in:', auth.currentUser);
       }
 
-      router.push('/dashboard'); // redirect after auth
+      if (isRegister) {
+        router.push('/learn');
+        // user must check out the learning page before accessing dashboard
+      }
+      else {
+        router.push('/dashboard'); 
+        // otherwise redirects to dashboard after login 
+        // because not their first time accessing our site
+      }
+
+      
     } catch (err: any) {
       setError(err.message);
     }
