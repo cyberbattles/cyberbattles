@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
+import GameEndPopup from '@/components/GameEndPopup';
 
 const Lobby = () => {
   const router = useRouter();
@@ -50,10 +51,12 @@ const Lobby = () => {
           console.log('session has already started');
           setGameStatus('started');
         } else if (!sessionSnap.data().started && localStorage.getItem('hasStarted') == 'true') {
-          setGameStatus('ended')
+          setGameStatus('ended');
         } else {
           setGameStatus('waiting');
         }
+      } else if (localStorage.getItem('hasStarted') == 'true') {
+        setGameStatus('ended');
       }
 
       // Find the scenario doc
@@ -326,6 +329,17 @@ const Lobby = () => {
 
   return (
     <>
+      {
+        gameStatus === 'ended' && 
+        <GameEndPopup {...{
+            isVisible: true,
+            onClose: () => {
+              console.log("close")
+            },
+            winningTeam: "team1",
+            }}>
+        </GameEndPopup>
+      }
       {/* Lobby Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}

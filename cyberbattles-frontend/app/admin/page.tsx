@@ -109,6 +109,8 @@ const Admin = () => {
         teamIds = sessionSnap.data().teamIds;
         if (sessionSnap.data().started) {
           setGameStatus('started');
+        } else if (!sessionSnap.data().started && localStorage.getItem('hasStarted') == 'true') {
+          setGameStatus('ended');
         } else {
           setGameStatus('waiting');
         }
@@ -323,6 +325,15 @@ const Admin = () => {
   async function cleanupSession() {
     if (!currentUser) return false;
 
+    console.log("updating session doc")
+    // Set the started value to false and wait 10 seconds
+    const sessionRef = doc(db, 'sessions', sessionId);
+    await updateDoc(sessionRef, {
+      started: false,
+    });
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 
+    delay(10);
+
     // Create the api request url
     const token = await currentUser.getIdToken(true);
     const request = '/cleanup/' + sessionId + '/' + token;
@@ -384,7 +395,7 @@ const Admin = () => {
     }
     setGameStatus('ending');
     await cleanupSession();
-    setGameStatus('ended')
+    setGameStatus('ended');
   };
 
   // Set the teams, players, and scenario hooks
@@ -558,7 +569,7 @@ const Admin = () => {
                 {
                   <div className="space-y-4">
                     {(gameStatus === 'waiting' ||
-                      gameStatus === 'starting') && (
+                      gameStatus === 'starting' || true) && (
                       <div className="p-3 bg-[#2f2f2f] rounded-lg">
                         <div className="text-sm text-gray-400 mb-5">
                           Begin Session
