@@ -76,7 +76,6 @@ async function buildImages(dockerfilesPath: string): Promise<void> {
 
   // Iterate over each Dockerfile and build the image
   for (const file of dockerfiles) {
-    const dockerfilePath = path.join(dockerfilesPath, file, 'Dockerfile');
     const imageTag = `${file}`;
 
     // Check if the image already exists
@@ -89,30 +88,10 @@ async function buildImages(dockerfilesPath: string): Promise<void> {
       SCENARIOS.push(imageTag);
       continue;
     } catch (error) {
-      // Image does not exist, proceed to build
-    }
-
-    // Read all files and directories within the context path
-    const contextPath = path.dirname(dockerfilePath);
-    const contextFiles = await fs.readdir(contextPath);
-
-    // Build the image
-    console.log(`Building image with tag: ${imageTag}`);
-    const stream = await docker.buildImage(
-      {
-        context: contextPath,
-        src: contextFiles,
-      },
-      {
-        t: imageTag,
-      },
-    );
-
-    if (await handleStream(stream)) {
-      console.error(`Error building image: ${imageTag}`);
-    } else {
-      console.log(`Successfully built image: ${imageTag}`);
-      SCENARIOS.push(imageTag);
+      console.error(
+        "The following image doesn't exist, please build it manually:",
+        imageTag,
+      );
     }
   }
 }
