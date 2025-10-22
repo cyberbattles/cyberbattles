@@ -118,6 +118,7 @@ const Lobby = () => {
   const [sessionTeams, setSessionTeams] = useState<SessionTeamInfo[]>([]);
   const [totalScore, setTotalScore] = useState<number>(0);
   const [uptimePercentage, setUptimePercentage] = useState<number>(100);
+  const [showVpn, setShowVpn] = useState(false);
 
   useEffect(() => {
     const updateUsername = async () => {
@@ -475,34 +476,36 @@ const Lobby = () => {
     }
   };
 
-  const showDownloadConfig = async () => {
-    if (!currentUser) {
-      console.error('User not signed in.');
-      return;
-    }
-    if (!gameSessionId || !gameTeamId || !currentUser.uid) {
-      console.error('Missing required IDs for config.');
-      return;
-    }
-
-
   useEffect(() => {
+    const fetchVpnConfig = async () => {
+      if (!currentUser) {
+        console.error('User not signed in.');
+        return;
+      }
+      if (!gameSessionId || !gameTeamId || !currentUser.uid) {
+        console.error('Missing required IDs for config.');
+        return;
+      }
+
       try {
         const token = await currentUser.getIdToken();
         const url = `https://cyberbattl.es/api/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`;
         const response = await fetch(url);
 
-      if (!response.ok) {
-        console.error(`Failed to fetch config file: ${response.status}`);
-        return;
-      }
+        if (!response.ok) {
+          console.error(`Failed to fetch config file: ${response.status}`);
+          return;
+        }
 
-      const data = await response.json();
-      setVpnConfig(data.config);
-    } catch (error) {
-      console.error('Error fetching VPN config:', error);
-    }
-  };
+        const data = await response.json();
+        setVpnConfig(data.config);
+      } catch (error) {
+        console.error('Error fetching VPN config:', error);
+      }
+    };
+
+    fetchVpnConfig();
+  }, [currentUser, gameSessionId, gameTeamId]);
 
   return (
     <>
@@ -696,7 +699,7 @@ const Lobby = () => {
               {/* Show VPN Button */}
               <button
                 className="w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
-                onClick={showDownloadConfig}
+                onClick={() => setShowVpn(!showVpn)}
               >
                 VPN Setup Guide
               </button>
@@ -719,7 +722,7 @@ const Lobby = () => {
       </div>
 
       {/* VPN Modal */}
-      {vpnConfig && (
+      {showVpn && vpnConfig && (
         <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1e1e1e] text-white p-6 rounded-2xl w-full max-w-4xl relative flex flex-col gap-6 max-h-[90vh] shadow-2xl border border-gray-700">
             <h2 className="text-2xl font-bold text-center">
