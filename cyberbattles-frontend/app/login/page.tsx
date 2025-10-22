@@ -46,7 +46,7 @@ export default function LoginPage() {
 
       if (isRegister) {
         router.push('/learn');
-        // user must check out the learn page before accessing dashboard
+        // user urged check out the learn page before accessing dashboard
       }
       else {
         router.push('/dashboard'); 
