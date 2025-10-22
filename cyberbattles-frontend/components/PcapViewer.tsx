@@ -5,7 +5,7 @@
 
 'use client'
 
-import { useEffect, useState, createElement } from 'react'
+import { useState, createElement } from 'react'
 import Script from 'next/script'
 
 interface PcapViewerProps {
