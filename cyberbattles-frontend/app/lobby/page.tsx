@@ -485,10 +485,12 @@ const Lobby = () => {
       return;
     }
 
-    try {
-      const token = await currentUser.getIdToken();
-      const url = `https://cyberbattl.es/api/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`;
-      const response = await fetch(url);
+
+  useEffect(() => {
+      try {
+        const token = await currentUser.getIdToken();
+        const url = `https://cyberbattl.es/api/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`;
+        const response = await fetch(url);
 
       if (!response.ok) {
         console.error(`Failed to fetch config file: ${response.status}`);
