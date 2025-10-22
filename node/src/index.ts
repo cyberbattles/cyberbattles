@@ -30,9 +30,6 @@ async function main() {
 
   const server = http.createServer(app);
   const wss = new WebSocketServer({server});
-
-  // Serve static files and parse JSON
-  app.use(express.static('public'));
   app.use(express.json());
 
   // Handle API routes
