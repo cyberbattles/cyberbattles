@@ -453,7 +453,6 @@ const Lobby = () => {
 
   const handleDownloadConfig = async () => {
     if (!currentUser || !vpnConfig) {
-      console.error('User not signed in or no config to download.');
       return;
     }
     try {
@@ -479,11 +478,9 @@ const Lobby = () => {
   useEffect(() => {
     const fetchVpnConfig = async () => {
       if (!currentUser) {
-        console.error('User not signed in.');
         return;
       }
       if (!gameSessionId || !gameTeamId || !currentUser.uid) {
-        console.error('Missing required IDs for config.');
         return;
       }
 
@@ -734,7 +731,7 @@ const Lobby = () => {
               <textarea
                 readOnly
                 value={vpnConfig}
-                className="flex-1 p-4 bg-[#2f2f2f] border border-gray-700 rounded-md font-mono text-sm text-gray-300 focus:outline-none"
+                className="flex-1 p-2 bg-[#2f2f2f] border border-gray-700 rounded-md font-mono text-sm text-gray-300 focus:outline-none"
                 rows={16}
               />
 
@@ -742,17 +739,16 @@ const Lobby = () => {
                 <div className="bg-white p-4 rounded-md">
                   <QRCode value={vpnConfig} size={200} />
                 </div>
-                <div className="font-mono text-xs text-green-300 bg-[#2f2f2f] p-3 rounded-md w-full">
+                <div className="font-mono text-xs text-green-300 bg-[#2f2f2f] p-3 rounded-md w-3/4">
                   <p># Install wireguard if you haven&apos;t already.</p>
                   <p className="text-yellow-400 break-all">
-                    sudo wg-quick up ~/{currentUsername || 'vpn-config'}
+                    sudo wg-quick up ./{currentUsername || 'vpn-config'}
                     .conf
                   </p>
-                  <p className="text-yellow-400 break-all mt-2">
-                    ssh -o StrictHostKeyChecking=no \ <br />
-                    -o UserKnownHostsFile=/dev/null
-                    <br />
-                    {currentUsername || 'null'}@10.12.0.3
+                  <p className="text-yellow-400 wrap-anywhere mt-2">
+                    ssh -o StrictHostKeyChecking=no -o
+                    UserKnownHostsFile=/dev/null
+                    {' ' + currentUsername || 'null'}@{team?.ipAddress}
                   </p>
                   <p># Your password is the same as your username</p>
                 </div>
