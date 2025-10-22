@@ -96,7 +96,7 @@ function Navbar() {
       newLinks[0] = '/lobby';
     } else if (isAdmin) {
       newItems[0] = 'Administration';
-      newLinks[0] = '/administration';
+      newLinks[0] = '/admin';
     } else {
       newItems[0] = 'Dashboard';
       newLinks[0] = '/dashboard';
