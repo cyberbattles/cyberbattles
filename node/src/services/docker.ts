@@ -138,11 +138,11 @@ export async function createUser(
     const container = docker.getContainer(containerId);
 
     // Update apt and install sudo command
-    const installSudo = [
-      '/bin/sh',
-      '-c',
-      'apt update && apt install sudo -y  > /dev/null 2>&1',
-    ];
+    // const installSudo = [
+    //   '/bin/sh',
+    //   '-c',
+    //   'apt update && apt install sudo -y  > /dev/null 2>&1',
+    // ];
 
     // Create user and add them to sudoers command
     const addSudoUser = [
@@ -159,7 +159,7 @@ export async function createUser(
     ];
 
     // Update repo and install sudo
-    await runCommandInContainer(container, installSudo);
+    // await runCommandInContainer(container, installSudo);
 
     // Create user and add them to sudoers
     await runCommandInContainer(container, addSudoUser);
