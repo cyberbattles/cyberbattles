@@ -184,35 +184,6 @@ const Lobby = () => {
     return ret;
   }
 
-  // CHeck if the currently signed in user is sessions admin (host)
-  // This will probably get changed to check if the user is the team leader rather than session admin
-  async function checkHost() {
-    // If the team hook is not set, do nothing
-    if (!team) {
-      return;
-    }
-
-    // Get the admin uid of the session
-    const sessionId = team.sessionId;
-    const docRef = doc(db, 'sessions', sessionId);
-    const docSnap = await getDoc(docRef);
-    let adminUid = '';
-    if (docSnap.exists()) {
-      adminUid = docSnap.data().adminUid;
-    } else {
-      console.log("couldn't find admin");
-      return;
-    }
-
-    console.log(adminUid);
-
-    // Determine if the current user is admin
-    if (currentUser && currentUser.uid == adminUid) {
-      console.log('this user is admin');
-      setIsHost(true);
-    }
-  }
-
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -267,7 +238,6 @@ const Lobby = () => {
         getPlayers();
         getScenario();
       }
-      checkHost();
     }
   }, [currentUser, team]);
 
