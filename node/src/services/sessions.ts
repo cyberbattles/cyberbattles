@@ -359,7 +359,7 @@ export async function startSession(
     }
   }
 
-  if (sessionData.scoringContainerId === '') {
+  if (sessionData.scoringContainerId !== '') {
     // Get the IP Address of the scoring bot container
     const scoringBotIp = await getContainerIpAddress(
       sessionData.scoringContainerId,
