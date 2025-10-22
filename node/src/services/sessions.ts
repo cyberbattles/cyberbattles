@@ -30,6 +30,8 @@ import {
 import {startTrafficCap} from './trafficcap';
 import {flagService} from './flags';
 
+const CYBERNOTE_ID = '8429abfca004aed7';
+
 // Get a unique ID for this server instance
 const serverId = machineIdSync();
 
@@ -148,10 +150,15 @@ export async function createSession(
     teamIds.push(generateId());
   }
 
-  // Predefine values for adding the scoring bot as a special team
-  const numTeamsWithScoringBot = numTeams + 1;
-  const scoringBotTeamId = sessionId;
-  const teamIdsWithScorer = teamIds.concat([scoringBotTeamId]);
+  let numTeamsWithScoringBot = numTeams;
+  let scoringBotTeamId = 'NOT_IMPLEMENTED';
+  let teamIdsWithScorer = teamIds;
+  if (scenarioId === CYBERNOTE_ID) {
+    // Predefine values for adding the scoring bot as a special team
+    numTeamsWithScoringBot = numTeams + 1;
+    scoringBotTeamId = sessionId;
+    teamIdsWithScorer = teamIds.concat([scoringBotTeamId]);
+  }
 
   // Create the WireGuard router container
   let wgContainerId: string;
@@ -205,23 +212,26 @@ export async function createSession(
   }
 
   // Create the scoring bot container as a special team
-  let scoringBotTeam: Team;
-  try {
-    scoringBotTeam = await createTeam(
-      'scoring-bot',
-      1,
-      '82202c6ed1bf107e', // Currently hardcoded to the default scenario
-      sessionId,
-      networkName,
-      scoringBotTeamId,
-    );
-  } catch (error) {
-    throw new Error(
-      `Scoring Bot Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    );
-  }
+  let scoringBotContainerId = '';
+  if (scenarioId === CYBERNOTE_ID) {
+    try {
+      const scoringBotTeam = await createTeam(
+        'scoring-bot',
+        1,
+        '82202c6ed1bf107e', // Currently hardcoded to the default scenario
+        sessionId,
+        networkName,
+        scoringBotTeamId,
+      );
+      scoringBotContainerId = scoringBotTeam.containerId;
+    } catch (error) {
+      throw new Error(
+        `Scoring Bot Creation Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
 
-  console.log(`Created scoring bot for session: ${sessionId}`);
+    console.log(`Created scoring bot for session: ${sessionId}`);
+  }
 
   // Removes session after 4 hours
   setTimeout(
@@ -246,7 +256,7 @@ export async function createSession(
     wgContainerId,
     wgPort: wireguardPort,
     subnet: allocatedSubnet,
-    scoringContainerId: scoringBotTeam.containerId,
+    scoringContainerId: scoringBotContainerId,
     id: sessionId,
     createdAt: admin.firestore.Timestamp.now(),
   };
@@ -349,13 +359,15 @@ export async function startSession(
     }
   }
 
-  // Get the IP Address of the scoring bot container
-  const scoringBotIp = await getContainerIpAddress(
-    sessionData.scoringContainerId,
-  );
+  if (sessionData.scoringContainerId === '') {
+    // Get the IP Address of the scoring bot container
+    const scoringBotIp = await getContainerIpAddress(
+      sessionData.scoringContainerId,
+    );
 
-  // Start the flag service for the session
-  flagService(teams, scoringBotIp);
+    // Start the flag service for the session
+    flagService(teams, scoringBotIp);
+  }
 
   // Update the session to mark it as started
   sessionData.started = true;
