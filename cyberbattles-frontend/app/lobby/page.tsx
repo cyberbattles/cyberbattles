@@ -52,10 +52,12 @@ const Lobby = () => {
           setGameStatus('started');
         } else if (!sessionSnap.data().started && localStorage.getItem('hasStarted') == 'true') {
           setGameStatus('ended');
+          localStorage.getItem('hasStarted') == 'false'
         } else {
           setGameStatus('waiting');
         }
       } else if (localStorage.getItem('hasStarted') == 'true') {
+        localStorage.getItem('hasStarted') == 'false'
         setGameStatus('ended');
       }
 
@@ -330,14 +332,14 @@ const Lobby = () => {
   return (
     <>
       {
-        gameStatus == 'ended' && teamId &&
+        gameStatus == 'ended' && team &&
         <GameEndPopup {...{
             isVisible: true,
             isAdmin: false,
             onClose: () => {
               localStorage.setItem('hasStarted', 'false');
             },
-            teamId: teamId,
+            sessionId: team.sessionId,
             }}>
         </GameEndPopup>
       }

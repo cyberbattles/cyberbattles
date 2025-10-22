@@ -16,6 +16,7 @@ import {
 import Navbar from '@/components/Navbar';
 import ApiClient from '@/components/ApiClient';
 import {useAuth} from '@/components/Auth';
+import GameEndPopup from '@/components/GameEndPopup';
 
 /**
  * An interface representing a result of starting a session.
@@ -109,8 +110,6 @@ const Admin = () => {
         teamIds = sessionSnap.data().teamIds;
         if (sessionSnap.data().started) {
           setGameStatus('started');
-        } else {
-          setGameStatus('waiting');
         }
       }
 
@@ -323,7 +322,6 @@ const Admin = () => {
   async function cleanupSession() {
     if (!currentUser) return false;
 
-    console.log("updating session doc")
     // Set the started value to false and wait 10 seconds
     const sessionRef = doc(db, 'sessions', sessionId);
     await updateDoc(sessionRef, {
@@ -331,6 +329,7 @@ const Admin = () => {
     });
     const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 
     delay(10);
+    setGameStatus('ended');
 
     // Create the api request url
     const token = await currentUser.getIdToken(true);
@@ -410,6 +409,17 @@ const Admin = () => {
 
   return (
     <>
+      {
+        gameStatus == 'ended' && sessionId &&
+        <GameEndPopup {...{
+            isVisible: true,
+            isAdmin: true,
+            onClose: () => {
+            },
+            sessionId: sessionId,
+            }}>
+        </GameEndPopup>
+      }
       {/* Lobby Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
