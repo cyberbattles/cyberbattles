@@ -262,6 +262,8 @@ const Admin = () => {
         const started = sessionSnap.data().started;
         if (started) {
           setGameStatus('started');
+        } else if (gameStatus != 'ended'){
+          setGameStatus('waiting')
         }
       }
 
@@ -576,7 +578,7 @@ const Admin = () => {
                 {
                   <div className="space-y-4">
                     {(gameStatus === 'waiting' ||
-                      gameStatus === 'starting' || true) && (
+                      gameStatus === 'starting') && (
                       <div className="p-3 bg-[#2f2f2f] rounded-lg">
                         <div className="text-sm text-gray-400 mb-5">
                           Begin Session
