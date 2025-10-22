@@ -24,6 +24,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import QRCode from 'react-qr-code';
+import GameEndPopup from '@/components/GameEndPopup';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -494,7 +495,20 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Fixed Navbar */}
+      {/* End of game popup */}
+
+      {
+        (localStorage.getItem('finishedSession') != '') &&
+        <GameEndPopup {...{
+            isVisible: true,
+            isAdmin: false,
+            onClose: () => {
+              localStorage.setItem('finishedSession', '');
+            },
+            sessionId: localStorage.getItem('finishedSession') || '',
+            }}>
+        </GameEndPopup>
+      }
 
       {/* Dashboard Layout */}
 <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">

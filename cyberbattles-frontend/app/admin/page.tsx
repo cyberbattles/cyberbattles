@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   updateDoc,
   onSnapshot,
 } from 'firebase/firestore';
@@ -108,7 +109,8 @@ const Admin = () => {
       const sessionSnap = await getDoc(sessionRef);
       if (sessionSnap.exists()) {
         teamIds = sessionSnap.data().teamIds;
-        if (sessionSnap.data().started) {
+        if (sessionSnap.data().started && gameStatus != 'ending') {
+          console.log('setting started')
           setGameStatus('started');
         }
       }
@@ -262,8 +264,6 @@ const Admin = () => {
         const started = sessionSnap.data().started;
         if (started) {
           setGameStatus('started');
-        } else if (gameStatus != 'ended'){
-          setGameStatus('waiting')
         }
       }
 
@@ -325,13 +325,41 @@ const Admin = () => {
     if (!currentUser) return false;
 
     // Set the started value to false and wait 10 seconds
-    const sessionRef = doc(db, 'sessions', sessionId);
-    await updateDoc(sessionRef, {
-      started: false,
-    });
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 
-    delay(10);
-    setGameStatus('ended');
+    // const sessionRef = doc(db, 'sessions', sessionId);
+    // await updateDoc(sessionRef, {
+    //   started: false,
+    // });
+    // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 
+    // delay(10);
+    // setGameStatus('ended');
+
+    // Populate the finished session and set the ended session value
+    localStorage.setItem('finishedSession', sessionId);
+    const finishedRef = doc(db, 'finishedSessions', sessionId);
+
+    interface ScoreDictionary {
+      [key: string]: number;
+    }
+    
+    // Add each team and their score to scoremap
+    let scoreMap: ScoreDictionary = {};
+
+    Array.from(teams.keys()).map(async (id) => {
+      const teamRef = doc(db, 'teams', id);
+      const teamSnap = await getDoc(teamRef);
+      if (!teamSnap.exists()) {
+        return;
+      }
+      const team = teamSnap.data();
+      const teamName:string = team.name;
+      const score:number = team.totalScore;
+
+      scoreMap[teamName] = score;
+    })
+    
+    await setDoc(finishedRef, {
+      results: scoreMap,
+    })
 
     // Create the api request url
     const token = await currentUser.getIdToken(true);
@@ -394,6 +422,7 @@ const Admin = () => {
     setGameStatus('ending');
     await cleanupSession();
     setGameStatus('ended');
+    router.push('/dashboard')
   };
 
   // Set the teams, players, and scenario hooks
@@ -411,17 +440,6 @@ const Admin = () => {
 
   return (
     <>
-      {
-        gameStatus == 'ended' && sessionId &&
-        <GameEndPopup {...{
-            isVisible: true,
-            isAdmin: true,
-            onClose: () => {
-            },
-            sessionId: sessionId,
-            }}>
-        </GameEndPopup>
-      }
       {/* Lobby Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}

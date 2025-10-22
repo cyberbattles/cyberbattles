@@ -522,8 +522,11 @@ export default function Shell() {
 
   const handleGameOver = async () => {
     setGameOver(true);
+    // Store the sessionId value in a 'finishedSession' local field
+    const sessionId = localStorage.getItem('sessionId');
+    if (sessionId) localStorage.setItem('finishedSession', sessionId);
     await delay(3000);
-    router.push('/lobby');
+    router.push('/dashboard');
   };
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

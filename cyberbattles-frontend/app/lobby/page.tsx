@@ -44,21 +44,13 @@ const Lobby = () => {
       if (sessionSnap.exists()) {
         scenarioId = sessionSnap.data().scenarioId;
 
-        console.log('getting sceneario');
-
         // Check if the session has started/ended
         if (sessionSnap.data().started) {
           console.log('session has already started');
           setGameStatus('started');
-        } else if (!sessionSnap.data().started && localStorage.getItem('hasStarted') == 'true') {
-          setGameStatus('ended');
-          localStorage.getItem('hasStarted') == 'false'
         } else {
           setGameStatus('waiting');
         }
-      } else if (localStorage.getItem('hasStarted') == 'true') {
-        localStorage.getItem('hasStarted') == 'false'
-        setGameStatus('ended');
       }
 
       // Find the scenario doc
@@ -119,6 +111,7 @@ const Lobby = () => {
   }
 
 
+  // Update the team 
   useEffect(() => {
     const updateTeams = async () => {
       if (currentUser) {
@@ -224,7 +217,6 @@ const Lobby = () => {
     setGameStatus('starting');
     await delay(3000);
     setGameStatus('started');
-    localStorage.setItem('hasStarted', 'true');
     handlePushShell();
   };
 
@@ -253,7 +245,7 @@ const Lobby = () => {
         return;
       }
       const session = sessionDoc.data()
-      if (session.started && localStorage.getItem('hasStarted') != 'true') {
+      if (session.started) {
         handleStartGame();
       }
     });
@@ -301,18 +293,6 @@ const Lobby = () => {
 
   return (
     <>
-      {
-        gameStatus == 'ended' && team &&
-        <GameEndPopup {...{
-            isVisible: true,
-            isAdmin: false,
-            onClose: () => {
-              localStorage.setItem('hasStarted', 'false');
-            },
-            sessionId: team.sessionId,
-            }}>
-        </GameEndPopup>
-      }
       {/* Lobby Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
