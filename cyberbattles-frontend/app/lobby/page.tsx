@@ -116,6 +116,8 @@ const Lobby = () => {
   const [vpnConfig, setVpnConfig] = useState<string | null>(null);
   const [gameteamIp, setgameteamIp] = useState<any>(null);
   const [sessionTeams, setSessionTeams] = useState<SessionTeamInfo[]>([]);
+  const [totalScore, setTotalScore] = useState<number>(0);
+  const [uptimePercentage, setUptimePercentage] = useState<number>(100);
 
   useEffect(() => {
     const updateUsername = async () => {
@@ -365,11 +367,35 @@ const Lobby = () => {
     return () => unsubscribe();
   }, [team, gameTeamId, currentUser]);
 
-  const totalScore = team?.totalScore ?? 0;
-  const uptimePercentage =
-    team && team.totalCount > 0
-      ? (1 - team.downCount / team.totalCount) * 100
-      : 100;
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    const scoreQuery = query(
+      collection(db, 'teams'),
+      where('memberIds', 'array-contains', currentUser.uid),
+    );
+
+    const unsubscribeScore = onSnapshot(scoreQuery, querySnapshot => {
+      if (!querySnapshot.empty) {
+        if (querySnapshot.docs[0].data().totalScore !== totalScore) {
+          let newTotalScore = querySnapshot.docs[0].data().totalScore;
+          let newDownCount = querySnapshot.docs[0].data().downCount;
+          let newTotalCount = querySnapshot.docs[0].data().totalCount;
+
+          const newUptimePercentage =
+            newTotalCount > 0 ? (1 - newDownCount / newTotalCount) * 100 : 100;
+          const calculatedTotalScore =
+            newTotalScore * (newUptimePercentage / 100);
+          setTotalScore(calculatedTotalScore);
+          setUptimePercentage(newUptimePercentage);
+        }
+      }
+    });
+
+    return () => unsubscribeScore();
+  }, [currentUser]);
 
   const handleLogout = async () => {
     try {
