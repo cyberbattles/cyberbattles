@@ -2,7 +2,8 @@
 import React, {useState, useEffect} from 'react';
 import {db} from '@/lib/firebase';
 import PcapViewer from '@/components/PcapViewer';
-import {collection, getDocs} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs, onSnapshot} from 'firebase/firestore';
+import {useRouter} from 'next/navigation';
 
 import FlagPopup from '@/components/FlagPopup';
 
@@ -18,12 +19,40 @@ import DownloadIcon from '@/public/images/download.png';
 // https://claude.ai/share/33adf08e-559c-4409-9267-2454ba3bbebf
 
 const NetworkTraffic = () => {
+  const router = useRouter();
   const [fileUrl, setFileUrl] = useState('');
   const [, setJwt] = useState<string | null>(null);
   const {currentUser} = useAuth();
   const [teamId, setTeamId] = useState<string>('');
   const [pcapBlobUrl, setPcapBlobUrl] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+
+  // Monitor if the session has ended
+  useEffect(() => {
+    const sessionId = localStorage.getItem('sessionId') || '';
+    if (sessionId === '') {
+      return;
+    }
+    const sessionRef = doc(db, 'sessions', sessionId);
+    const unsubscribe = onSnapshot(sessionRef, sessionDoc => {
+      if (!sessionDoc.exists()) {
+        handleGameOver();
+        return;
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const handleGameOver = async () => {
+    setGameOver(true);
+    await delay(3000);
+    router.push('/lobby');
+  };
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
     const fetchJwt = async () => {
@@ -184,6 +213,17 @@ const NetworkTraffic = () => {
           <div>
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
           </div>
+
+          {gameOver && (
+            <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
+                <span className="text-red-400 font-semibold">
+                  The game has ended ...
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-8 items-center">
             <button
