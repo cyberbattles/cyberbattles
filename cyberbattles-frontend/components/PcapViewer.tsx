@@ -1,7 +1,11 @@
 // components/PcapViewer.tsx
+
+// REF: Debugged compiler warning using Claude. 
+// REF: https://claude.ai/share/17830828-d66b-4453-b8d6-69dcb04418a3
+
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, createElement } from 'react'
 import Script from 'next/script'
 
 interface PcapViewerProps {
@@ -31,14 +35,13 @@ export default function PcapViewer({
       />
       
       {isReady ? (
-        <pcap-element
-          src={src}
-          lang={lang}
-          {...(enableHexToggle && { enablehextoggle: '' })}
-          {...(showFullscreenBtn && { showfullscreenbtn: '' })}
-          {...(useCanvas && { usecanvas: 'true' })}
-        /> 
-        // im unsure how to get rid of this error tbh. it works tho
+        createElement('pcap-element', {
+          src,
+          lang,
+          ...(enableHexToggle && { enablehextoggle: 'true' }),
+          ...(showFullscreenBtn && { showfullscreenbtn: 'true' }),
+          ...(useCanvas && { usecanvas: 'true' })
+        })
       ) : (
         <div className="p-4 text-gray-500">Loading PCAP viewer...</div>
       )}
