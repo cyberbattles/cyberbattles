@@ -338,7 +338,7 @@ const Admin = () => {
     const finishedRef = doc(db, 'finishedSessions', sessionId);
 
     interface ScoreDictionary {
-      [key: string]: number;
+      [key: string]: [string, number];
     }
     
     // Add each team and their score to scoremap
@@ -354,8 +354,11 @@ const Admin = () => {
       const teamName:string = team.name;
       const score:number = team.totalScore;
 
-      scoreMap[teamName] = score;
+      scoreMap[id] = [teamName, score];
     })
+    scoreMap['team1'] = ['team1', 1];
+    scoreMap['team2'] = ['team2', 2];
+    scoreMap['team3'] = ['team3', 3];
     
     await setDoc(finishedRef, {
       results: scoreMap,

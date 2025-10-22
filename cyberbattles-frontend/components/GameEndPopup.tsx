@@ -47,16 +47,23 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
       if (!sessionId) {
         return;
       }
-      const sessionRef = doc(db, 'sessions', sessionId);
-      const sessionSnap = await getDoc(sessionRef);
-      if (!sessionSnap.exists()) {
+      const finishedRef = doc(db, 'finishedSessions', sessionId);
+      const finishedSnap = await getDoc(finishedRef);
+      if (!finishedSnap.exists()) {
         return;
       }
-      const sessionData = sessionSnap.data();
-      const teamIds: string[] = sessionData.teamIds;
-      teamIds.forEach((id) => {
-        addTeamScore(id);
-      });
+
+      const scoreMap = new Map();
+
+      const finishedData = finishedSnap.data();
+      const results = finishedData.results;
+      Object.keys(results).forEach((id) => {
+        const pair = results[id];
+        const teamName = pair[0];
+        const score = pair[1];
+        scoreMap.set(id, [teamName, score])
+      })
+      setScores(scoreMap);
     }
     getScores();
   }, [sessionId]);

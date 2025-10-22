@@ -498,7 +498,7 @@ const Dashboard = () => {
       {/* End of game popup */}
 
       {
-        (localStorage.getItem('finishedSession') != '') &&
+        (localStorage?.getItem('finishedSession') != '') &&
         <GameEndPopup {...{
             isVisible: true,
             isAdmin: false,
