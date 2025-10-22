@@ -354,8 +354,10 @@ const Admin = () => {
       const teamName:string = team.name;
       const score:number = team.totalScore;
 
+      // Doesn't add to the map for some reason
       scoreMap[id] = [teamName, score];
     })
+    // Adds to map successfully
     scoreMap['team1'] = ['team1', 1];
     scoreMap['team2'] = ['team2', 2];
     scoreMap['team3'] = ['team3', 3];
