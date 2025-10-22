@@ -53,7 +53,7 @@ function Navbar() {
 
     const sessionQuery = query(
       collection(db, 'sessions'),
-      where('adminId', '==', currentUser.uid),
+      where('adminUid', '==', currentUser.uid),
     );
 
     const unsubscribeSessions = onSnapshot(sessionQuery, querySnapshot => {
