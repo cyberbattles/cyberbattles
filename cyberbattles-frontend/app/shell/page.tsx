@@ -124,7 +124,6 @@ export default function Shell() {
     const sessionSnap = await getDoc(sessionRef);
     const sessionData = sessionSnap.data();
 
-
     if (sessionData && sessionData.adminUid === userUid) {
       setIsAdmin(true);
 
@@ -512,25 +511,22 @@ export default function Shell() {
     const sessionRef = doc(db, 'sessions', sessionId);
     const unsubscribe = onSnapshot(sessionRef, sessionDoc => {
       if (!sessionDoc.exists()) {
-        return;
-      }
-      const session = sessionDoc.data();
-      if (!session.started) {
         handleGameOver();
+        return;
       }
     });
     return () => {
       unsubscribe();
-    }
+    };
   }, []);
 
   const handleGameOver = async () => {
     setGameOver(true);
     await delay(3000);
-    router.push("/lobby");
-  }
+    router.push('/lobby');
+  };
 
-  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
     <div className="h-screen w-full flex flex-col bg-[#1a1a1a] font-sans pt-25 sm:pt-45">
@@ -538,7 +534,9 @@ export default function Shell() {
         <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
           <div className="flex items-center gap-2">
             <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
-            <span className="text-red-400 font-semibold">The game has ended ...</span>
+            <span className="text-red-400 font-semibold">
+              The game has ended ...
+            </span>
           </div>
         </div>
       )}
