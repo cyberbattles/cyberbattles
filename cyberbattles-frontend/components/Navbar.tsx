@@ -2,30 +2,29 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {useRouter} from 'next/navigation';
 import logo from '../public/images/logo.png';
 import {IoMenu} from 'react-icons/io5';
 import React, {useEffect, useState} from 'react';
 import {useAuth} from '@/components/Auth';
+import {collection, where, query, onSnapshot} from 'firebase/firestore';
+
+import {db} from '@/lib/firebase';
+
+const pfpPlaceholder = '/images/avatar_placeholder.png';
+const genericItems = ['Home', 'Leaderboard', 'Learn'];
+const genericLinks = ['/', '/leaderboard', '/learn'];
+const userItems = ['Dashboard', 'Leaderboard', 'Learn'];
+const userLinks = ['/dashboard', '/leaderboard', '/learn'];
 
 function Navbar() {
-  const router = useRouter();
-
-  const pfpPlaceholder = '/images/avatar_placeholder.png';
-  const genericItems = ['Home', 'Leaderboard', 'Learn'];
-  const genericLinks = ['/', '/leaderboard', '/learn'];
-  const userItems = ['Dashboard','Leaderboard', 'Learn'];
-  const userLinks = [
-    '/dashboard',
-    '/leaderboard',
-    '/learn',
-  ];
-
   const [[items, links], setItems] = useState([genericItems, genericLinks]);
   const {currentUser} = useAuth();
   const [photoURL, setPhotoURL] = useState(pfpPlaceholder);
 
   const [isOpen, setIsOpen] = useState(false);
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isInTeam, setIsInTeam] = useState(false);
 
   const handleClick = () => {
     setIsOpen(!isOpen);
@@ -33,42 +32,96 @@ function Navbar() {
 
   useEffect(() => {
     if (currentUser) {
-      setItems([userItems, userLinks]);
       if (currentUser.photoURL) {
         setPhotoURL(currentUser.photoURL);
       }
     } else {
+      // User logged out, reset everything to default
       setItems([genericItems, genericLinks]);
-      setPhotoURL(pfpPlaceholder); // Clear photoURL on logout
+      setPhotoURL(pfpPlaceholder);
+      setIsAdmin(false);
+      setIsInTeam(false);
     }
   }, [currentUser]);
 
-  // Forces a reload when clicking onto the homepage from the homepage
-  const handleHomeClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    setIsOpen(!isOpen);
-    if (window.location.pathname === '/') {
-      e.preventDefault();
-      router.replace('/');
-      window.location.reload();
+  // Check if user is admin
+  useEffect(() => {
+    if (!currentUser) {
+      setIsAdmin(false);
+      return;
     }
-  };
+
+    const sessionQuery = query(
+      collection(db, 'sessions'),
+      where('adminId', '==', currentUser.uid),
+    );
+
+    const unsubscribeSessions = onSnapshot(sessionQuery, querySnapshot => {
+      setIsAdmin(!querySnapshot.empty);
+    });
+
+    return () => unsubscribeSessions();
+  }, [currentUser]);
+
+  // Check if user is in a team
+  useEffect(() => {
+    if (!currentUser) {
+      setIsInTeam(false);
+      return;
+    }
+
+    const teamsQuery = query(
+      collection(db, 'teams'),
+      where('memberIds', 'array-contains', currentUser.uid),
+    );
+
+    const unsubscribeTeams = onSnapshot(teamsQuery, querySnapshot => {
+      setIsInTeam(!querySnapshot.empty);
+    });
+
+    return () => unsubscribeTeams();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setItems([genericItems, genericLinks]);
+      return;
+    }
+
+    const newItems = [...userItems];
+    const newLinks = [...userLinks];
+
+    if (isInTeam) {
+      newItems[0] = 'Lobby';
+      newLinks[0] = '/lobby';
+    } else if (isAdmin) {
+      newItems[0] = 'Administration';
+      newLinks[0] = '/administration';
+    } else {
+      newItems[0] = 'Dashboard';
+      newLinks[0] = '/dashboard';
+    }
+
+    setItems([newItems, newLinks]);
+  }, [currentUser, isAdmin, isInTeam]);
 
   return (
     <nav className="fixed w-full h-25 sm:h-40 shadow-xl bg-black z-50">
       <div className="flex justify-between flex-basis items-center h-full w-full ">
         <div className="flex items-center pl-5">
           {/* Logo */}
-          <Link href="/" onClick={handleHomeClick}>
+          <Link href="/">
             <div
               className={`flex-shrink-0 flex items-center ${isOpen ? 'hidden' : ''}`}
             >
               <Image
                 src={logo}
                 alt="logo"
-                className="xl:flex hidden max-w-[150px] flex-shrink-0"
+                className="md:flex hidden max-w-[150px] flex-shrink-0"
               />
             </div>
           </Link>
+          {/* Mobile Navbar Dropdown */}
           <div className="flex md:hidden relative">
             {/* Hamburger icon */}
             <IoMenu
@@ -88,7 +141,7 @@ function Navbar() {
                   <Link
                     key={index}
                     href={index === 0 ? '/' : links[index - 1]}
-                    onClick={index === 0 ? handleHomeClick : handleClick}
+                    onClick={handleClick}
                   >
                     <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
                       {item}
