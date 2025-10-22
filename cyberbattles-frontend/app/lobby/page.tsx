@@ -333,7 +333,7 @@ const Lobby = () => {
       }
     }
     checkAdmin();
-  }, [currentUser, team]);
+  }, [currentUser, team, router]);
 
   // Listen for game start
   useEffect(() => {
@@ -380,9 +380,9 @@ const Lobby = () => {
     const unsubscribeScore = onSnapshot(scoreQuery, querySnapshot => {
       if (!querySnapshot.empty) {
         if (querySnapshot.docs[0].data().totalScore !== totalScore) {
-          let newTotalScore = querySnapshot.docs[0].data().totalScore;
-          let newDownCount = querySnapshot.docs[0].data().downCount;
-          let newTotalCount = querySnapshot.docs[0].data().totalCount;
+          const newTotalScore = querySnapshot.docs[0].data().totalScore;
+          const newDownCount = querySnapshot.docs[0].data().downCount;
+          const newTotalCount = querySnapshot.docs[0].data().totalCount;
 
           const newUptimePercentage =
             newTotalCount > 0 ? (1 - newDownCount / newTotalCount) * 100 : 100;
@@ -738,7 +738,7 @@ const Lobby = () => {
                   <QRCode value={vpnConfig} size={200} />
                 </div>
                 <div className="font-mono text-xs text-green-300 bg-[#2f2f2f] p-3 rounded-md w-full">
-                  <p># Install wireguard if you haven't already.</p>
+                  <p># Install wireguard if you haven&apos;t already.</p>
                   <p className="text-yellow-400 break-all">
                     sudo wg-quick up ~/{currentUsername || 'vpn-config'}
                     .conf
@@ -749,6 +749,7 @@ const Lobby = () => {
                     <br />
                     {currentUsername || 'null'}@10.12.0.3
                   </p>
+                  <p># Your password is the same as your username</p>
                 </div>
               </div>
             </div>
