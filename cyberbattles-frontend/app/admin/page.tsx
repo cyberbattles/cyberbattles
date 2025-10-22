@@ -109,8 +109,6 @@ const Admin = () => {
         teamIds = sessionSnap.data().teamIds;
         if (sessionSnap.data().started) {
           setGameStatus('started');
-        } else if (!sessionSnap.data().started && localStorage.getItem('hasStarted') == 'true') {
-          setGameStatus('ended');
         } else {
           setGameStatus('waiting');
         }
@@ -379,7 +377,6 @@ const Admin = () => {
     await startSession().then(value => {
       if (value) {
         setGameStatus('started');
-        localStorage.setItem('hasStarted', 'true');
       } else {
         // Tell the user that something went wrong +++
         setGameStatus('waiting');

@@ -1,28 +1,78 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import {auth, db} from '@/lib/firebase';
+import {
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
 interface GameEndPopupProps {
   isVisible: boolean;
+  isAdmin: boolean;
   onClose: () => void;
-  winningTeam: string;
-  isAdmin?: boolean;
-  gameScore?: {
-    team1: {name: string; score: number};
-    team2: {name: string; score: number};
-  };
+  teamId: string;
 }
 
 const GameEndPopup: React.FC<GameEndPopupProps> = ({
   isVisible,
-  onClose,
-  winningTeam,
   isAdmin,
-  gameScore,
+  onClose,
+  teamId,
 }) => {
   const router = useRouter();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [scores, setScores] = useState<Map<string, [string, number]>>(new Map());
 
   if (!isVisible) return null;
+
+  // Get the sessionId information once
+  useEffect(() => {
+    const getSession = async () => {
+      const teamRef = doc(db, 'teams', teamId);
+      const teamSnap = await getDoc(teamRef)
+      if (!teamSnap.exists()) {
+        return;
+      }
+      const teamData = teamSnap.data();
+      setSessionId(teamData.sessionId);
+    }
+    getSession();
+  }, [])
+
+  // Populate the scores
+  useEffect(() => {
+    const getScores = async () => {
+      if (!sessionId) {
+        return;
+      }
+      const sessionRef = doc(db, 'sessions', sessionId);
+      const sessionSnap = await getDoc(sessionRef);
+      if (!sessionSnap.exists()) {
+        return;
+      }
+      const sessionData = sessionSnap.data();
+      const teamIds: string[] = sessionData.teamIds;
+      teamIds.forEach((id) => {
+        addTeamScore(id);
+      });
+    }
+    getScores();
+  }, [sessionId]);
+
+  // Add the given team id's score to the scores map
+  const addTeamScore = async (id: string) => {
+    const teamDoc = doc(db, 'teams', id);
+    const teamSnap = await getDoc(teamDoc);
+    if (!teamSnap.exists()) {
+      return;
+    }
+    const teamData = teamSnap.data();
+    const teamName = teamData.name;
+    const score = teamData.totalScore;
+    scores.set(id, [teamName, score]);
+    setScores(new Map(scores));
+  }
 
   const handleViewLeaderboard = () => {
     router.push('/leaderboard');
@@ -66,58 +116,48 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
               Game Finished
             </h1>
             <div className="text-xl text-yellow-200 font-semibold">
-              Winner: <span className="text-yellow-100">{winningTeam}</span>
+              Winner: <span className="text-yellow-100">{}</span>
             </div>
           </div>
         </div>
 
         {/* Game Results */}
-        {gameScore && (
+        {(scores.size) && (
           <div className="p-6 border-b border-gray-700">
             <h3 className="text-lg font-semibold mb-4 text-center text-blue-400">
               Final Scores
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div
-                className={`p-4 rounded-xl text-center ${
-                  gameScore.team1.name === winningTeam
-                    ? 'bg-green-900/30 border border-green-500'
-                    : 'bg-[#2f2f2f]'
-                }`}
-              >
-                <div className="text-lg font-semibold text-white">
-                  {gameScore.team1.name}
+              {
+                Array.from(scores.values()).map((team) => (
+                <div key={team[0]}>
+                  <div
+                    className={`p-4 rounded-xl text-center ${
+                      // Need to change this to check if they are the winning team
+                      true
+                        ? 'bg-green-900/30 border border-green-500'
+                        : 'bg-[#2f2f2f]'
+                    }`}
+                  >
+                    {/* Team Name */}
+                    <div className="text-lg font-semibold text-white">
+                      {team[0]}
+                    </div>
+
+                    <div
+                      className={`text-2xl font-bold ${
+                        //Need to change
+                        true
+                          ? 'text-green-400'
+                          : 'text-gray-400'
+                      }`}
+                    >
+                      {team[1]}
+                    </div>
+                  </div>
                 </div>
-                <div
-                  className={`text-2xl font-bold ${
-                    gameScore.team1.name === winningTeam
-                      ? 'text-green-400'
-                      : 'text-gray-400'
-                  }`}
-                >
-                  {gameScore.team1.score}
-                </div>
-              </div>
-              <div
-                className={`p-4 rounded-xl text-center ${
-                  gameScore.team2.name === winningTeam
-                    ? 'bg-green-900/30 border border-green-500'
-                    : 'bg-[#2f2f2f]'
-                }`}
-              >
-                <div className="text-lg font-semibold text-white">
-                  {gameScore.team2.name}
-                </div>
-                <div
-                  className={`text-2xl font-bold ${
-                    gameScore.team2.name === winningTeam
-                      ? 'text-green-400'
-                      : 'text-gray-400'
-                  }`}
-                >
-                  {gameScore.team2.score}
-                </div>
-              </div>
+                ))
+              }
             </div>
           </div>
         )}

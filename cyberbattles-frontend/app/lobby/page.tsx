@@ -271,7 +271,7 @@ const Lobby = () => {
 
   // Monitor if the session has started (only in waiting state)
   useEffect(() => {
-    if (!team || gameStatus != 'waiting') {
+    if (!team) {
       return;
     }
 
@@ -281,7 +281,7 @@ const Lobby = () => {
         return;
       }
       const session = sessionDoc.data()
-      if (session.started) {
+      if (session.started && localStorage.getItem('hasStarted') != 'true') {
         handleStartGame();
       }
     });
@@ -330,13 +330,14 @@ const Lobby = () => {
   return (
     <>
       {
-        gameStatus === 'ended' && 
+        gameStatus == 'ended' && teamId &&
         <GameEndPopup {...{
             isVisible: true,
+            isAdmin: false,
             onClose: () => {
-              console.log("close")
+              localStorage.setItem('hasStarted', 'false');
             },
-            winningTeam: "team1",
+            teamId: teamId,
             }}>
         </GameEndPopup>
       }
