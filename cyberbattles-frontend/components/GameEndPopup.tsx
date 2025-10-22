@@ -23,6 +23,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [scores, setScores] = useState<Map<string, [string, number]>>(new Map());
+  const [winners, setWinners] = useState<string[]>(['']);
 
   if (!isVisible) return null;
 
@@ -59,6 +60,25 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
     }
     getScores();
   }, [sessionId]);
+
+  // Get winners
+  useEffect(() => {
+    // Get the high score
+    let winners: string[] = [];
+    let highScore: number | null = null;
+    scores.forEach((value, key) => {
+      let id = key;
+      let teamName = value[0]
+      let score = value[1]
+      if (highScore == null || score > highScore) {
+        highScore = score;
+        winners = [teamName];
+      } else if (score == highScore) {
+        winners = winners.concat([teamName]);
+      }
+    });
+    setWinners(winners);
+  }, [scores])
 
   // Add the given team id's score to the scores map
   const addTeamScore = async (id: string) => {
@@ -115,9 +135,18 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             <h1 className="text-3xl font-bold text-white mb-2">
               Game Finished
             </h1>
-            <div className="text-xl text-yellow-200 font-semibold">
-              Winner: <span className="text-yellow-100">{}</span>
-            </div>
+            {
+              winners.length == 1 && 
+              <div className="text-xl text-yellow-200 font-semibold">
+                Winner: <span className="text-yellow-100">{winners[0]}</span>
+              </div>
+            }
+            {
+              winners.length > 1 && 
+              <div className="text-xl text-yellow-200 font-semibold">
+                Tie: {winners.map((winner) => (<span className="text-yellow-100">{winner} </span>))}
+              </div>
+            }
           </div>
         </div>
 
@@ -134,7 +163,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                   <div
                     className={`p-4 rounded-xl text-center ${
                       // Need to change this to check if they are the winning team
-                      true
+                      (winners.includes(team[0]))
                         ? 'bg-green-900/30 border border-green-500'
                         : 'bg-[#2f2f2f]'
                     }`}
@@ -147,7 +176,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                     <div
                       className={`text-2xl font-bold ${
                         //Need to change
-                        true
+                        (winners.includes(team[0]))
                           ? 'text-green-400'
                           : 'text-gray-400'
                       }`}
