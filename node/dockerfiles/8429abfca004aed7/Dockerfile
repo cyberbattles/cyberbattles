@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 RUN apt update && \
-  apt install vim openssh-server supervisor python3 python3-flask wireguard curl iproute2 tcpdump -y
+  apt install vim openssh-server sudo supervisor python3 python3-flask wireguard curl iproute2 tcpdump -y
 
 RUN mkdir /var/run/sshd
 
