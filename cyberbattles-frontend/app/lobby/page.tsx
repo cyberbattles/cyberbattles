@@ -696,7 +696,7 @@ const Lobby = () => {
               {/* Show VPN Button */}
               <button
                 className="w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
-                onClick={() => setShowVpn(!showVpn)}
+                onClick={() => setShowVpn(true)}
               >
                 VPN Setup Guide
               </button>
@@ -765,7 +765,7 @@ const Lobby = () => {
               </button>
               <button
                 className="px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold "
-                onClick={() => setVpnConfig(null)}
+                onClick={() => setShowVpn(false)}
               >
                 Close
               </button>
