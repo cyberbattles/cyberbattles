@@ -9,6 +9,7 @@ import {
   updateProfile,
 } from 'firebase/auth';
 import {useRouter} from 'next/navigation';
+import { FirebaseError } from 'firebase/app';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,9 +44,27 @@ export default function LoginPage() {
         console.log('Logged in:', auth.currentUser);
       }
 
-      router.push('/dashboard'); // redirect after auth
-    } catch (err: any) {
-      setError(err.message);
+      if (isRegister) {
+        router.push('/learn');
+        // user urged check out the learn page before accessing dashboard
+      }
+      else {
+        router.push('/dashboard'); 
+        // otherwise redirects to dashboard after login 
+        // because not their first time accessing our site
+      }
+
+      
+    } catch (err: unknown) {
+      if (err instanceof FirebaseError) {
+        setError(err.message);
+      }
+      else {
+        setError("An unexpected error occurred");
+        // i don't THINK it would ever hit this block
+        // just had to specify a type for the error to make the linter happy
+      }
+
     }
   };
 
