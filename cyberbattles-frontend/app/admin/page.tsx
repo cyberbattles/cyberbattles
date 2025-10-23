@@ -109,10 +109,6 @@ const Admin = () => {
       const sessionSnap = await getDoc(sessionRef);
       if (sessionSnap.exists()) {
         teamIds = sessionSnap.data().teamIds;
-        if (sessionSnap.data().started && gameStatus != 'ending') {
-          console.log('setting started')
-          setGameStatus('started');
-        }
       }
 
       teamIds.forEach(teamId => {
@@ -262,7 +258,7 @@ const Admin = () => {
         scenarioId = sessionSnap.data().scenarioId;
         // Check if the session has already started
         const started = sessionSnap.data().started;
-        if (started) {
+        if (started && gameStatus != 'ending') {
           setGameStatus('started');
         }
       }
