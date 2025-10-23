@@ -79,7 +79,7 @@ export async function createTeam(
       ipAddress: null,
       downCount: 0,
       totalCount: 0,
-      totalScore: 0,
+      totalScore: 100,
       activeFlags: [],
     };
   } catch (error) {
