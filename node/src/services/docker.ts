@@ -76,7 +76,6 @@ async function buildImages(dockerfilesPath: string): Promise<void> {
 
   // Iterate over each Dockerfile and build the image
   for (const file of dockerfiles) {
-    const dockerfilePath = path.join(dockerfilesPath, file, 'Dockerfile');
     const imageTag = `${file}`;
 
     // Check if the image already exists
@@ -89,30 +88,10 @@ async function buildImages(dockerfilesPath: string): Promise<void> {
       SCENARIOS.push(imageTag);
       continue;
     } catch (error) {
-      // Image does not exist, proceed to build
-    }
-
-    // Read all files and directories within the context path
-    const contextPath = path.dirname(dockerfilePath);
-    const contextFiles = await fs.readdir(contextPath);
-
-    // Build the image
-    console.log(`Building image with tag: ${imageTag}`);
-    const stream = await docker.buildImage(
-      {
-        context: contextPath,
-        src: contextFiles,
-      },
-      {
-        t: imageTag,
-      },
-    );
-
-    if (await handleStream(stream)) {
-      console.error(`Error building image: ${imageTag}`);
-    } else {
-      console.log(`Successfully built image: ${imageTag}`);
-      SCENARIOS.push(imageTag);
+      console.error(
+        "The following image doesn't exist, please build it manually:",
+        imageTag,
+      );
     }
   }
 }
@@ -159,11 +138,11 @@ export async function createUser(
     const container = docker.getContainer(containerId);
 
     // Update apt and install sudo command
-    const installSudo = [
-      '/bin/sh',
-      '-c',
-      'apt update && apt install sudo -y  > /dev/null 2>&1',
-    ];
+    // const installSudo = [
+    //   '/bin/sh',
+    //   '-c',
+    //   'apt update && apt install sudo -y  > /dev/null 2>&1',
+    // ];
 
     // Create user and add them to sudoers command
     const addSudoUser = [
@@ -180,7 +159,7 @@ export async function createUser(
     ];
 
     // Update repo and install sudo
-    await runCommandInContainer(container, installSudo);
+    // await runCommandInContainer(container, installSudo);
 
     // Create user and add them to sudoers
     await runCommandInContainer(container, addSudoUser);
@@ -354,7 +333,7 @@ export async function createWgRouter(
       `PEERS=${numTeams * numMembersPerTeamIncAdmin + numTeams}`,
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
-      `SERVERURL=${wgRouterIp}`,
+      `SERVERURL=${process.env.SERVERURL ? process.env.SERVERURL : wgRouterIp}`,
       `SERVERPORT=${wireguardPort}`,
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
