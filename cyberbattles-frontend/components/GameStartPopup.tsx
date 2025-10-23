@@ -1,10 +1,7 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
-import {
-  doc,
-  getDoc,
-} from 'firebase/firestore';
+import {doc, getDoc} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
 interface GameStartPopupProps {
@@ -43,22 +40,23 @@ const GameStartPopup: React.FC<GameStartPopupProps> = ({
               {teamName}, your game has started!
             </h1>
           </div>
-          <div className='italic'>
-            Jump into your CyberBattles game by visiting the shell or monitoring network traffic. <br />
+          <div className="italic">
+            Jump into your CyberBattles game by visiting the shell or monitoring
+            network traffic. <br />
             You can use your own terminal by following the VPN setup guide.
           </div>
         </div>
-          {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white"
-            >
-              Close
-            </button>
-          </div>
+        {/* Footer Actions */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-b-xl transition font-semibold text-white"
+          >
+            Close
+          </button>
         </div>
       </div>
+    </div>
   );
 };
 
