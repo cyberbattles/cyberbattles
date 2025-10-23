@@ -201,18 +201,20 @@ const Dashboard = () => {
     <>
       {/* End of game popup */}
 
-      {
-        (searchParams.get('sessionId')) &&
-        <GameEndPopup {...{
+      {searchParams.get('sessionId') && (
+        <GameEndPopup
+          {...{
             isVisible: true,
             isAdmin: false,
+            isOpen: true,
             onClose: () => {
               localStorage.setItem('sessionId', '');
             },
             sessionId: searchParams.get('sessionId') || '',
-            }}>
-        </GameEndPopup>
-      }
+            continueAdministering: false,
+          }}
+        ></GameEndPopup>
+      )}
 
       {/* Dashboard Layout */}
       <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
