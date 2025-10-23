@@ -355,22 +355,6 @@ const Lobby = () => {
     if (!sessionId) {
       return;
     }
-    checkAdmin();
-  }, [currentUser, team, router]);
-
-  // Listen for game start
-  useEffect(() => {
-    if (!team || !team.sessionId || gameStatus === 'started') return;
-
-    const unsubscribe = onSnapshot(doc(db, 'sessions', team.sessionId), doc => {
-      if (doc.exists() && doc.data().started) {
-        console.log('Session has started');
-        handleStartGame();
-      }
-    });
-    return () => unsubscribe();
-  }, [team, gameStatus]);
-
     const unsubscribe = onSnapshot(doc(db, 'finishedSessions', sessionId), doc => {
       if (doc.exists()) {
         console.log('session has finished');
