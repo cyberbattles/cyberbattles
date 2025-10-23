@@ -57,6 +57,7 @@ const CodeBlock = ({content}: {content: string}) => {
 
 export default function ModernLearnPage() {
   const {currentUser} = useAuth();
+  const [loggedin, setLoggedin] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [completedModules, setCompletedModules] = useState([
     false,
@@ -412,10 +413,13 @@ export default function ModernLearnPage() {
     setCompletedModules(newCompleted);
     if (!uid) {
       console.log("user not logged in");
+      setLoggedin(false);
+
       return;
     }
-
+    
     try {
+      setLoggedin(true);
       const userRef = collection(db, 'login');
       const userSnap = await getDocs(userRef);
       const userId = uid;
@@ -706,6 +710,7 @@ export default function ModernLearnPage() {
                   Mark Complete
                 </button>
 
+
                 <button
                   onClick={() => {
                     const newIndex = Math.min(
@@ -730,6 +735,12 @@ export default function ModernLearnPage() {
                   Next <FaChevronRight className="text-sm" />
                 </button>
               </div>
+              {(loggedin === false) && 
+                 <div className='text-center mt-5 ml-10 font-bold italic'>
+                  Login to complete the learn modules.
+                 </div>
+                
+                }
             </div>
           </div>
         </div>
