@@ -1,4 +1,8 @@
 'use client';
+import { useAuth } from '@/components/Auth';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, doc, getDocs, updateDoc } from 'firebase/firestore';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   FaLock,
@@ -52,6 +56,70 @@ const CodeBlock = ({content}: {content: string}) => {
 };
 
 export default function ModernLearnPage() {
+  const {currentUser} = useAuth();
+  const [uid, setUid] = useState<string | null>(null);
+  const [completedModules, setCompletedModules] = useState([
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+  ]);
+  const [isLocked, setIsLocked] = useState([
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+  ]);
+
+  // Check if user has visitedd the page before via a firebase call.
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        console.log("user not logged in")
+        return;
+      }
+      setUid(user.uid);
+
+    try {
+      // Fetch information from login database
+      const userRef = collection(db, "login");
+      const userSnap = await getDocs(userRef);
+      const userId = user.uid;
+
+      for (const userDoc of userSnap.docs) {
+        const userData = userDoc.data();
+
+        if (
+          userId === userData.UID && userData.learnStarted === true
+        ) {
+          setCompletedModules(userData.learnActivity);
+          setIsLocked(userData.lockActivity);
+          const completed = userData.learnActivity;
+
+         
+        }
+        const userRef = doc(db, "login", userId);
+        if (userId === userData.UID && (userData.learnStarted === false || userData.learnStarted === undefined)) {
+          await updateDoc(userRef, { learnActivity: [false, false, false, false, false, false], 
+            learnStarted: true,
+            lockActivity: [false, true, true, true, true, true], 
+          });
+          
+          
+        }
+      }
+
+    } catch (error) {
+      console.error("Error fetching learn activity");
+    }
+  });
+    return () => unsubscribe();
+  },[]);
+  
   const learnItems: LearnItem[] = [
     {
       title: 'Getting Started',
@@ -337,33 +405,49 @@ export default function ModernLearnPage() {
   ];
 
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [completedModules, setCompletedModules] = useState([
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-  ]);
-  const [isLocked, setIsLocked] = useState([
-    false,
-    true,
-    true,
-    true,
-    true,
-    true,
-  ]);
 
-  const handleModuleComplete = () => {
+  const handleModuleComplete = async () => {
     const newCompleted = [...completedModules];
     newCompleted[selectedIndex] = true;
     setCompletedModules(newCompleted);
+    if (!uid) {
+      console.log("user not logged in");
+      return;
+    }
+
+    try {
+      const userRef = collection(db, 'login');
+      const userSnap = await getDocs(userRef);
+      const userId = uid;
+
+      for (const userDoc of userSnap.docs) {
+        const userData = userDoc.data();
+
+        if (userId === userData.UID && userData.learnStarted === true) {
+          const updateRef = doc(db, 'login', userId);
+
+          const updatedLearnActivity = [...userData.learnActivity];
+          const updatedLockActivity = [...userData.lockActivity];
+          updatedLearnActivity[selectedIndex] = true;
+          updatedLockActivity[selectedIndex] = false;
+          if (selectedIndex + 1 < updatedLockActivity.length) {
+            updatedLockActivity[selectedIndex + 1] = false; 
+          }
+          
+
+          await updateDoc(updateRef, { learnActivity: updatedLearnActivity, lockActivity: updatedLockActivity });
+
+      } 
+    }
 
     // Unlock next module
     if (selectedIndex + 1 < isLocked.length) {
       const newLocked = [...isLocked];
       newLocked[selectedIndex + 1] = false;
       setIsLocked(newLocked);
+    } 
+  } catch {
+    console.log("update failed");
     }
   };
 

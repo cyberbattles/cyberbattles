@@ -9,11 +9,6 @@ import {db} from '@/lib/firebase';
 import ApiClient from '@/components/ApiClient';
 import {useAuth} from '@/components/Auth';
 
-interface ScenarioOption {
-  value: string;
-  label: string;
-}
-
 const CreateSession = () => {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
