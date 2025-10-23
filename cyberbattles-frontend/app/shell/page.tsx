@@ -14,10 +14,12 @@ import {Terminal, IDisposable} from 'xterm';
 import {FitAddon} from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import FlagPopup from '@/components/FlagPopup';
-import {collection, doc, getDoc, getDocs} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs, onSnapshot} from 'firebase/firestore';
 import {useAuth} from '@/components/Auth';
+import {useRouter} from 'next/navigation';
 
 export default function Shell() {
+  const router = useRouter();
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
@@ -32,6 +34,7 @@ export default function Shell() {
   // Admin related states
   const [isAdmin, setIsAdmin] = useState(false);
   const [teamIds, setTeamIds] = useState<string[]>([]);
+  const [gameOver, setGameOver] = useState<Boolean>(false);
   const [teamSelectionListener, setTeamSelectionListener] =
     useState<IDisposable | null>(null);
 
@@ -113,6 +116,9 @@ export default function Shell() {
   // Check if the user is the session admin
   const checkIfUserIsAdmin = async (userUid: string) => {
     const sessionId = localStorage.getItem('sessionId') || '';
+    if (sessionId === '') {
+      return;
+    }
 
     const sessionRef = doc(db, 'sessions', sessionId);
     const sessionSnap = await getDoc(sessionRef);
@@ -496,8 +502,46 @@ export default function Shell() {
     };
   }, [isTerminalInitialized]);
 
+  // Monitor if the session has ended
+  useEffect(() => {
+    const sessionId = localStorage.getItem('sessionId') || '';
+    if (sessionId === '') {
+      return;
+    }
+    const sessionRef = doc(db, 'sessions', sessionId);
+    const unsubscribe = onSnapshot(sessionRef, sessionDoc => {
+      if (!sessionDoc.exists()) {
+        handleGameOver();
+        return;
+      }
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const handleGameOver = async () => {
+    setGameOver(true);
+    // Store the sessionId value in a 'finishedSession' local field
+    const sessionId = localStorage.getItem('sessionId');
+    await delay(3000);
+    router.push('/dashboard?sessionId=' + sessionId);
+  };
+
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   return (
     <div className="h-screen w-full flex flex-col bg-[#1a1a1a] font-sans pt-25 sm:pt-45">
+      {gameOver && (
+        <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
+            <span className="text-red-400 font-semibold">
+              The game has ended ...
+            </span>
+          </div>
+        </div>
+      )}
       <div
         ref={terminalRef}
         className="flex-1 min-h-0 overflow-hidden px-5 pb-5"

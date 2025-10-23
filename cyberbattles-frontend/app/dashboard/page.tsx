@@ -13,11 +13,13 @@ import {
   arrayRemove,
   onSnapshot,
 } from 'firebase/firestore';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
+import GameEndPopup from '@/components/GameEndPopup';
 
 const Dashboard = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
@@ -197,6 +199,21 @@ const Dashboard = () => {
 
   return (
     <>
+      {/* End of game popup */}
+
+      {
+        (searchParams.get('sessionId')) &&
+        <GameEndPopup {...{
+            isVisible: true,
+            isAdmin: false,
+            onClose: () => {
+              localStorage.setItem('sessionId', '');
+            },
+            sessionId: searchParams.get('sessionId') || '',
+            }}>
+        </GameEndPopup>
+      }
+
       {/* Dashboard Layout */}
       <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
