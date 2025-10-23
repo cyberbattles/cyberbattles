@@ -18,15 +18,6 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-{
-  /* TO DO FOR THIS PAGE
-    1. Get a way to see what challenges were presented to the game. Use the userId or Game id to access these on the frontend. 
-    2. If a challenge is completed, mark as complete in firebase, during the game or after.
-    3. We can then get the challenges, and have some read me information for each challenge created.
-    4. If they failed that challenge we can have some information about how to complete such a challenge.
-    */
-}
-
 const Reports = () => {
   const [userClan, setUserClan] = useState<any>(null);
   const [teamId, setteamId] = useState<any>(null);

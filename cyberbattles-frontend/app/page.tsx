@@ -1,9 +1,6 @@
 'use client';
 import React, {useEffect, useRef} from 'react';
 
-// https://claude.ai/chat/5a4af02b-ce13-4936-86fc-e3fbc403427a
-// https://chatgpt.com/s/t_68d0c7af94bc819199a17e1c7a2da6c4
-
 const MatrixBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 

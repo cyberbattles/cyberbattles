@@ -17,9 +17,6 @@ import {
   FaCheck,
 } from 'react-icons/fa';
 
-// REF: Used claude to update how it looks
-// https://claude.ai/chat/275e0248-c0a1-4fbf-a503-7293669bd103
-
 type ContentSegment =
   | {type: 'text'; content: string}
   | {type: 'heading'; content: string}
