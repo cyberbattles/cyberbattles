@@ -349,9 +349,24 @@ const Lobby = () => {
     return () => unsubscribe();
   }, [team, gameStatus]);
 
+  // Listen for game end
+  useEffect(() => {
+    const sessionId = localStorage.getItem('sessionId')
+    if (!sessionId) {
+      return;
+    }
+    const unsubscribe = onSnapshot(doc(db, 'finishedSessions', sessionId), doc => {
+      if (doc.exists()) {
+        console.log('session has finished');
+        handleEndGame();
+      }
+    });
+    return () => unsubscribe();
+  }, [team]);
+
   // Listen for being kicked
   useEffect(() => {
-    if (!team || !gameTeamId || !currentUser) return;
+    if (!team || !gameTeamId || !currentUser || gameStatus === 'ended') return;
 
     const unsubscribe = onSnapshot(doc(db, 'teams', gameTeamId), doc => {
       if (doc.exists()) {
@@ -440,6 +455,14 @@ const Lobby = () => {
 
   const handleStartGame = async () => {
     setGameStatus('started');
+  };
+
+  const handleEndGame = async () => {
+    setGameStatus('ended');
+    const sessionId = localStorage.getItem('sessionId');
+    if (router) {
+      router.push('/dashboard?sessionId=' + sessionId);
+    }
   };
 
   const handleCopy = useCallback(async (text: string) => {
@@ -540,7 +563,9 @@ const Lobby = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : 'text-green-400'
+                        : gameStatus === 'ended'
+                          ? 'text-red-400'
+                          : 'text-green-400'
                   }`}
                 >
                   {gameStatus === 'starting' ? 'Starting...' : gameStatus}

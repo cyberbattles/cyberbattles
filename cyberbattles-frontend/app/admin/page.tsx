@@ -10,12 +10,14 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   updateDoc,
   onSnapshot,
 } from 'firebase/firestore';
 import Navbar from '@/components/Navbar';
 import ApiClient from '@/components/ApiClient';
 import {useAuth} from '@/components/Auth';
+import GameEndPopup from '@/components/GameEndPopup';
 
 /**
  * An interface representing a result of starting a session.
@@ -107,11 +109,6 @@ const Admin = () => {
       const sessionSnap = await getDoc(sessionRef);
       if (sessionSnap.exists()) {
         teamIds = sessionSnap.data().teamIds;
-        if (sessionSnap.data().started) {
-          setGameStatus('started');
-        } else {
-          setGameStatus('waiting');
-        }
       }
 
       teamIds.forEach(teamId => {
@@ -261,7 +258,7 @@ const Admin = () => {
         scenarioId = sessionSnap.data().scenarioId;
         // Check if the session has already started
         const started = sessionSnap.data().started;
-        if (started) {
+        if (started && gameStatus != 'ending') {
           setGameStatus('started');
         }
       }
@@ -323,6 +320,44 @@ const Admin = () => {
   async function cleanupSession() {
     if (!currentUser) return false;
 
+    // Set the started value to false and wait 10 seconds
+    // const sessionRef = doc(db, 'sessions', sessionId);
+    // await updateDoc(sessionRef, {
+    //   started: false,
+    // });
+    // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms)); 
+    // delay(10);
+    // setGameStatus('ended');
+
+    // Populate the finished session and set the ended session value
+    const finishedRef = doc(db, 'finishedSessions', sessionId);
+
+    interface ScoreDictionary {
+      [key: string]: [string, number];
+    }
+    
+    // Add each team and their score to scoremap
+    let scoreMap: ScoreDictionary = {};
+
+    const fetchTeamPromises = Array.from(teams.keys()).map(async (id) => {
+      const teamRef = doc(db, 'teams', id);
+      const teamSnap = await getDoc(teamRef);
+      if (!teamSnap.exists()) {
+        return;
+      }
+      const team = teamSnap.data();
+      const teamName:string = team.name;
+      const score:number = team.totalScore;
+
+      scoreMap[id] = [teamName, score];
+    });
+
+    await Promise.all(fetchTeamPromises);
+    
+    await setDoc(finishedRef, {
+      results: scoreMap,
+    })
+
     // Create the api request url
     const token = await currentUser.getIdToken(true);
     const request = '/cleanup/' + sessionId + '/' + token;
@@ -383,7 +418,8 @@ const Admin = () => {
     }
     setGameStatus('ending');
     await cleanupSession();
-    router.push('/dashboard');
+    setGameStatus('ended');
+    router.push('/dashboard?sessionId=' + sessionId);
   };
 
   // Set the teams, players, and scenario hooks
@@ -430,7 +466,7 @@ const Admin = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : gameStatus === 'ending'
+                        : (gameStatus === 'ending' || gameStatus === 'ended')
                           ? 'text-red-400'
                           : 'text-green-400'
                   }`}
