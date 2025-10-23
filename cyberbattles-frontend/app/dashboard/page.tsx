@@ -14,7 +14,7 @@ import {
   onSnapshot,
   getDoc,
 } from 'firebase/firestore';
-import {useRouter} from 'next/navigation';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -28,6 +28,7 @@ import GameEndPopup from '@/components/GameEndPopup';
 
 const Dashboard = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [jwt, setJwt] = useState('');
   const [showJwt, setShowJwt] = useState(false);
 
@@ -498,14 +499,14 @@ const Dashboard = () => {
       {/* End of game popup */}
 
       {
-        (localStorage?.getItem('finishedSession') != '') &&
+        (searchParams.get('sessionId')) &&
         <GameEndPopup {...{
             isVisible: true,
             isAdmin: false,
             onClose: () => {
-              localStorage.setItem('finishedSession', '');
+              localStorage.setItem('sessionId', '');
             },
-            sessionId: localStorage.getItem('finishedSession') || '',
+            sessionId: searchParams.get('sessionId') || '',
             }}>
         </GameEndPopup>
       }

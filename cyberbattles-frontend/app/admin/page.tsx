@@ -334,7 +334,6 @@ const Admin = () => {
     // setGameStatus('ended');
 
     // Populate the finished session and set the ended session value
-    localStorage.setItem('finishedSession', sessionId);
     const finishedRef = doc(db, 'finishedSessions', sessionId);
 
     interface ScoreDictionary {
@@ -354,7 +353,6 @@ const Admin = () => {
       const teamName:string = team.name;
       const score:number = team.totalScore;
 
-      // Doesn't add to the map for some reason
       scoreMap[id] = [teamName, score];
     });
 
@@ -425,7 +423,7 @@ const Admin = () => {
     setGameStatus('ending');
     await cleanupSession();
     setGameStatus('ended');
-    router.push('/dashboard')
+    router.push('/dashboard?sessionId=' + sessionId);
   };
 
   // Set the teams, players, and scenario hooks
