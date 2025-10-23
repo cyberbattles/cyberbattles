@@ -361,7 +361,7 @@ export default function Shell() {
       wsRef.current = null;
     }
 
-    const host = 'cyberbattl.es';
+    const host = 'cyberbattl.es'; // Change this to localhost:1337 if required!
     let ws: WebSocket | null = null;
     let abort = false;
 
