@@ -18,6 +18,7 @@ import {FaRegCopy} from 'react-icons/fa';
 import QRCode from 'react-qr-code';
 import {useAuth} from '@/components/Auth';
 import FlagPopup from '@/components/FlagPopup';
+import GameStartPopup from '@/components/GameStartPopup';
 
 interface TeamData {
   id: string;
@@ -114,6 +115,7 @@ const Lobby = () => {
   const [gameSessionId, setSessionId] = useState<string>('');
   const [currentUsername, setcurrentUsername] = useState('User');
   const [vpnConfig, setVpnConfig] = useState<string | null>(null);
+  const [gamestartonce, setgamestartonce] = useState(false);
   const [gameteamIp, setgameteamIp] = useState<any>(null);
   const [sessionTeams, setSessionTeams] = useState<SessionTeamInfo[]>([]);
   const [totalScore, setTotalScore] = useState<number>(0);
@@ -529,6 +531,22 @@ const Lobby = () => {
 
   return (
     <>
+     {/* Start of game popup */}
+
+      {
+        (gameStatus === 'started' && gamestartonce === false) &&
+        <GameStartPopup {...{
+            teamName: team?.name || 'Team-1',
+            isVisible: true,
+            isAdmin: false,
+            onClose: () => {
+              setgamestartonce(true);
+            },
+            }}>
+        </GameStartPopup>
+      }
+        
+      {/* End of game popup */}
       {/* Lobby Layout */}
       <div className="flex flex-col md:flex-row min-h-screen pt-20 sm:pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
