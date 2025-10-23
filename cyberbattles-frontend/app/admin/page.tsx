@@ -101,6 +101,8 @@ const Admin = () => {
   const [vpnTeamSelectIpAddress, setVpnTeamSelectIpAddress] =
     useState<string>('');
   const [username, setUsername] = useState<string>('');
+  const [showEndGame, setShowEndGame] = useState(false);
+  const [endedSessionId, setEndedSessionId] = useState<string>('');
 
   const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
     ({teams, port, handleCopy}) => {
@@ -325,12 +327,12 @@ const Admin = () => {
       const sessionSnap = await getDoc(sessionRef);
       let scenarioId = '';
       if (sessionSnap.exists()) {
-
+        const sessionData = sessionSnap.data();
         setCreatedAt(sessionData.createdAt || null);
         setStartedAt(sessionData.startedAt || null);
 
-        scenarioId = sessionSnap.data().scenarioId;
-        
+        scenarioId = sessionData.scenarioId;
+
         // Check if the session has already started
         const started = sessionSnap.data().started;
         if (started && gameStatus != 'ending') {
@@ -402,28 +404,28 @@ const Admin = () => {
     interface ScoreDictionary {
       [key: string]: [string, number];
     }
-    
+
     // Add each team and their score to scoremap
     let scoreMap: ScoreDictionary = {};
 
-    const fetchTeamPromises = Array.from(teams.keys()).map(async (id) => {
+    const fetchTeamPromises = Array.from(teams.keys()).map(async id => {
       const teamRef = doc(db, 'teams', id);
       const teamSnap = await getDoc(teamRef);
       if (!teamSnap.exists()) {
         return;
       }
       const team = teamSnap.data();
-      const teamName:string = team.name;
-      const score:number = team.totalScore;
+      const teamName: string = team.name;
+      const score: number = team.totalScore;
 
       scoreMap[id] = [teamName, score];
     });
 
     await Promise.all(fetchTeamPromises);
-    
+
     await setDoc(finishedRef, {
       results: scoreMap,
-    })
+    });
 
     // Create the api request url
     const token = await currentUser.getIdToken(true);
@@ -492,21 +494,25 @@ const Admin = () => {
       console.log('No current admin user or session');
       return;
     }
-    const sessionToEnd = sessionId;
+    setEndedSessionId(sessionId);
+    const endedSessionIdLocal = sessionId;
+    setSessionIds(sessionIds.filter(sid => sid !== endedSessionIdLocal));
     setGameStatus('ending');
-    setSessionIds(sessionIds.filter(sid => sid !== sessionToEnd));
 
     if (sessionIds.length - 1 > 0) {
+      setShowEndGame(true);
       setSessionId(sessionIds[0]);
       getTeams();
       getPlayers();
       getScenario();
-      await cleanupSession(sessionToEnd);
+      await cleanupSession(endedSessionIdLocal);
     } else {
       setSessionId('');
-      await cleanupSession(sessionToEnd);
-    setGameStatus('ended');
-    router.push('/dashboard?sessionId=' + sessionId);
+      setGameStatus('ending');
+
+      await cleanupSession(endedSessionIdLocal);
+      setGameStatus('ended');
+      router.push('/dashboard?sessionId=' + endedSessionIdLocal);
     }
   };
 
@@ -651,6 +657,21 @@ const Admin = () => {
   };
   return (
     <>
+      {/* End of game popup */}
+      {showEndGame && (
+        <GameEndPopup
+          {...{
+            isVisible: true,
+            isAdmin: true,
+            isOpen: true,
+            onClose: () => {
+              setShowEndGame(false);
+            },
+            sessionId: endedSessionId || '',
+            continueAdministering: true,
+          }}
+        ></GameEndPopup>
+      )}
       <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
         {/* Sidebar */}
         <aside className="w-full md:w-64 bg-[#1e1e1e] shadow-md flex-shrink-0">
@@ -672,7 +693,7 @@ const Admin = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : (gameStatus === 'ending' || gameStatus === 'ended')
+                        : gameStatus === 'ending' || gameStatus === 'ended'
                           ? 'text-red-400'
                           : 'text-green-400'
                   }`}
