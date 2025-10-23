@@ -61,142 +61,104 @@ exports.deleteUserFromFirestore = functions.auth.user().onDelete(user => {
 });
 
 /**
- * Triggered when a team document is updated in Firestore.
- * Recalculates and updates the total score for the clan that the team belongs to,
- * based on the SLA-adjusted scores of all member teams.
+ * Triggered when a new finished session document is created.
+ * Aggregates scores from the session results and updates the totalScore
+ * for each associated clan using atomic increments.
  */
-exports.updateClanScoreOnTeamUpdate = functions.firestore
-  .document('teams/{teamId}')
-  .onUpdate(async (change, context) => {
-    const teamDataBefore = change.before.data();
-    const teamDataAfter = change.after.data();
-    const teamId = context.params.teamId;
+exports.aggregateClanScores = functions.firestore
+  .document('finishedSessions/{sessionId}')
+  .onCreate(async (snap, context) => {
+    const sessionData = snap.data();
+    const sessionId = context.params.sessionId;
+    const results = sessionData.results;
 
-    // --- Step 2: Check for Relevant Changes ---
-    // Exit if score and SLA fields haven't changed
     if (
-      teamDataAfter.totalScore === teamDataBefore.totalScore &&
-      teamDataAfter.downCount === teamDataBefore.downCount &&
-      teamDataAfter.totalCount === teamDataBefore.totalCount
+      !results ||
+      typeof results !== 'object' ||
+      Object.keys(results).length === 0
     ) {
-      console.log(
-        `Team ${teamId}: No relevant score/SLA fields changed. Exiting.`,
-      );
       return null;
     }
-
-    console.log(
-      `Team ${teamId}: Relevant change detected. Recalculating clan score.`,
-    );
-
-    // --- Step 3: Identify Team Leader ---
-    // Team leader is the first member ID
-    if (!teamDataAfter.memberIds || teamDataAfter.memberIds.length === 0) {
-      console.log(`Team ${teamId} has no members. Cannot find clan.`);
-      return null;
-    }
-    const teamLeaderId = teamDataAfter.memberIds[0];
 
     const db = admin.firestore();
+    const clanScoresToAdd = {};
 
-    try {
-      // --- Step 4: Find the Clan ---
-      const clansRef = db.collection('clans');
-      const clanQuery = clansRef
-        .where('memberIds', 'array-contains', teamLeaderId)
-        .limit(1);
-      const clanSnapshot = await clanQuery.get();
+    // Aggregate New Scores from this session
+    for (const teamId in results) {
+      if (Object.prototype.hasOwnProperty.call(results, teamId)) {
+        const scoreEntry = results[teamId];
+        // Ensure the entry is an array with at least 3 elements
+        if (Array.isArray(scoreEntry) && scoreEntry.length >= 3) {
+          const teamScore = scoreEntry[1];
+          const clanId = scoreEntry[2];
 
-      if (clanSnapshot.empty) {
-        console.log(
-          `Team leader ${teamLeaderId} (from team ${teamId}) not found in any clan.`,
-        );
-        return null; // Team leader isn't in a clan
-      }
-
-      const clanDoc = clanSnapshot.docs[0];
-      const clanId = clanDoc.id;
-      const clanData = clanDoc.data();
-      const clanMemberLeaderIds = clanData.memberIds || [];
-
-      console.log(
-        `Found clan ${clanId} for team leader ${teamLeaderId} (from team ${teamId}).`,
-      );
-
-      if (clanMemberLeaderIds.length === 0) {
-        console.log(`Clan ${clanId} has no members. Setting score to 0.`);
-        await db.collection('clans').doc(clanId).update({totalScore: 0});
-        return null;
-      }
-
-      // --- Step 5 & 6: Fetch Member Teams & Calculate Adjusted Scores ---
-      const teamsRef = db.collection('teams');
-      let totalClanScore = 0;
-
-      // Create promises to fetch all teams whose leader is in the clan
-      const teamFetchPromises = clanMemberLeaderIds.map(async leaderId => {
-        const teamQuery = teamsRef
-          .where('memberIds', 'array-contains', leaderId)
-          .limit(1); // Assuming leader is unique across teams for safety
-        const teamSnapshot = await teamQuery.get();
-
-        if (!teamSnapshot.empty) {
-          const memberTeamDoc = teamSnapshot.docs[0];
-          // Ensure the leader we queried for is actually the *first* member
-          if (memberTeamDoc.data().memberIds[0] === leaderId) {
-            return memberTeamDoc.data(); // Return the team data
+          // Validate data types
+          if (
+            typeof teamScore === 'number' &&
+            typeof clanId === 'string' &&
+            clanId.trim() !== ''
+          ) {
+            clanScoresToAdd[clanId] =
+              (clanScoresToAdd[clanId] || 0) + teamScore;
+            console.log(
+              ` - Team ${teamId}: Score ${teamScore}, Clan ${clanId}`,
+            );
+          } else {
+            console.warn(
+              `Skipping invalid score entry for team ${teamId} in session ${sessionId}. Entry:`,
+              scoreEntry,
+            );
           }
-        }
-        console.warn(
-          `Could not find team for leader ID: ${leaderId} or they are not the leader.`,
-        );
-        return null; // Return null if team not found or ID doesn't match leader position
-      });
-
-      // Wait for all team fetches
-      const memberTeamsData = await Promise.all(teamFetchPromises);
-
-      // --- Step 7: Sum Scores ---
-      memberTeamsData.forEach(teamData => {
-        if (teamData) {
-          // Check if team data was successfully fetched
-          const {totalScore = 0, downCount = 0, totalCount = 0} = teamData;
-          let slaMultiplier = 1;
-          if (totalCount > 0) {
-            slaMultiplier = 1 - downCount / totalCount;
-          }
-          // Ensure multiplier isn't negative if downCount somehow exceeds totalCount
-          slaMultiplier = Math.max(0, slaMultiplier);
-
-          const adjustedScore = totalScore * slaMultiplier;
-          totalClanScore += adjustedScore;
-          console.log(
-            `Team ${teamData.id}: Score=${totalScore}, Down=${downCount}, Total=${totalCount}, Multiplier=${slaMultiplier.toFixed(3)}, AdjScore=${adjustedScore.toFixed(2)}`,
+        } else {
+          console.warn(
+            `Skipping malformed score entry for team ${teamId} in session ${sessionId}. Entry:`,
+            scoreEntry,
           );
         }
-      });
-      // Round the final score to avoid potential floating point inaccuracies
-      const finalClanScore = Math.round(totalClanScore);
+      }
+    }
 
+    if (Object.keys(clanScoresToAdd).length === 0) {
       console.log(
-        `Clan ${clanId}: Calculated total adjusted score: ${finalClanScore}`,
+        `No valid clan scores found in session ${sessionId}. Exiting.`,
       );
-
-      // --- Update Clan Document ---
-      await db.collection('clans').doc(clanId).update({
-        totalScore: finalClanScore,
-      });
-
-      console.log(
-        `Successfully updated clan ${clanId} score to ${finalClanScore}.`,
-      );
-      return null;
-    } catch (error) {
-      console.error(
-        `Error updating score for clan containing team ${teamId}:`,
-        error,
-      );
-      // Optional: Add more specific error handling/reporting
       return null;
     }
+
+    // Update Clan Totals Atomically
+    const updatePromises = [];
+    for (const clanId in clanScoresToAdd) {
+      if (Object.prototype.hasOwnProperty.call(clanScoresToAdd, clanId)) {
+        const scoreToAdd = clanScoresToAdd[clanId];
+        const clanDocRef = db.collection('clans').doc(clanId);
+
+        // Use FieldValue.increment for atomic addition
+        const updatePromise = clanDocRef
+          .update({
+            totalScore: admin.firestore.FieldValue.increment(scoreToAdd),
+          })
+          .catch(error => {
+            console.error(
+              `Failed to update score for clan ${clanId}. Error:`,
+              error,
+            );
+          });
+
+        updatePromises.push(updatePromise);
+      }
+    }
+
+    try {
+      await Promise.all(updatePromises);
+      console.log(
+        `Successfully processed score updates for session ${sessionId}.`,
+      );
+    } catch (error) {
+      console.error(
+        `Error during batch update for session ${sessionId}:`,
+        error,
+      );
+    }
+
+    return null;
   });
