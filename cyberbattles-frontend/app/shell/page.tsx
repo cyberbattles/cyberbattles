@@ -1,11 +1,8 @@
 'use client';
 
-// REF: https://claude.ai/chat/599256c2-bde2-40df-8ad5-3acb29f3ecae
 // REF: https://www.qovery.com/blog/react-xtermjs-a-react-library-to-build-terminals/
 // REF: https://www.npmjs.com/package/xterm-for-react
 // REF: https://www.tkcnn.com/github/xtermjs/xterm.js.html
-// REF: https://chatgpt.com/c/68b93e97-0f38-832f-a207-b02b0dc4eef6
-// REF: https://chatgpt.com/share/68d9cb25-aecc-8008-91cb-1ce122b78793
 
 import {db} from '@/lib/firebase';
 import {User} from 'firebase/auth';

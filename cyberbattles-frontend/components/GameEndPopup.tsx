@@ -26,27 +26,12 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   }
 
   const router = useRouter();
-  // const [sessionId, setSessionId] = useState<string | null>(null);
   const [scores, setScores] = useState<Map<string, [string, number]>>(
     new Map(),
   );
   const [winners, setWinners] = useState<string[]>(['']);
 
   if (!isVisible) return null;
-
-  // Get the sessionId information once
-  // useEffect(() => {
-  //   const getSession = async () => {
-  //     const teamRef = doc(db, 'teams', teamId);
-  //     const teamSnap = await getDoc(teamRef)
-  //     if (!teamSnap.exists()) {
-  //       return;
-  //     }
-  //     const teamData = teamSnap.data();
-  //     setSessionId(teamData.sessionId);
-  //   }
-  //   getSession();
-  // }, []);
 
   // Populate the scores
   useEffect(() => {
@@ -272,12 +257,6 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                 Back to Dashboard
               </button>
             )}
-            {/* <button
-              onClick={onClose}
-              className="flex-1 px-4 py-3 bg-[#2f2f2f] hover:bg-gray-700 border border-gray-600 rounded-xl transition font-semibold text-white"
-            >
-              Close
-            </button> */}
           </div>
         </div>
       </div>

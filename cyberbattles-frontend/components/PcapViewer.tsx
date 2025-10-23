@@ -1,8 +1,3 @@
-// components/PcapViewer.tsx
-
-// REF: Debugged compiler warning using Claude. 
-// REF: https://claude.ai/share/17830828-d66b-4453-b8d6-69dcb04418a3
-
 'use client'
 
 import { useState, createElement } from 'react'
