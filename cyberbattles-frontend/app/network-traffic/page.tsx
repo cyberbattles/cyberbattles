@@ -14,10 +14,6 @@ import WarningIcon from '@/public/images/warning.png';
 import SyncIcon from '@/public/images/sync.png';
 import DownloadIcon from '@/public/images/download.png';
 
-// REF: Utilised Claude.
-// https://claude.ai/share/501c44f9-ec4a-4796-98af-d68a16c36f78
-// https://claude.ai/share/33adf08e-559c-4409-9267-2454ba3bbebf
-
 const NetworkTraffic = () => {
   const router = useRouter();
   const [fileUrl, setFileUrl] = useState('');
