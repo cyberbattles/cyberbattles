@@ -450,7 +450,6 @@ const Lobby = () => {
     setIsKicked(true);
     await delay(3000);
     if (router) {
-      console.log("KICKEDDD")
       router.push('/dashboard');
     }
   };
