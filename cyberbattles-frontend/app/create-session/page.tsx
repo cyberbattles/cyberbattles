@@ -4,8 +4,8 @@
 import React, {useState, useEffect} from 'react';
 import {useRouter} from 'next/navigation';
 import Select, {SingleValue} from 'react-select';
-import {getDocs, collection} from 'firebase/firestore';
-import {db} from '@/lib/firebase';
+// import {getDocs, collection} from 'firebase/firestore';
+// import {db} from '@/lib/firebase';
 
 import ApiClient from '@/components/ApiClient';
 import {useAuth} from '@/components/Auth';
@@ -19,15 +19,18 @@ const CreateSession = () => {
   const router = useRouter();
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // const [scenarios, setScenarios] = useState<
+  //   Array<{
+  //     id: string;
+  //     scenario_description: any;
+  //     scenario_difficulty: any;
+  //     scenario_title: any;
+  //     timestamp: any;
+  //     zipData: any;
+  //   }>
+  // >([]); Commented out until more than 1 scenario is added
   const [scenarios, setScenarios] = useState<
-    Array<{
-      id: string;
-      scenario_description: any;
-      scenario_difficulty: any;
-      scenario_title: any;
-      timestamp: any;
-      zipData: any;
-    }>
+    Array<{id: string; scenario_title: string}>
   >([]);
   const [, setJwt] = useState<string | null>(null);
   const [, setShowJwt] = useState(false);
@@ -51,36 +54,34 @@ const CreateSession = () => {
   };
 
   useEffect(() => {
-    // grab available scenarios when page load
-
-    const getScenarios = async () => {
-      try {
-        const scenariosRef = collection(db, 'scenarios');
-        const querySnapshot = await getDocs(scenariosRef);
-
-        const data = querySnapshot.docs.map(doc => ({
-          // We don't really need all these fields but it's there if I decide
-          // to update this page to give more info in the creation process.
-          id: doc.id,
-          scenario_description: doc.data().scenario_description,
-          scenario_difficulty: doc.data().scenario_difficulty,
-          scenario_title: doc.data().scenario_title,
-          timestamp: doc.data().timestamp,
-          zipData: doc.data().zipData,
-        }));
-
-        const scenarioOptions = scenarios.map(s => ({
-          value: s.id,
-          label: s.scenario_title,
-        }));
-
-        setScenarios(data);
-      } catch (error) {
-        console.error('Failed to get scenarios', error);
-      }
-    };
-
-    getScenarios();
+    // const getScenarios = async () => {
+    //   try {
+    //     const scenariosRef = collection(db, 'scenarios');
+    //     const querySnapshot = await getDocs(scenariosRef);
+    //
+    //     const data = querySnapshot.docs.map(doc => ({
+    //       // We don't really need all these fields but it's there if I decide
+    //       // to update this page to give more info in the creation process.
+    //       id: doc.id,
+    //       scenario_description: doc.data().scenario_description,
+    //       scenario_difficulty: doc.data().scenario_difficulty,
+    //       scenario_title: doc.data().scenario_title,
+    //       timestamp: doc.data().timestamp,
+    //       zipData: doc.data().zipData,
+    //     }));
+    //
+    //     const scenarioOptions = scenarios.map(s => ({
+    //       value: s.id,
+    //       label: s.scenario_title,
+    //     }));
+    //
+    //     setScenarios(data);
+    //   } catch (error) {
+    //     console.error('Failed to get scenarios', error);
+    //   }
+    // };
+    // getScenarios(); Commented out until more than 1 scenario is added
+    setScenarios([{id: '8429abfca004aed7', scenario_title: 'Cybernote'}]);
   }, []);
 
   useEffect(() => {
