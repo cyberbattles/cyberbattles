@@ -615,17 +615,17 @@ const Admin = () => {
 
     try {
       const token = await currentUser.getIdToken();
-      const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${currentUser.uid}/${token}`;
-      const response = await fetch(url);
+      
+      const response = await ApiClient.get(`/config/${sessionId}/${teamId}/${currentUser.uid}/${token}`);
 
-      if (!response.ok) {
+      if (response.status != 200) {
         console.error(`Failed to fetch config file: ${response.status}`);
         setVpnConfig(null);
         setVpnConfigLoading(false);
         return;
       }
 
-      const data = await response.json();
+      const data = response.data;
       setVpnConfig(data.config);
     } catch (error) {
       console.error('Error fetching VPN config:', error);
