@@ -1,7 +1,7 @@
 'use client';
 
-import React, {useState} from 'react';
-import {useRouter} from 'next/navigation';
+import React, {useState, useEffect, useCallback} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
 import {
   collection,
   doc,
@@ -24,8 +24,10 @@ const JoinTeam = () => {
   const [editingTeamId, setEditingTeamId] = useState('');
   const [nameMessage, setNameMessage] = useState({type: '', text: ''});
   const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const searchParams = useSearchParams();
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
 
-  const handleJoinTeam = async () => {
+  const handleJoinTeam = useCallback(async () => {
     // Prevent multiple submissions
     if (isLoading) return;
 
@@ -166,9 +168,9 @@ const JoinTeam = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser, isLoading, router, teamId]);
 
-  const handleSetName = async () => {
+  const handleSetName = useCallback(async () => {
     if (isUpdatingName) return;
 
     const trimmedName = newTeamName.trim();
@@ -218,20 +220,49 @@ const JoinTeam = () => {
       });
       setIsUpdatingName(false); // Only set to false on error, success redirects
     }
-  };
+  }, [isUpdatingName, newTeamName, editingTeamId, router]);
 
-  const handleSkip = () => {
+  const handleSkip = useCallback(() => {
     // If they skip, just go to the lobby
     router.push('/lobby');
-  };
+  }, [router]); // Added dependency
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     try {
       router.back();
     } catch (error) {
       console.error('Navigation failed:', error);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const paramTeamId = searchParams.get('teamId');
+
+    // If we have a teamId in the URL and our state is empty, set it.
+    if (paramTeamId && !teamId && !hasAutoSubmitted) {
+      setTeamId(paramTeamId);
+    }
+
+    // If the state is now set from the param, we are logged in,
+    // not already loading, and haven't tried to submit yet, then submit.
+    if (
+      paramTeamId &&
+      teamId === paramTeamId &&
+      currentUser &&
+      !isLoading &&
+      !hasAutoSubmitted
+    ) {
+      setHasAutoSubmitted(true); // Set flag to prevent re-submitting
+      handleJoinTeam();
+    }
+  }, [
+    teamId,
+    currentUser,
+    isLoading,
+    searchParams,
+    handleJoinTeam,
+    hasAutoSubmitted,
+  ]);
 
   return (
     <>
