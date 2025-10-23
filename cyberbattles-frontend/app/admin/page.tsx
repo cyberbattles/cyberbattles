@@ -344,7 +344,7 @@ const Admin = () => {
     // Add each team and their score to scoremap
     let scoreMap: ScoreDictionary = {};
 
-    Array.from(teams.keys()).map(async (id) => {
+    const fetchTeamPromises = Array.from(teams.keys()).map(async (id) => {
       const teamRef = doc(db, 'teams', id);
       const teamSnap = await getDoc(teamRef);
       if (!teamSnap.exists()) {
@@ -356,11 +356,9 @@ const Admin = () => {
 
       // Doesn't add to the map for some reason
       scoreMap[id] = [teamName, score];
-    })
-    // Adds to map successfully
-    scoreMap['team1'] = ['team1', 1];
-    scoreMap['team2'] = ['team2', 2];
-    scoreMap['team3'] = ['team3', 3];
+    });
+
+    await Promise.all(fetchTeamPromises);
     
     await setDoc(finishedRef, {
       results: scoreMap,
