@@ -217,7 +217,6 @@ const Lobby = () => {
     setGameStatus('starting');
     await delay(3000);
     setGameStatus('started');
-    handlePushShell();
   };
 
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -252,7 +251,37 @@ const Lobby = () => {
     return () => {
       unsubscribe();
     };
-  }, [team, gameStatus]);
+  }, [team]);
+
+  // Monitor if the finished session doc has appeared
+  useEffect(() => {
+    if (!team) {
+      return;
+    }
+
+    const finishedRef = doc(db, 'finishedSessions', team.sessionId);
+    const unsubscribe = onSnapshot(finishedRef, finishedDoc => {
+      if (!finishedDoc.exists()) {
+        return;
+      }
+      handleEndGame();
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [team]);
+
+  const handleEndGame = async () => {
+    // If not currently admin of a session, do nothing
+    if (!team || !currentUser) {
+      console.log('No current admin user or session');
+      return;
+    }
+    setGameStatus('ending');
+    await delay(3000);
+    setGameStatus('ended');
+    router.push('/dashboard?sessionId=' + team.sessionId);
+  };
 
   // checking the memberIds array useEffect
   useEffect(() => {
@@ -324,7 +353,7 @@ const Lobby = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : gameStatus === 'ended'
+                        : gameStatus === 'ended' || gameStatus === 'ending'
                           ? 'text-red-400'
                           : 'text-green-400'
                   }`}
@@ -362,6 +391,15 @@ const Lobby = () => {
               <div className="flex items-center gap-2">
                 <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
                 <span className="text-red-400 font-semibold">You have been kicked ...</span>
+              </div>
+            </div>
+          )}
+
+          {gameStatus == 'ending' && (
+            <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
+                <span className="text-red-400 font-semibold">The game is ending ...</span>
               </div>
             </div>
           )}
