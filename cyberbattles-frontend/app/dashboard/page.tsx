@@ -15,9 +15,11 @@ import {
 } from 'firebase/firestore';
 import {useRouter, useSearchParams} from 'next/navigation';
 import {useAuth} from '@/components/Auth';
+import GameEndPopup from '@/components/GameEndPopup';
 
 const Dashboard = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {currentUser} = useAuth();
   const [userClan, setUserClan] = useState<any>(null);
   const [clanLoading, setClanLoading] = useState(true);
