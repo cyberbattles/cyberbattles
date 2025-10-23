@@ -867,11 +867,34 @@ const Admin = () => {
                     </div>
                   ))}
                 </div>
+
                 <div className="flex h-full align-bottom items-end mt-4">
-                  <div className="flex flex-row px-2 pt-3 w-full justify-between border-t border-gray-700">
-                    <h2 className="text-l font-semibold text-white">
-                      Team ID: {value.id}
-                    </h2>
+                  <div className="flex flex-row px-2 pt-3 w-full justify-between items-center border-t border-gray-700">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="text-md font-semibold text-white flex-shrink-0">
+                        Team ID:
+                      </span>
+                      <a
+                        href={`https://cyberbattl.es/join-team?teamId=${value.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline truncate"
+                        title="Open join link in new tab"
+                      >
+                        {value.id}
+                      </a>
+                    </div>
+                    <button
+                      onClick={() =>
+                        handleCopy(
+                          `https://cyberbattl.es/join-team?teamId=${value.id}`,
+                        )
+                      }
+                      className="flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200"
+                      title="Copy Team ID"
+                    >
+                      <FaRegCopy className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
