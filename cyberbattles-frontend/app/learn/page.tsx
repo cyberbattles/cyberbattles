@@ -57,7 +57,7 @@ const CodeBlock = ({content}: {content: string}) => {
 
 export default function ModernLearnPage() {
   const {currentUser} = useAuth();
-  const [loggedin, setLoggedin] = useState<string | null>(null);
+  const [loggedin, setLoggedin] = useState<boolean | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [completedModules, setCompletedModules] = useState([
     false,
