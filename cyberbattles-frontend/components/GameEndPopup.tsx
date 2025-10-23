@@ -1,28 +1,105 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import {auth, db} from '@/lib/firebase';
+import {
+  doc,
+  getDoc,
+} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
 interface GameEndPopupProps {
   isVisible: boolean;
+  isAdmin: boolean;
   onClose: () => void;
-  winningTeam: string;
-  isAdmin?: boolean;
-  gameScore?: {
-    team1: {name: string; score: number};
-    team2: {name: string; score: number};
-  };
+  sessionId: string;
 }
 
 const GameEndPopup: React.FC<GameEndPopupProps> = ({
   isVisible,
-  onClose,
-  winningTeam,
   isAdmin,
-  gameScore,
+  onClose,
+  sessionId,
 }) => {
   const router = useRouter();
+  // const [sessionId, setSessionId] = useState<string | null>(null);
+  const [scores, setScores] = useState<Map<string, [string, number]>>(new Map());
+  const [winners, setWinners] = useState<string[]>(['']);
 
   if (!isVisible) return null;
+
+  // Get the sessionId information once
+  // useEffect(() => {
+  //   const getSession = async () => {
+  //     const teamRef = doc(db, 'teams', teamId);
+  //     const teamSnap = await getDoc(teamRef)
+  //     if (!teamSnap.exists()) {
+  //       return;
+  //     }
+  //     const teamData = teamSnap.data();
+  //     setSessionId(teamData.sessionId);
+  //   }
+  //   getSession();
+  // }, []);
+
+  // Populate the scores
+  useEffect(() => {
+    const getScores = async () => {
+      if (!sessionId) {
+        return;
+      }
+      const finishedRef = doc(db, 'finishedSessions', sessionId);
+      const finishedSnap = await getDoc(finishedRef);
+      if (!finishedSnap.exists()) {
+        return;
+      }
+
+      const scoreMap = new Map();
+
+      const finishedData = finishedSnap.data();
+      const results = finishedData.results;
+      Object.keys(results).forEach((id) => {
+        const pair = results[id];
+        const teamName = pair[0];
+        const score = pair[1];
+        scoreMap.set(id, [teamName, score])
+      })
+      setScores(scoreMap);
+    }
+    getScores();
+  }, [sessionId]);
+
+  // Get winners
+  useEffect(() => {
+    // Get the high score
+    let winners: string[] = [];
+    let highScore: number | null = null;
+    scores.forEach((value, key) => {
+      let id = key;
+      let teamName = value[0]
+      let score = value[1]
+      if (highScore == null || score > highScore) {
+        highScore = score;
+        winners = [teamName];
+      } else if (score == highScore) {
+        winners = winners.concat([teamName]);
+      }
+    });
+    setWinners(winners);
+  }, [scores])
+
+  // Add the given team id's score to the scores map
+  const addTeamScore = async (id: string) => {
+    const teamDoc = doc(db, 'teams', id);
+    const teamSnap = await getDoc(teamDoc);
+    if (!teamSnap.exists()) {
+      return;
+    }
+    const teamData = teamSnap.data();
+    const teamName = teamData.name;
+    const score = teamData.totalScore;
+    scores.set(id, [teamName, score]);
+    setScores(new Map(scores));
+  }
 
   const handleViewLeaderboard = () => {
     router.push('/leaderboard');
@@ -65,59 +142,58 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             <h1 className="text-3xl font-bold text-white mb-2">
               Game Finished
             </h1>
-            <div className="text-xl text-yellow-200 font-semibold">
-              Winner: <span className="text-yellow-100">{winningTeam}</span>
-            </div>
+            {
+              winners.length == 1 && 
+              <div className="text-xl text-yellow-200 font-semibold">
+                Winner: <span className="text-yellow-100">{winners[0]}</span>
+              </div>
+            }
+            {
+              winners.length > 1 && 
+              <div className="text-xl text-yellow-200 font-semibold">
+                Tie: {winners.map((winner) => (<span key={winner} className="text-yellow-100">{winner} </span>))}
+              </div>
+            }
           </div>
         </div>
 
         {/* Game Results */}
-        {gameScore && (
+        {(scores.size) && (
           <div className="p-6 border-b border-gray-700">
             <h3 className="text-lg font-semibold mb-4 text-center text-blue-400">
               Final Scores
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <div
-                className={`p-4 rounded-xl text-center ${
-                  gameScore.team1.name === winningTeam
-                    ? 'bg-green-900/30 border border-green-500'
-                    : 'bg-[#2f2f2f]'
-                }`}
-              >
-                <div className="text-lg font-semibold text-white">
-                  {gameScore.team1.name}
+              {
+                Array.from(scores.values()).map((team) => (
+                <div key={team[0]}>
+                  <div
+                    className={`p-4 rounded-xl text-center ${
+                      // Need to change this to check if they are the winning team
+                      (winners.includes(team[0]))
+                        ? 'bg-green-900/30 border border-green-500'
+                        : 'bg-[#2f2f2f]'
+                    }`}
+                  >
+                    {/* Team Name */}
+                    <div className="text-lg font-semibold text-white">
+                      {team[0]}
+                    </div>
+
+                    <div
+                      className={`text-2xl font-bold ${
+                        //Need to change
+                        (winners.includes(team[0]))
+                          ? 'text-green-400'
+                          : 'text-gray-400'
+                      }`}
+                    >
+                      {team[1]}
+                    </div>
+                  </div>
                 </div>
-                <div
-                  className={`text-2xl font-bold ${
-                    gameScore.team1.name === winningTeam
-                      ? 'text-green-400'
-                      : 'text-gray-400'
-                  }`}
-                >
-                  {gameScore.team1.score}
-                </div>
-              </div>
-              <div
-                className={`p-4 rounded-xl text-center ${
-                  gameScore.team2.name === winningTeam
-                    ? 'bg-green-900/30 border border-green-500'
-                    : 'bg-[#2f2f2f]'
-                }`}
-              >
-                <div className="text-lg font-semibold text-white">
-                  {gameScore.team2.name}
-                </div>
-                <div
-                  className={`text-2xl font-bold ${
-                    gameScore.team2.name === winningTeam
-                      ? 'text-green-400'
-                      : 'text-gray-400'
-                  }`}
-                >
-                  {gameScore.team2.score}
-                </div>
-              </div>
+                ))
+              }
             </div>
           </div>
         )}
@@ -171,12 +247,12 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             >
               Back to Dashboard
             </button>
-            <button
+            {/* <button
               onClick={onClose}
               className="flex-1 px-4 py-3 bg-[#2f2f2f] hover:bg-gray-700 border border-gray-600 rounded-xl transition font-semibold text-white"
             >
               Close
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

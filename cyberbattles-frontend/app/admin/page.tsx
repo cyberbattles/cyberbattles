@@ -10,6 +10,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   updateDoc,
   onSnapshot,
   Timestamp,
@@ -19,6 +20,7 @@ import ApiClient from '@/components/ApiClient';
 import {useAuth} from '@/components/Auth';
 import {FaRegCopy} from 'react-icons/fa';
 import QRCode from 'react-qr-code';
+import GameEndPopup from '@/components/GameEndPopup';
 
 /**
  * An interface representing a result of starting a session.
@@ -199,11 +201,6 @@ const Admin = () => {
       const sessionSnap = await getDoc(sessionRef);
       if (sessionSnap.exists()) {
         teamIds = sessionSnap.data().teamIds;
-        if (sessionSnap.data().started) {
-          setGameStatus('started');
-        } else {
-          setGameStatus('waiting');
-        }
       }
       teamIds.forEach(teamId => {
         addTeam(teamId);
@@ -328,14 +325,15 @@ const Admin = () => {
       const sessionSnap = await getDoc(sessionRef);
       let scenarioId = '';
       if (sessionSnap.exists()) {
-        const sessionData = sessionSnap.data();
-        scenarioId = sessionData.scenarioId;
 
         setCreatedAt(sessionData.createdAt || null);
         setStartedAt(sessionData.startedAt || null);
 
-        const started = sessionData.started;
-        if (started) {
+        scenarioId = sessionSnap.data().scenarioId;
+        
+        // Check if the session has already started
+        const started = sessionSnap.data().started;
+        if (started && gameStatus != 'ending') {
           setGameStatus('started');
         } else {
           setGameStatus('waiting');
@@ -397,6 +395,37 @@ const Admin = () => {
   // Cleanup the session
   async function cleanupSession(sessionId: string) {
     if (!currentUser) return false;
+
+    // Populate the finished session and set the ended session value
+    const finishedRef = doc(db, 'finishedSessions', sessionId);
+
+    interface ScoreDictionary {
+      [key: string]: [string, number];
+    }
+    
+    // Add each team and their score to scoremap
+    let scoreMap: ScoreDictionary = {};
+
+    const fetchTeamPromises = Array.from(teams.keys()).map(async (id) => {
+      const teamRef = doc(db, 'teams', id);
+      const teamSnap = await getDoc(teamRef);
+      if (!teamSnap.exists()) {
+        return;
+      }
+      const team = teamSnap.data();
+      const teamName:string = team.name;
+      const score:number = team.totalScore;
+
+      scoreMap[id] = [teamName, score];
+    });
+
+    await Promise.all(fetchTeamPromises);
+    
+    await setDoc(finishedRef, {
+      results: scoreMap,
+    })
+
+    // Create the api request url
     const token = await currentUser.getIdToken(true);
     const request = '/cleanup/' + sessionId + '/' + token;
     try {
@@ -476,7 +505,8 @@ const Admin = () => {
     } else {
       setSessionId('');
       await cleanupSession(sessionToEnd);
-      router.push('/dashboard');
+    setGameStatus('ended');
+    router.push('/dashboard?sessionId=' + sessionId);
     }
   };
 
@@ -642,7 +672,7 @@ const Admin = () => {
                       ? 'text-yellow-400'
                       : gameStatus === 'starting'
                         ? 'text-blue-400'
-                        : gameStatus === 'ending'
+                        : (gameStatus === 'ending' || gameStatus === 'ended')
                           ? 'text-red-400'
                           : 'text-green-400'
                   }`}
