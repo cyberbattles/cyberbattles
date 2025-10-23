@@ -182,6 +182,7 @@ const Admin = () => {
 
       if (newSessionIds.length > 0 && sessionId === '') {
         setSessionId(newSessionIds[0]);
+        localStorage.setItem('sessionId', newSessionIds[0]);
       }
     } catch (error) {
       console.log('Failed', error);
