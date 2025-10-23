@@ -32,7 +32,6 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   );
   const [winners, setWinners] = useState<string[]>(['']);
 
-
   if (!isVisible) return null;
 
   // Get the sessionId information once
@@ -155,23 +154,29 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             <h1 className="text-3xl font-bold text-white mb-2">
               Game Finished
             </h1>
-            {
-              winners.length == 1 && 
+            {winners.length == 1 && (
               <div className="text-xl text-blue-400 font-semibold">
-                Winner:<br /> <span className="text-blue-400">{winners[0]}</span>
+                Winner:
+                <br /> <span className="text-blue-400">{winners[0]}</span>
               </div>
-            }
-            {
-              winners.length > 1 && 
-              <div className="text-xl text-blue-400 font-semibold" >
-                Tie:<br /> {winners.map((winner, index) => (<span key={winner} className="text-blue-400"> {winner} {index !== winners.length - 1 && ' & '}</span>))}
+            )}
+            {winners.length > 1 && (
+              <div className="text-xl text-blue-400 font-semibold">
+                Tie:
+                <br />{' '}
+                {winners.map((winner, index) => (
+                  <span key={winner} className="text-blue-400">
+                    {' '}
+                    {winner} {index !== winners.length - 1 && ' & '}
+                  </span>
+                ))}
               </div>
             )}
           </div>
         </div>
 
         {/* Game Results */}
-        {(scores.size) && (
+        {scores.size && (
           <div className="p-6">
             <h3 className="text-lg font-semibold mb-4 text-center text-white">
               Final Scores
