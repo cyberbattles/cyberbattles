@@ -926,7 +926,8 @@ const Admin = () => {
                         Team ID:
                       </span>
                       <a
-                        href={`https://cyberbattl.es/join-team?teamId=${value.id}`}
+                        href={`https://cyberbattl.es/join-team?teamId=${value.id}`} 
+                        // ^ This needs to be changed if backend on localhost
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline truncate"
@@ -939,6 +940,7 @@ const Admin = () => {
                       onClick={() =>
                         handleCopy(
                           `https://cyberbattl.es/join-team?teamId=${value.id}`,
+                          // ^ This too!
                         )
                       }
                       className="flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200"
