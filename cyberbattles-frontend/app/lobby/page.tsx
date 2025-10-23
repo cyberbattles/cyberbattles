@@ -633,7 +633,7 @@ const Lobby = () => {
             </div>
           )}
 
-          {/* New Stats Cards */}
+          {/* Stats Cards */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* Total Score Card */}
             <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
@@ -664,31 +664,36 @@ const Lobby = () => {
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Current Scenario */}
             <div className="flex flex-col p-6 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-3">
-              <h2 className="text-xl font-semibold pb-3 border-b border-gray-700 text-gray-100">
-                Current Scenario
-              </h2>
               {currentScenario ? (
-                <div className="flex flex-col gap-3 text-gray-300">
-                  <p className="text-2xl font-bold text-white">
-                    {currentScenario.scenario_title}
-                  </p>
-                  <p>{currentScenario.scenario_description}</p>
-                  <div className="flex gap-4 font-semibold mt-2">
-                    <span className="text-gray-400">Difficulty:</span>
-                    <span>{currentScenario.scenario_difficulty}</span>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-gray-500">Loading scenario details...</p>
-              )}
-              {gameStatus === 'starting' && (
-                <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                    <span className="text-blue-400 font-semibold">
-                      Game starting...
+                <div className="flex flex-col items-center text-center gap-6">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <h2 className="text-gray-400 text-sm uppercase tracking-wider">
+                      Current Scenario
+                    </h2>
+                    <h3 className="text-3xl font-bold text-white">
+                      {currentScenario.scenario_title}
+                    </h3>
+                    <p className="text-gray-300 text-sm max-w-md">
+                      {currentScenario.scenario_description}
+                    </p>
+                    <span className="mt-2 px-4 py-1.5 bg-[#2f2f2f] text-gray-100 text-sm font-semibold rounded-full border border-gray-600">
+                      {currentScenario.scenario_difficulty}
                     </span>
                   </div>
+                  {gameStatus === 'starting' && (
+                    <div className="p-3 bg-blue-900/30 border border-blue-500 rounded-lg w-full max-w-md">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+                        <span className="text-blue-400 font-semibold">
+                          Game starting...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center">
+                  <p className="text-gray-500">Loading scenario details...</p>
                 </div>
               )}
             </div>
@@ -714,7 +719,7 @@ const Lobby = () => {
               </div>
             </div>
 
-            {/* New Actions Card */}
+            {/* Actions Card */}
             <div className="flex flex-col p-6 gap-4 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-1">
               <h2 className="text-xl font-semibold text-gray-100 mb-2">
                 Actions

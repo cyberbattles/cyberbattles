@@ -1,5 +1,6 @@
 import type {Metadata} from 'next';
 import {Geist, Geist_Mono} from 'next/font/google';
+import React, {Suspense} from 'react';
 import './globals.css';
 import Navbar from '@/components/Navbar';
 import {AuthProvider} from '@/components/Auth';
@@ -31,7 +32,16 @@ export default function RootLayout({
       >
         <AuthProvider>
           <Navbar />
-          {children}
+          <Suspense
+            fallback={
+              <canvas
+                className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"
+                style={{background: 'black', filter: 'blur(5px)'}}
+              />
+            }
+          >
+            {children}
+          </Suspense>
         </AuthProvider>
       </body>
     </html>
