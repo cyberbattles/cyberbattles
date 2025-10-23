@@ -3,7 +3,6 @@
 
 import React, {useState, useEffect} from 'react';
 import {useRouter} from 'next/navigation';
-import Select, {SingleValue} from 'react-select';
 import {getDocs, collection} from 'firebase/firestore';
 import {db} from '@/lib/firebase';
 
@@ -22,15 +21,9 @@ const CreateSession = () => {
   const [scenarios, setScenarios] = useState<
     Array<{
       id: string;
-      scenario_description: any;
-      scenario_difficulty: any;
       scenario_title: any;
-      timestamp: any;
-      zipData: any;
     }>
   >([]);
-  const [, setJwt] = useState<string | null>(null);
-  const [, setShowJwt] = useState(false);
   const [numTeams, setNumberTeams] = useState(2);
   const [numMembersPerTeam, setPlayersPerTeam] = useState(1);
   const [selectedScenario, setSelectedScenario] = useState<string | null>(null);
@@ -41,77 +34,46 @@ const CreateSession = () => {
     label: s.scenario_title,
   }));
 
-  const handleChange = (option: SingleValue<ScenarioOption>) => {
-    if (option) {
-      setSelectedScenario(option.value);
-      console.log('Selected scenario id:', option.value);
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value) {
+      setSelectedScenario(value);
+      console.log('Selected scenario id:', value);
     } else {
       setSelectedScenario(null);
     }
   };
 
   useEffect(() => {
-    // grab available scenarios when page load
-
     const getScenarios = async () => {
       try {
         const scenariosRef = collection(db, 'scenarios');
         const querySnapshot = await getDocs(scenariosRef);
 
-        const data = querySnapshot.docs.map(doc => ({
-          // We don't really need all these fields but it's there if I decide
-          // to update this page to give more info in the creation process.
+        // Filter out documents without scenario_title
+        const filteredDocs = querySnapshot.docs.filter(
+          doc => doc.data().scenario_title,
+        );
+        const data = filteredDocs.map(doc => ({
           id: doc.id,
-          scenario_description: doc.data().scenario_description,
-          scenario_difficulty: doc.data().scenario_difficulty,
           scenario_title: doc.data().scenario_title,
-          timestamp: doc.data().timestamp,
-          zipData: doc.data().zipData,
         }));
-
-        const scenarioOptions = scenarios.map(s => ({
-          value: s.id,
-          label: s.scenario_title,
-        }));
+        data.reverse();
 
         setScenarios(data);
       } catch (error) {
         console.error('Failed to get scenarios', error);
       }
     };
-
     getScenarios();
   }, []);
-
-  useEffect(() => {
-    const fetchJwt = async () => {
-      if (currentUser) {
-        try {
-          const token = await currentUser.getIdToken(true);
-          setJwt(token);
-          localStorage.setItem('token', token);
-          setShowJwt(true);
-        } catch (error) {
-          console.error('Failed to get JWT:', error);
-          setJwt('Could not retrieve token.');
-          setShowJwt(true);
-        }
-      } else {
-        console.error('No user is signed in.');
-        setJwt(null);
-        setShowJwt(false);
-      }
-    };
-
-    fetchJwt();
-  }, [currentUser]);
 
   async function createSession() {
     const response = await ApiClient.post('/session', {
       scenarioId: selectedScenario,
       numTeams: numTeams,
       numMembersPerTeam: numMembersPerTeam,
-      token: localStorage.getItem('token'),
+      token: currentUser ? await currentUser.getIdToken() : null,
     });
     console.log(response.data);
     return response.data;
@@ -148,8 +110,6 @@ const CreateSession = () => {
 
   return (
     <>
-      {/* Fixed Navbar */}
-
       {/* Create Team Layout */}
       <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
         {/* Main Content */}
@@ -214,12 +174,27 @@ const CreateSession = () => {
               </div>
             </div>
 
-            <div className="w-80 text-black">
-              <Select<ScenarioOption, false>
-                options={options}
+            <div className="w-80">
+              <select
+                id="scenario"
+                value={selectedScenario || ''}
                 onChange={handleChange}
-                placeholder="Select scenario name"
-              />
+                className="w-full p-4 bg-white text-l text-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-400"
+              >
+                <option value="" disabled className="text-gray-500">
+                  Select scenario name
+                </option>
+
+                {options.map(option => (
+                  <option
+                    key={option.value}
+                    value={option.value}
+                    className="p-4 text-l"
+                  >
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="flex flex-col items-center space-y-4">
