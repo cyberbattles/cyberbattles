@@ -6,6 +6,7 @@ import {collection, doc, getDoc, getDocs, onSnapshot} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
 import FlagPopup from '@/components/FlagPopup';
+import ApiClient from '@/components/ApiClient';
 
 import {useAuth} from '@/components/Auth';
 import Image from 'next/image';
@@ -128,12 +129,14 @@ const NetworkTraffic = () => {
             return;
           }
 
-          const response = await fetch(
-            `https://cyberbattl.es/api/captures/${teamIdResult}/${jwt}?t=${new Date().getTime()}`,
-          );
+          const response = await ApiClient.get(`/captures/${teamIdResult}/${jwt}`,
+            {
+              params: { t: new Date().getTime() },
+              responseType: 'blob' 
+            });
 
-          if (response.ok) {
-            const pcapBlob = await response.blob();
+          if (response.status == 200) {
+            const pcapBlob = await response.data;
 
             if (pcapBlobUrl) {
               URL.revokeObjectURL(pcapBlobUrl);
@@ -181,12 +184,16 @@ const NetworkTraffic = () => {
         return;
       }
 
-      const response = await fetch(
-        `https://cyberbattl.es/api/captures/${teamId}/${jwt}?t=${new Date().getTime()}`,
-      );
+      const response = await ApiClient.get(`/captures/${teamId}/${jwt}`,
+            {
+              params: { t: new Date().getTime() },
+              responseType: 'blob' 
+            }); 
+      // ew I probably should have just called runFetches() here rather 
+      // than duplicating code but it is what it is -Liam
 
-      if (response.ok) {
-        const pcapBlob = await response.blob();
+      if (response.status == 200) {
+        const pcapBlob = await response.data;
 
         if (pcapBlobUrl) {
           URL.revokeObjectURL(pcapBlobUrl);
