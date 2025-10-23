@@ -121,6 +121,29 @@ def signupPage():
 
 @app.route("/home", methods=["POST", "GET"])
 def home():
+
+    def home_page(username):
+        return f"""
+            <div style="display:flex; flex-direction: column; margin: 5rem;">
+
+                <div style="padding: 15px;display:flex; flex-direction: row; align-items: center"> 
+                    <div style="margin-right: 20px;">
+                        <h1> {username}'s note </h1>
+                    </div>
+                    <a href="/logout"><input type="button" value="logout"></a>
+                </div>
+                <div style="box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px; padding: 2rem;">
+                    <form action="/note" method="post" style="margin:0px;"> 
+                        <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
+
+                        <br><br>
+                    
+                        <input type="submit" name="save" value="Save"> 
+                    </form>
+                </div>
+            </div>
+        """
+
     if request.method == "POST":
         username = request.form.get("user")
         passwd = request.form.get("passwd")
@@ -143,17 +166,7 @@ def home():
 
         note = result["note"]
 
-        page = f"""
-            <h1> {username}'s note </h1>
-            <form action="/note" method="post"> 
-                <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
-
-                <br><br>
-            
-                <input type="submit" name="save" value="Save"> 
-            </form>
-        """
-
+        page = home_page(username)
         response = make_response(page)
         response.set_cookie("username", username)
         response.set_cookie("password", passwd)
@@ -173,18 +186,17 @@ def home():
         con.close()
         note = result["note"] if result is not None else ""
 
-        page = f"""
-            <h1> {username}'s note </h1>
-            <form action="/note" method="post"> 
-                <textarea id="message" name="note" rows="5" cols="40" placeholder="Write some notes">{note}</textarea>
-
-                <br><br>
-            
-                <input type="submit" name="save" value="Save"> 
-            </form>
-        """
+        page = home_page(username)
         response = make_response(page)
         return response
+
+
+@app.route("/logout")
+def logout():
+    response = make_response(redirect("/"))
+    response.set_cookie("username", "", expires=0)
+    response.set_cookie("password", "", expires=0)
+    return response
 
 
 @app.route("/note", methods=["POST"])
