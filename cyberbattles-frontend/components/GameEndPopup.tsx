@@ -119,7 +119,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
   };
 
   const handleViewMaterials = () => {
-    router.push('/learn');
+    router.push('/reports');
     onClose();
   };
 
@@ -147,24 +147,27 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
       />
 
       {/* Popup Content */}
-      <div className="relative bg-[#1e1e1e] border border-gray-600 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
+      <div className="relative bg-[#2E2D2D] rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
         {/* Header with celebration effect */}
-        <div className="relative bg-gradient-to-r from-red-700 to-blue-700 p-6 text-center">
+        <div className="relative bg-[#1e1e1e] p-6 text-center">
           <div className="relative">
             <h1 className="text-3xl font-bold text-white mb-2">
               Game Finished
             </h1>
             {winners.length == 1 && (
-              <div className="text-xl text-yellow-200 font-semibold">
-                Winner: <span className="text-yellow-100">{winners[0]}</span>
+              <div className="text-xl text-blue-400 font-semibold">
+                Winner:
+                <br /> <span className="text-blue-400">{winners[0]}</span>
               </div>
             )}
             {winners.length > 1 && (
-              <div className="text-xl text-yellow-200 font-semibold">
-                Tie:{' '}
-                {winners.map(winner => (
-                  <span key={winner} className="text-yellow-100">
-                    {winner}{' '}
+              <div className="text-xl text-blue-400 font-semibold">
+                Tie:
+                <br />{' '}
+                {winners.map((winner, index) => (
+                  <span key={winner} className="text-blue-400">
+                    {' '}
+                    {winner} {index !== winners.length - 1 && ' & '}
                   </span>
                 ))}
               </div>
@@ -174,8 +177,8 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
 
         {/* Game Results */}
         {scores.size && (
-          <div className="p-6 border-b border-gray-700">
-            <h3 className="text-lg font-semibold mb-4 text-center text-blue-400">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold mb-4 text-center text-white">
               Final Scores
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -186,7 +189,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                       // Need to change this to check if they are the winning team
                       winners.includes(team[0])
                         ? 'bg-green-900/30 border border-green-500'
-                        : 'bg-[#2f2f2f]'
+                        : 'bg-red-900/30 border border-red-500'
                     }`}
                   >
                     {/* Team Name */}
@@ -199,7 +202,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                         //Need to change
                         winners.includes(team[0])
                           ? 'text-green-400'
-                          : 'text-gray-400'
+                          : 'text-red-400'
                       }`}
                     >
                       {team[1]}
@@ -217,9 +220,9 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             {/* View Leaderboard */}
             <button
               onClick={handleViewLeaderboard}
-              className="flex items-center justify-center gap-3 p-4 bg-yellow-600 hover:bg-yellow-700 rounded-xl transition font-semibold text-white"
+              className="flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white"
             >
-              <span className="text-xl">🏆</span>
+              <span className="text-xl"></span>
               View Leaderboard
             </button>
 
@@ -228,7 +231,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
               onClick={handleViewTraffic}
               className="flex items-center justify-center gap-3 p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition font-semibold text-white"
             >
-              <span className="text-xl">📊</span>
+              <span className="text-xl"></span>
               View Network Traffic
             </button>
 
@@ -238,16 +241,16 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                 onClick={handleCreateNewGame}
                 className="flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white sm:col-span-2"
               >
-                <span className="text-xl">🎮</span>
+                <span className="text-xl"></span>
                 Create New Game
               </button>
             ) : (
               <button
                 onClick={handleViewMaterials}
-                className="flex items-center justify-center gap-3 p-4 bg-purple-600 hover:bg-purple-700 rounded-xl transition font-semibold text-white sm:col-span-2"
+                className="flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
               >
-                <span className="text-xl">📚</span>
-                View Learning Materials
+                <span className="text-xl"></span>
+                View Game Reports
               </button>
             )}
           </div>
