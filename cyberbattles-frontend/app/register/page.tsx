@@ -8,9 +8,6 @@ export default function CreateAccountPage() {
     <>
       <div className="p-10"></div>
       <div className="p-10">
-        {/* <div className="absolute top-4 left-4 w-25 h-25">
-        <Image src={logo} alt="logo of the website"/>     
-      </div> */}
 
         <section className="min-h-screen flex items-center justify-start pl-150">
           <div className="flex relative gap-8">

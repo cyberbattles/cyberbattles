@@ -1,5 +1,4 @@
 'use client';
-// REF: https://claude.ai/chat/ab790ee6-b43f-4356-a5c9-d020e0a8d5bf
 import React, {useEffect, useState} from 'react';
 import {
   collection,

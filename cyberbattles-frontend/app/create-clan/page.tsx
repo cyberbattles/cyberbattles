@@ -14,8 +14,6 @@ import {db} from '@/lib/firebase';
 import {updateDoc} from 'firebase/firestore';
 import {useAuth} from '@/components/Auth';
 
-// https://claude.ai/chat/905473d6-1bea-4927-9c12-e2b8fb49674e
-
 const CreateClan = () => {
   const router = useRouter();
   const [clanTag, setClanTag] = useState('');
