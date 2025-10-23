@@ -44,8 +44,6 @@ export interface Team {
   numMembers: number;
   /** The user ids of each member of the team. */
   memberIds: string[];
-  /** The UID of the team leader. */
-  teamLeaderUid: string;
   /** The Docker containerId associated with the team. */
   containerId: string;
   /** A unique identifier for the team. */
@@ -184,6 +182,7 @@ const Admin = () => {
 
       if (newSessionIds.length > 0 && sessionId === '') {
         setSessionId(newSessionIds[0]);
+        localStorage.setItem('sessionId', newSessionIds[0]);
       }
     } catch (error) {
       console.log('Failed', error);
@@ -402,7 +401,7 @@ const Admin = () => {
     const finishedRef = doc(db, 'finishedSessions', sessionId);
 
     interface ScoreDictionary {
-      [key: string]: [string, number];
+      [key: string]: [string, number, string];
     }
 
     // Add each team and their score to scoremap
@@ -416,9 +415,25 @@ const Admin = () => {
       }
       const team = teamSnap.data();
       const teamName: string = team.name;
-      const score: number = team.totalScore;
+      const uptime: number =
+        team.downCount > 0 ? 1 - team.downCount / team.totalCount : 0;
+      const score: number = team.totalScore > 0 ? team.totalScore * uptime : 0;
 
-      scoreMap[id] = [teamName, score];
+      // Lookup the Clan (if any) associated with the team leader
+      const leaderId: string = team.memberIds[0];
+      let clanId = '';
+      if (leaderId) {
+        const q = query(
+          collection(db, 'clans'),
+          where('memberIds', 'array-contains', leaderId),
+        );
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          clanId = querySnapshot.docs[0].data().clanId;
+        }
+      }
+
+      scoreMap[id] = [teamName, score, clanId];
     });
 
     await Promise.all(fetchTeamPromises);
