@@ -260,6 +260,9 @@ export async function createTeamContainer(
       ],
       RestartPolicy: {Name: 'unless-stopped'},
     },
+    Labels: {
+      'managed-by': 'cyberbattles',
+    },
   });
   return container.id;
 }
@@ -369,6 +372,9 @@ export async function createWgRouter(
         },
       },
     },
+    Labels: {
+      'managed-by': 'cyberbattles',
+    },
   });
   console.log(`Starting wg-router container for Session: ${sessionId}...`);
   await container.start();
@@ -468,5 +474,56 @@ export async function getContainerIpAddress(
   } catch (error) {
     console.error(`Error inspecting container '${containerId}':`);
     return null;
+  }
+}
+
+/**
+ * Cleans up old Docker containers that were managed by CyberBattles.
+ * @returns A Promise that resolves when the cleanup is complete.
+ */
+export async function cleanupOldContainers() {
+  try {
+    const containers = await docker.listContainers({
+      all: true,
+      filters: JSON.stringify({
+        label: ['managed-by=cyberbattles'],
+      }),
+    });
+
+    if (containers.length === 0) {
+      return;
+    }
+
+    console.log(`Found ${containers.length} leftover containers to remove.`);
+
+    // Stop and remove all found containers
+    const removalPromises = containers.map(async containerInfo => {
+      console.log(`Stopping and removing container ${containerInfo.Id}...`);
+      const container = docker.getContainer(containerInfo.Id);
+
+      try {
+        // Force stop the container.
+        await container.stop({t: 5});
+      } catch (error) {
+        // Ignore "container already stopped" errors
+        if (
+          error instanceof Error &&
+          'statusCode' in error &&
+          error.statusCode !== 304
+        ) {
+          console.warn(
+            `Could not stop container ${containerInfo.Id}: ${error.message}`,
+          );
+        }
+      }
+
+      await container.remove({force: true});
+      console.log(`Removed container ${containerInfo.Id}.`);
+    });
+
+    // Wait for all containers to be removed
+    await Promise.all(removalPromises);
+  } catch (error) {
+    console.error('Error during container cleanup:', error);
   }
 }
