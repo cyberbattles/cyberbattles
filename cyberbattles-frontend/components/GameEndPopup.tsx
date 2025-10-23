@@ -1,28 +1,35 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {auth, db} from '@/lib/firebase';
-import {
-  doc,
-  getDoc,
-} from 'firebase/firestore';
+import {doc, getDoc} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
 interface GameEndPopupProps {
   isVisible: boolean;
   isAdmin: boolean;
+  isOpen: boolean;
   onClose: () => void;
   sessionId: string;
+  continueAdministering: boolean;
 }
 
 const GameEndPopup: React.FC<GameEndPopupProps> = ({
   isVisible,
   isAdmin,
+  isOpen,
   onClose,
   sessionId,
+  continueAdministering,
 }) => {
+  if (!isOpen) {
+    return null;
+  }
+
   const router = useRouter();
   // const [sessionId, setSessionId] = useState<string | null>(null);
-  const [scores, setScores] = useState<Map<string, [string, number]>>(new Map());
+  const [scores, setScores] = useState<Map<string, [string, number]>>(
+    new Map(),
+  );
   const [winners, setWinners] = useState<string[]>(['']);
 
   if (!isVisible) return null;
@@ -57,14 +64,14 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
 
       const finishedData = finishedSnap.data();
       const results = finishedData.results;
-      Object.keys(results).forEach((id) => {
+      Object.keys(results).forEach(id => {
         const pair = results[id];
         const teamName = pair[0];
         const score = pair[1];
-        scoreMap.set(id, [teamName, score])
-      })
+        scoreMap.set(id, [teamName, score]);
+      });
       setScores(scoreMap);
-    }
+    };
     getScores();
   }, [sessionId]);
 
@@ -75,8 +82,8 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
     let highScore: number | null = null;
     scores.forEach((value, key) => {
       let id = key;
-      let teamName = value[0]
-      let score = value[1]
+      let teamName = value[0];
+      let score = value[1];
       if (highScore == null || score > highScore) {
         highScore = score;
         winners = [teamName];
@@ -85,7 +92,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
       }
     });
     setWinners(winners);
-  }, [scores])
+  }, [scores]);
 
   // Add the given team id's score to the scores map
   const addTeamScore = async (id: string) => {
@@ -99,7 +106,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
     const score = teamData.totalScore;
     scores.set(id, [teamName, score]);
     setScores(new Map(scores));
-  }
+  };
 
   const handleViewLeaderboard = () => {
     router.push('/leaderboard');
@@ -126,6 +133,11 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
     onClose();
   };
 
+  const handleBackToAdmin = () => {
+    router.push('/admin');
+    onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-51 flex items-center justify-center">
       {/* Backdrop */}
@@ -142,35 +154,37 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             <h1 className="text-3xl font-bold text-white mb-2">
               Game Finished
             </h1>
-            {
-              winners.length == 1 && 
+            {winners.length == 1 && (
               <div className="text-xl text-yellow-200 font-semibold">
                 Winner: <span className="text-yellow-100">{winners[0]}</span>
               </div>
-            }
-            {
-              winners.length > 1 && 
+            )}
+            {winners.length > 1 && (
               <div className="text-xl text-yellow-200 font-semibold">
-                Tie: {winners.map((winner) => (<span key={winner} className="text-yellow-100">{winner} </span>))}
+                Tie:{' '}
+                {winners.map(winner => (
+                  <span key={winner} className="text-yellow-100">
+                    {winner}{' '}
+                  </span>
+                ))}
               </div>
-            }
+            )}
           </div>
         </div>
 
         {/* Game Results */}
-        {(scores.size) && (
+        {scores.size && (
           <div className="p-6 border-b border-gray-700">
             <h3 className="text-lg font-semibold mb-4 text-center text-blue-400">
               Final Scores
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {
-                Array.from(scores.values()).map((team) => (
+              {Array.from(scores.values()).map(team => (
                 <div key={team[0]}>
                   <div
                     className={`p-4 rounded-xl text-center ${
                       // Need to change this to check if they are the winning team
-                      (winners.includes(team[0]))
+                      winners.includes(team[0])
                         ? 'bg-green-900/30 border border-green-500'
                         : 'bg-[#2f2f2f]'
                     }`}
@@ -183,7 +197,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                     <div
                       className={`text-2xl font-bold ${
                         //Need to change
-                        (winners.includes(team[0]))
+                        winners.includes(team[0])
                           ? 'text-green-400'
                           : 'text-gray-400'
                       }`}
@@ -192,8 +206,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                     </div>
                   </div>
                 </div>
-                ))
-              }
+              ))}
             </div>
           </div>
         )}
@@ -241,12 +254,21 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
 
           {/* Footer Actions */}
           <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleBackToDashboard}
-              className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
-            >
-              Back to Dashboard
-            </button>
+            {continueAdministering ? (
+              <button
+                onClick={onClose}
+                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
+              >
+                Close
+              </button>
+            ) : (
+              <button
+                onClick={handleBackToDashboard}
+                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
+              >
+                Back to Dashboard
+              </button>
+            )}
             {/* <button
               onClick={onClose}
               className="flex-1 px-4 py-3 bg-[#2f2f2f] hover:bg-gray-700 border border-gray-600 rounded-xl transition font-semibold text-white"
