@@ -6,7 +6,7 @@ import {WebSocketServer} from 'ws';
 import {handleWSConnection} from './services/websockets';
 import apiRoutes from './routes';
 import {cleanupAllSessions} from './services/sessions';
-import {getScenarios} from './services/docker';
+import {getScenarios, cleanupOldContainers} from './services/docker';
 // import {syncFolders} from './services/sync';
 
 const PORT = '1337';
@@ -15,7 +15,8 @@ async function main() {
   // Sync then build Docker images with Firestore
   // const dockerFiles = path.join(__dirname, '../../dockerfiles');
   // await syncFolders(dockerFiles);
-  // console.log('Prebuilding Docker images...');
+
+  await cleanupOldContainers();
 
   await getScenarios();
 
