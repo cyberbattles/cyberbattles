@@ -201,35 +201,16 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
 
         {/* Action Buttons */}
         <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 gap-4 mb-6">
             {/* View Leaderboard */}
             <button
               onClick={handleViewLeaderboard}
-              className="flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white"
+              className="flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white sm:col-span-2"
             >
               <span className="text-xl"></span>
               View Leaderboard
             </button>
 
-            {/* View Traffic */}
-            <button
-              onClick={handleViewTraffic}
-              className="flex items-center justify-center gap-3 p-4 bg-blue-600 hover:bg-blue-700 rounded-xl transition font-semibold text-white"
-            >
-              <span className="text-xl"></span>
-              View Network Traffic
-            </button>
-
-            {/* Conditional third button */}
-            {isAdmin ? (
-              <button
-                onClick={handleCreateNewGame}
-                className="flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white sm:col-span-2"
-              >
-                <span className="text-xl"></span>
-                Create New Game
-              </button>
-            ) : (
               <button
                 onClick={handleViewMaterials}
                 className="flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
@@ -237,7 +218,6 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
                 <span className="text-xl"></span>
                 View Game Reports
               </button>
-            )}
           </div>
 
           {/* Footer Actions */}
