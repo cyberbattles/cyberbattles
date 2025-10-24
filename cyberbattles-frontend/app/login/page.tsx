@@ -54,9 +54,10 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
+        setError("Incorrect password, please try again.");
+      }
+      else {
+        setError("An unexpected error occurred");
         // i don't THINK it would ever hit this block
         // just had to specify a type for the error to make the linter happy
       }
