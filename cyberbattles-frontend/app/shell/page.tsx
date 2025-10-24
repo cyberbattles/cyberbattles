@@ -18,6 +18,8 @@ import {collection, doc, getDoc, getDocs, onSnapshot} from 'firebase/firestore';
 import {useAuth} from '@/components/Auth';
 import {useRouter} from 'next/navigation';
 
+import {WEBSOCKET_URL} from '@/components/ApiClient';
+
 export default function Shell() {
   const router = useRouter();
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -34,7 +36,7 @@ export default function Shell() {
   // Admin related states
   const [isAdmin, setIsAdmin] = useState(false);
   const [teamIds, setTeamIds] = useState<string[]>([]);
-  const [gameOver, setGameOver] = useState<Boolean>(false);
+  const [gameOver, setGameOver] = useState<boolean>(false);
   const [teamSelectionListener, setTeamSelectionListener] =
     useState<IDisposable | null>(null);
 
@@ -361,7 +363,6 @@ export default function Shell() {
       wsRef.current = null;
     }
 
-    const host = 'cyberbattl.es'; // Change this to localhost:1337 if required!
     let ws: WebSocket | null = null;
     let abort = false;
 
@@ -386,7 +387,7 @@ export default function Shell() {
           return;
         }
 
-        const wssUrl = `wss://${host}/terminals/${teamId}/${user.uid}/${freshJwt}`;
+        const wssUrl = `${WEBSOCKET_URL}/terminals/${teamId}/${user.uid}/${freshJwt}`;
         ws = new WebSocket(wssUrl);
         wsRef.current = ws;
 
