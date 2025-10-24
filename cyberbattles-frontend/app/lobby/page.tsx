@@ -19,6 +19,7 @@ import QRCode from 'react-qr-code';
 import {useAuth} from '@/components/Auth';
 import FlagPopup from '@/components/FlagPopup';
 import GameStartPopup from '@/components/GameStartPopup';
+import ApiClient from '@/components/ApiClient';
 
 interface TeamData {
   id: string;
@@ -578,15 +579,15 @@ const Lobby = () => {
 
       try {
         const token = await currentUser.getIdToken();
-        const url = `https://cyberbattl.es/api/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`;
-        const response = await fetch(url);
 
-        if (!response.ok) {
+        const response = await ApiClient.get(`/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`);
+        
+        if (response.status != 200) {
           console.error(`Failed to fetch config file: ${response.status}`);
           return;
         }
 
-        const data = await response.json();
+        const data = response.data;
         setVpnConfig(data.config);
       } catch (error) {
         console.error('Error fetching VPN config:', error);

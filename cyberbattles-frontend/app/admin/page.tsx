@@ -22,6 +22,8 @@ import {FaRegCopy} from 'react-icons/fa';
 import QRCode from 'react-qr-code';
 import GameEndPopup from '@/components/GameEndPopup';
 
+import {BACKEND_URL} from '@/components/ApiClient';
+
 /**
  * An interface representing a result of starting a session.
  */
@@ -101,6 +103,7 @@ const Admin = () => {
   const [username, setUsername] = useState<string>('');
   const [showEndGame, setShowEndGame] = useState(false);
   const [endedSessionId, setEndedSessionId] = useState<string>('');
+  const [frontendUrl, setFrontendUrl] = useState<string>('');
 
   const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
     ({teams, port, handleCopy}) => {
@@ -277,7 +280,7 @@ const Admin = () => {
       .then(() => {
         console.log('Team doc successfully updated');
       })
-      .catch((error: any) => {
+      .catch(error => {
         console.error('Error updating document: ', error);
       });
   };
@@ -288,6 +291,12 @@ const Admin = () => {
     getTeams();
     getPlayers();
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setFrontendUrl(window.location.origin);
+    }
+  }, []);
 
   useEffect(() => {
     if (!sessionId) {
@@ -394,8 +403,10 @@ const Admin = () => {
   }
 
   // Cleanup the session
-  async function cleanupSession(sessionId: string) {
-    if (!currentUser) return false;
+  async function cleanupSession(sessionId: string, teams?: Map<string, Team>) {
+    if (!currentUser || !sessionId || !teams) return false;
+
+    setGameStatus('ending');
 
     // Populate the finished session and set the ended session value
     const finishedRef = doc(db, 'finishedSessions', sessionId);
@@ -441,6 +452,11 @@ const Admin = () => {
     await setDoc(finishedRef, {
       results: scoreMap,
     });
+
+    if (sessionIds.length === 0) {
+      setGameStatus('ended');
+      setShowEndGame(true);
+    }
 
     // Create the api request url
     const token = await currentUser.getIdToken(true);
@@ -511,21 +527,18 @@ const Admin = () => {
     }
     setEndedSessionId(sessionId);
     const endedSessionIdLocal = sessionId;
+    const endedTeams = teams;
     setSessionIds(sessionIds.filter(sid => sid !== endedSessionIdLocal));
-    setGameStatus('ending');
 
     if (sessionIds.length - 1 > 0) {
+      await cleanupSession(endedSessionIdLocal, endedTeams);
       setShowEndGame(true);
       setSessionId(sessionIds[0]);
-      getTeams();
-      getPlayers();
-      getScenario();
-      await cleanupSession(endedSessionIdLocal);
+      await getScenario();
+      await getTeams();
+      await getPlayers();
     } else {
-      setSessionId('');
-      setGameStatus('ending');
-
-      await cleanupSession(endedSessionIdLocal);
+      await cleanupSession(endedSessionIdLocal, endedTeams);
       setGameStatus('ended');
       router.push('/dashboard?sessionId=' + endedSessionIdLocal);
     }
@@ -588,7 +601,6 @@ const Admin = () => {
   }, [teams, sessionId]);
 
   const handlePushShell = () => router.push('/shell');
-  const handlePushTraffic = () => router.push('/network-traffic');
 
   const openVpnModal = () => {
     setVpnConfig(null);
@@ -630,17 +642,19 @@ const Admin = () => {
 
     try {
       const token = await currentUser.getIdToken();
-      const url = `https://cyberbattl.es/api/config/${sessionId}/${teamId}/${currentUser.uid}/${token}`;
-      const response = await fetch(url);
 
-      if (!response.ok) {
+      const response = await ApiClient.get(
+        `/config/${sessionId}/${teamId}/${currentUser.uid}/${token}`,
+      );
+
+      if (response.status != 200) {
         console.error(`Failed to fetch config file: ${response.status}`);
         setVpnConfig(null);
         setVpnConfigLoading(false);
         return;
       }
 
-      const data = await response.json();
+      const data = response.data;
       setVpnConfig(data.config);
     } catch (error) {
       console.error('Error fetching VPN config:', error);
@@ -792,13 +806,6 @@ const Admin = () => {
               >
                 Go to Shell
               </button>
-              <button
-                className="w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
-                onClick={handlePushTraffic}
-              >
-                View Network Traffic
-              </button>
-
               <div className="border-t border-gray-700 my-2"></div>
 
               <button
@@ -941,7 +948,11 @@ const Admin = () => {
                         Team ID:
                       </span>
                       <a
-                        href={`https://cyberbattl.es/join-team?teamId=${value.id}`}
+                        href={
+                          frontendUrl
+                            ? `${frontendUrl}/join-team?teamId=${value.id}`
+                            : '#'
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline truncate"
@@ -953,10 +964,13 @@ const Admin = () => {
                     <button
                       onClick={() =>
                         handleCopy(
-                          `https://cyberbattl.es/join-team?teamId=${value.id}`,
+                          frontendUrl
+                            ? `${frontendUrl}/join-team?teamId=${value.id}`
+                            : '',
                         )
                       }
-                      className="flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200"
+                      disabled={!frontendUrl}
+                      className="flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Copy Team ID"
                     >
                       <FaRegCopy className="w-4 h-4" />
