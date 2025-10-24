@@ -147,21 +147,20 @@ const Lobby = () => {
     updateUsername();
   }, [currentUser]);
 
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async currentUser => {
       if (!currentUser || !gameTeamId.trim()) {
         setPopupChecked(true);
         return;
       }
-  
+
       try {
         const teamRef = doc(db, 'teams', gameTeamId.trim());
         const docSnap = await getDoc(teamRef);
-  
+
         if (docSnap.exists()) {
           const teamData = docSnap.data();
-  
+
           if (teamData.shownpopup === true) {
             // Popup has already been shown
             setShouldShowPopup(false);
@@ -170,19 +169,18 @@ const Lobby = () => {
             // Popup not shown yet
             setShouldShowPopup(true);
             setgamestartonce(false);
-            await updateDoc(teamRef, { shownpopup: true });
+            await updateDoc(teamRef, {shownpopup: true});
           }
         }
       } catch (err) {
-        console.log("Error in handling popup:", err);
+        console.log('Error in handling popup:', err);
       } finally {
         setPopupChecked(true);
       }
     });
-  
+
     return () => unsubscribe();
   }, [gameTeamId]);
-  
 
   useEffect(() => {
     if (!currentUser) return;
@@ -392,16 +390,19 @@ const Lobby = () => {
 
   // Listen for game end
   useEffect(() => {
-    const sessionId = localStorage.getItem('sessionId')
+    const sessionId = localStorage.getItem('sessionId');
     if (!sessionId) {
       return;
     }
-    const unsubscribe = onSnapshot(doc(db, 'finishedSessions', sessionId), doc => {
-      if (doc.exists()) {
-        console.log('session has finished');
-        handleEndGame();
-      }
-    });
+    const unsubscribe = onSnapshot(
+      doc(db, 'finishedSessions', sessionId),
+      doc => {
+        if (doc.exists()) {
+          console.log('session has finished');
+          handleEndGame();
+        }
+      },
+    );
     return () => unsubscribe();
   }, [team]);
 
@@ -542,32 +543,27 @@ const Lobby = () => {
   const handlePopup = async () => {
     if (currentUser) {
       try {
-        const teamRef = doc(db, 'teams', gameTeamId.trim());;
+        const teamRef = doc(db, 'teams', gameTeamId.trim());
         console.log(gameTeamId);
         const docSnap = await getDoc(teamRef);
 
-          if (docSnap.exists()) {
-            const teamData = docSnap.data();
+        if (docSnap.exists()) {
+          const teamData = docSnap.data();
 
-          if (
-            teamData.shownpopup === true
-          ) {
+          if (teamData.shownpopup === true) {
             setgamestartonce(true);
-
           }
           if (
-            (teamData.shownpopup === false || teamData.shownpopup === undefined)
-
+            teamData.shownpopup === false ||
+            teamData.shownpopup === undefined
           ) {
             setgamestartonce(true);
-            await updateDoc(teamRef, { shownpopup: true });
+            await updateDoc(teamRef, {shownpopup: true});
           }
         }
       } catch {
-        console.log("Error in handling popup");
-
+        console.log('Error in handling popup');
       }
-     
     }
   };
 
@@ -602,22 +598,24 @@ const Lobby = () => {
 
   return (
     <>
-     {/* Start of game popup */}
-     
+      {/* Start of game popup */}
 
-      {
-        (shouldShowPopup && popupChecked && gameStatus === 'started' && gamestartonce === false) &&
-        <GameStartPopup {...{
-            teamName: team?.name || 'Team-1',
-            isVisible: true,
-            isAdmin: false,
-            onClose: () => {
-              handlePopup();
-            },
-            }}>
-        </GameStartPopup>
-      }
-        
+      {shouldShowPopup &&
+        popupChecked &&
+        gameStatus === 'started' &&
+        gamestartonce === false && (
+          <GameStartPopup
+            {...{
+              teamName: team?.name || 'Team-1',
+              isVisible: true,
+              isAdmin: false,
+              onClose: () => {
+                handlePopup();
+              },
+            }}
+          ></GameStartPopup>
+        )}
+
       {/* End of game popup */}
       {/* Lobby Layout */}
       <div className="flex flex-col md:flex-row min-h-screen pt-20 sm:pt-40 bg-[#2f2f2f] text-white">
