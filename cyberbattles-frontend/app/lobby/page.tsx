@@ -1,7 +1,7 @@
 'use client';
 import React, {useState, useEffect, useCallback} from 'react';
 import {auth, db} from '@/lib/firebase';
-import {signOut} from 'firebase/auth';
+import {onAuthStateChanged, signOut} from 'firebase/auth';
 import {
   collection,
   query,
@@ -121,6 +121,8 @@ const Lobby = () => {
   const [totalScore, setTotalScore] = useState<number>(0);
   const [uptimePercentage, setUptimePercentage] = useState<number>(100);
   const [showVpn, setShowVpn] = useState(false);
+  const [popupChecked, setPopupChecked] = useState(false);
+  const [shouldShowPopup, setShouldShowPopup] = useState(false);
 
   useEffect(() => {
     const updateUsername = async () => {
@@ -144,6 +146,43 @@ const Lobby = () => {
     };
     updateUsername();
   }, [currentUser]);
+
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser || !gameTeamId.trim()) {
+        setPopupChecked(true);
+        return;
+      }
+  
+      try {
+        const teamRef = doc(db, 'teams', gameTeamId.trim());
+        const docSnap = await getDoc(teamRef);
+  
+        if (docSnap.exists()) {
+          const teamData = docSnap.data();
+  
+          if (teamData.shownpopup === true) {
+            // Popup has already been shown
+            setShouldShowPopup(false);
+            setgamestartonce(true);
+          } else {
+            // Popup not shown yet
+            setShouldShowPopup(true);
+            setgamestartonce(false);
+            await updateDoc(teamRef, { shownpopup: true });
+          }
+        }
+      } catch (err) {
+        console.log("Error in handling popup:", err);
+      } finally {
+        setPopupChecked(true);
+      }
+    });
+  
+    return () => unsubscribe();
+  }, [gameTeamId]);
+  
 
   useEffect(() => {
     if (!currentUser) return;
@@ -500,6 +539,38 @@ const Lobby = () => {
     }
   };
 
+  const handlePopup = async () => {
+    if (currentUser) {
+      try {
+        const teamRef = doc(db, 'teams', gameTeamId.trim());;
+        console.log(gameTeamId);
+        const docSnap = await getDoc(teamRef);
+
+          if (docSnap.exists()) {
+            const teamData = docSnap.data();
+
+          if (
+            teamData.shownpopup === true
+          ) {
+            setgamestartonce(true);
+
+          }
+          if (
+            (teamData.shownpopup === false || teamData.shownpopup === undefined)
+
+          ) {
+            setgamestartonce(true);
+            await updateDoc(teamRef, { shownpopup: true });
+          }
+        }
+      } catch {
+        console.log("Error in handling popup");
+
+      }
+     
+    }
+  };
+
   useEffect(() => {
     const fetchVpnConfig = async () => {
       if (!currentUser) {
@@ -532,15 +603,16 @@ const Lobby = () => {
   return (
     <>
      {/* Start of game popup */}
+     
 
       {
-        (gameStatus === 'started' && gamestartonce === false) &&
+        (shouldShowPopup && popupChecked && gameStatus === 'started' && gamestartonce === false) &&
         <GameStartPopup {...{
             teamName: team?.name || 'Team-1',
             isVisible: true,
             isAdmin: false,
             onClose: () => {
-              setgamestartonce(true);
+              handlePopup();
             },
             }}>
         </GameStartPopup>
