@@ -131,7 +131,6 @@ const JoinTeam = () => {
             setIsLoading(false);
             return;
           }
-          
         }
 
         // Add the user's UID to the memberIds array
