@@ -8,7 +8,6 @@ export default function CreateAccountPage() {
     <>
       <div className="p-10"></div>
       <div className="p-10">
-
         <section className="min-h-screen flex items-center justify-start pl-150">
           <div className="flex relative gap-8">
             {/* Left: Form */}
