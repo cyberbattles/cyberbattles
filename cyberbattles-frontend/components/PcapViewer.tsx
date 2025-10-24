@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useState, createElement } from 'react'
-import Script from 'next/script'
+import {useState, createElement} from 'react';
+import Script from 'next/script';
 
 interface PcapViewerProps {
-  src: string
-  lang?: 'zh-cn' | 'en-us'
-  enableHexToggle?: boolean
-  showFullscreenBtn?: boolean
-  useCanvas?: boolean
+  src: string;
+  lang?: 'zh-cn' | 'en-us';
+  enableHexToggle?: boolean;
+  showFullscreenBtn?: boolean;
+  useCanvas?: boolean;
 }
 
 export default function PcapViewer({
@@ -16,9 +16,9 @@ export default function PcapViewer({
   lang = 'en-us',
   enableHexToggle = true,
   showFullscreenBtn = false,
-  useCanvas = true
+  useCanvas = true,
 }: PcapViewerProps) {
-  const [isReady, setIsReady] = useState(false)
+  const [isReady, setIsReady] = useState(false);
 
   return (
     <>
@@ -28,18 +28,18 @@ export default function PcapViewer({
         onReady={() => setIsReady(true)}
         strategy="lazyOnload"
       />
-      
+
       {isReady ? (
         createElement('pcap-element', {
           src,
           lang,
-          ...(enableHexToggle && { enablehextoggle: 'true' }),
-          ...(showFullscreenBtn && { showfullscreenbtn: 'true' }),
-          ...(useCanvas && { usecanvas: 'true' })
+          ...(enableHexToggle && {enablehextoggle: 'true'}),
+          ...(showFullscreenBtn && {showfullscreenbtn: 'true'}),
+          ...(useCanvas && {usecanvas: 'true'}),
         })
       ) : (
         <div className="p-4 text-gray-500">Loading PCAP viewer...</div>
       )}
     </>
-  )
+  );
 }
