@@ -80,7 +80,7 @@ const Reports = () => {
         {
           type: 'text',
           content:
-            'This SQL query setup allows an always-true payload. Entering an SQL attack query that is always true would return rows the attacker should not see and log the user into the server as admin.',
+            "This SQL query setup allows an always-true payload. Entering an SQL attack query that is always true allows an attacker to access data they shouldn't or gain access to other's accounts.",
         },
         {type: 'heading', content: 'Attack Side'},
         {
@@ -88,12 +88,12 @@ const Reports = () => {
           content:
             'To access the flag attackers can use this always-true payload to access the server and solve the challenge.',
         },
-        {type: 'code', content: "... OR '1'='1'"},
+        {type: 'code', content: "'OR '1'='1"},
         {type: 'heading', content: 'Defence Side'},
         {
           type: 'text',
           content:
-            'In order to defend against the vulnerability the script should treat the values as non-SQL not as SQL commands. ',
+            'In order to defend against the vulnerability the app should prevent user input from being treated as SQL. ',
         },
         {
           type: 'code',
@@ -107,7 +107,7 @@ const Reports = () => {
         {
           type: 'text',
           content:
-            'To understand more about this challenge and how SQL attacks can occur, CyberBattles recommends this reference.',
+            'To understand more about this challenge and how SQL attacks can occur, CyberBattl.es recommends this reference.',
         },
       ],
       resources: ['https://www.w3schools.com/sql/sql_injection.asp'],
