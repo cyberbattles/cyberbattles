@@ -57,7 +57,7 @@ export default function LoginPage() {
       
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
-        setError(err.message);
+        setError("Incorrect password, please try again.");
       }
       else {
         setError("An unexpected error occurred");

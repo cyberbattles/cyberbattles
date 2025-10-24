@@ -287,9 +287,9 @@ export default function LeaderboardPage() {
             <div className="flex">
               <button
                 onClick={() => setViewMode('clan')}
-                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                className={`px-6 py-3 rounded-full transition-all duration-300 font-bold ${
                   viewMode === 'clan'
-                    ? 'bg-cyan-500 text-white '
+                    ? 'bg-blue-500 text-white '
                     : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                 }`}
               >
@@ -298,9 +298,9 @@ export default function LeaderboardPage() {
               {isInSession && (
                 <button
                   onClick={() => setViewMode('game')}
-                  className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-full transition-all duration-300 font-bold ${
                     viewMode === 'game'
-                      ? 'bg-cyan-500 text-white'
+                      ? 'bg-blue-500 text-white'
                       : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
                   }`}
                 >
