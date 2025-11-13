@@ -1,390 +1,263 @@
 'use client';
+import React, {useState, useEffect} from 'react';
+import {db} from '@/lib/firebase';
 import {
   collection,
+  query,
+  where,
   doc,
   getDoc,
   getDocs,
-  query,
-  where,
 } from 'firebase/firestore';
-import {auth, db} from '@/lib/firebase';
-import React, {useEffect, useState, useRef} from 'react';
-import {
-  CheckCircle,
-  XCircle,
-  TrendingUp,
-  Award,
-  Target,
-  AlertCircle,
-} from 'lucide-react';
+import {useAuth} from '@/components/Auth';
+import {useRouter} from 'next/navigation';
+import {FaLink} from 'react-icons/fa';
 
-const Reports = () => {
-  const [userClan, setUserClan] = useState<any>(null);
-  const [teamId, setteamId] = useState<any>(null);
-  const [clanLoading, setClanLoading] = useState(true);
+interface SolutionBlock {
+  type: 'heading' | 'paragraph' | 'code' | 'link';
+  content: string;
+  language?: string;
+  url?: string;
+  text?: string;
+}
 
-  type ContentSegment =
-    | {type: 'text'; content: string}
-    | {type: 'heading'; content: string}
-    | {type: 'code'; content: string};
+interface Solution {
+  blocks: SolutionBlock[];
+}
 
-  type ChallengeItem = {
-    id: number;
-    title: string;
-    segments: ContentSegment[];
-    completed: boolean;
-    attempts: number;
-    resources?: string[];
-    difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
-  };
+interface Report {
+  id: string;
+  scenarioTitle: string;
+  solution: Solution;
+}
 
-  const CodeBlock = ({content}: {content: string}) => {
+interface SolutionRendererProps {
+  solution: Solution;
+}
+
+const SolutionRenderer: React.FC<SolutionRendererProps> = ({solution}) => {
+  if (!solution || !solution.blocks) {
     return (
-      <div className="relative group">
-        <div className="absolute inset-0 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-        <div className="relative bg-gray-900/90 backdrop-blur-sm borderrounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2 bg-gray-400/50 border-b border-gray-400/50">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-              <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-              <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-            </div>
-            <span className="text-xs text-gray-400">bash</span>
-          </div>
-          <pre className="p-4 text-sm text-green-500 font-mono overflow-x-auto">
-            <code>{content}</code>
-          </pre>
-        </div>
-      </div>
+      <p className="text-gray-500">
+        This scenario does not have a solution available yet.
+      </p>
     );
-  };
+  }
 
-  const [challenges, setChallenges] = useState<ChallengeItem[]>([
-    {
-      id: 1,
-      title: 'Cybernote',
-      difficulty: 'Beginner',
-      completed: false,
-      attempts: 2,
-      segments: [
-        {
-          type: 'text',
-          content:
-            'This challenge demonstrates a web server that is exploitable by players via an SQL attack. The login page for this web server has an incorrect setup for logging users in.',
-        },
-        {
-          type: 'code',
-          content:
-            "sql = \"SELECT note FROM users WHERE id = '%s' AND passwd = '%s'\" % (username, passwd)",
-        },
-        {
-          type: 'text',
-          content:
-            "This SQL query setup allows an always-true payload. Entering an SQL attack query that is always true allows an attacker to access data they shouldn't or gain access to other's accounts.",
-        },
-        {type: 'heading', content: 'Attack Side'},
-        {
-          type: 'text',
-          content:
-            'To access the flag attackers can use this always-true payload to access the server and solve the challenge.',
-        },
-        {type: 'code', content: "admin' OR 1=1 --"},
-        {type: 'heading', content: 'Defence Side'},
-        {
-          type: 'text',
-          content:
-            'In order to defend against the vulnerability the app should prevent user input from being treated as SQL. ',
-        },
-        {
-          type: 'code',
-          content: 'sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"',
-        },
-        {
-          type: 'text',
-          content:
-            'The database driver does not splice username and password into the SQL string. Instead it sends the SQL template and the parameter values separately to the database engine. The DB treats those parameters purely as data, never as SQL syntax.',
-        },
-        {
-          type: 'text',
-          content:
-            'To understand more about this challenge and how SQL attacks can occur, CyberBattl.es recommends this reference.',
-        },
-      ],
-      resources: ['https://www.w3schools.com/sql/sql_injection.asp'],
-    },
-  ]);
-
-  const solutionRefs = useRef<Record<number, HTMLDivElement | null>>({});
-
-  const scrollToSolution = (challengeId: number) => {
-    const element = solutionRefs.current[challengeId];
-    if (element) {
-      element.scrollIntoView({behavior: 'smooth', block: 'start'});
-      // Add a highlight effect
-      element.classList.add('highlight-pulse');
-      setTimeout(() => {
-        element.classList.remove('highlight-pulse');
-      }, 2000);
-    }
-  };
-
-  const completedChallenges = challenges.filter(c => c.completed);
-  const incompleteChallenges = challenges.filter(c => !c.completed);
-  const completionRate = Math.round(
-    (completedChallenges.length / challenges.length) * 100,
-  );
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Beginner':
-        return 'text-green-400 bg-green-400/10';
-      case 'Intermediate':
-        return 'text-yellow-400 bg-yellow-400/10';
-      case 'Advanced':
-        return 'text-red-400 bg-red-400/10';
-      default:
-        return 'text-gray-400 bg-gray-400/10';
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(async user => {
-      if (!user) {
-        setUserClan(null);
-        setteamId(null);
-        setClanLoading(false);
-        return;
-      }
-
-      setClanLoading(true);
-
-      try {
-        const teamsRef = collection(db, 'clans');
-        const q = query(
-          teamsRef,
-          where('memberIds', 'array-contains', user.uid),
+  const renderBlock = (block: SolutionBlock, index: number) => {
+    switch (block.type) {
+      case 'heading':
+        return (
+          <h3
+            key={index}
+            className="text-2xl font-bold text-blue-300 mt-6 mb-3"
+          >
+            {block.content}
+          </h3>
         );
-        const querySnapshot = await getDocs(q);
+      case 'paragraph':
+        return (
+          <p key={index} className="text-gray-300 leading-relaxed mb-4">
+            {block.content}
+          </p>
+        );
+      case 'code':
+        return (
+          <pre
+            key={index}
+            className="bg-[#1e1e1e] p-4 rounded-lg overflow-x-auto my-4 border border-gray-700"
+          >
+            <code className={`font-mono text-sm text-green-300`}>
+              {block.content}
+            </code>
+          </pre>
+        );
+      case 'link':
+        return (
+          <a
+            key={index}
+            href={block.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 hover:underline transition-colors"
+          >
+            <FaLink size={14} />
+            <span>{block.text || block.url}</span>
+          </a>
+        );
+      default:
+        return null;
+    }
+  };
 
-        if (!querySnapshot.empty) {
-          const clanDoc = querySnapshot.docs[0];
-          const clanData = clanDoc.data();
+  return <div className="prose-dark">{solution.blocks.map(renderBlock)}</div>;
+};
 
-          setUserClan({
-            id: clanDoc.id,
-            ...clanData,
-          });
+interface DesignProps {
+  reports: Report[];
+}
 
-          if (clanData.teamId) {
-            setteamId(clanData.teamId);
-          } else {
-            setteamId(null);
-          }
-        } else {
-          setUserClan(null);
-          setteamId(null);
-        }
-      } catch (error) {
-        console.error('Error checking user clan:', error);
-        setUserClan(null);
-        setteamId(null);
-      } finally {
-        setClanLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+const Reports: React.FC<DesignProps> = ({reports}) => {
+  const [activeTab, setActiveTab] = useState(reports[0]?.id || '');
 
   return (
-    <div className="min-h-screen pt-16 px-6 pb-12 text-white">
-      {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold mb-3 bg-white bg-clip-text text-transparent pt-30">
-          Game Performance Report
-        </h1>
-        <p className="text-gray-400 text-lg">
-          Review challenges from your last game and improve your skills
-        </p>
-      </div>
-      {/* Completed Challenges */}
-      <div className="mb-12">
-        <div className="flex items-center gap-3 mb-6">
-          <h2 className="text-2xl font-bold text-green-400">
-            Completed Challenges
-          </h2>
-        </div>
+    <div className="flex flex-col md:flex-row gap-6">
+      <nav className="flex md:flex-col flex-shrink-0 md:w-64">
+        {reports.map(report => (
+          <button
+            key={report.id}
+            onClick={() => setActiveTab(report.id)}
+            className={`w-full p-4 text-left font-medium rounded-lg transition-colors ${
+              activeTab === report.id
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-300 hover:bg-[#2a2a2a]'
+            }`}
+          >
+            {report.scenarioTitle}
+          </button>
+        ))}
+      </nav>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {completedChallenges.map(challenge => (
-            <div
-              key={challenge.id}
-              className="bg-gray-800/50 border border-green-500/30 rounded-lg p-5 hover:border-green-500/50 transition-all"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-semibold text-white">
-                  {challenge.title}
-                </h3>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white font-bold">Attempts</span>
-                  <span className="text-white font-bold">
-                    {challenge.attempts}
-                  </span>
-                </div>
-                <div className="pt-2">
-                  <span
-                    className={`text-xs px-3 py-1 rounded-full ${getDifficultyColor(challenge.difficulty)}`}
-                  >
-                    {challenge.difficulty}
-                  </span>
-                </div>
-              </div>
+      <div className="flex-1 bg-[#1e1e1e] p-6 rounded-2xl shadow-md border border-gray-700 min-h-[300px]">
+        {reports.map(report =>
+          activeTab === report.id ? (
+            <div key={report.id}>
+              <h2 className="text-3xl font-bold text-gray-100 mb-6">
+                {report.scenarioTitle}
+              </h2>
+              <SolutionRenderer solution={report.solution} />
             </div>
-          ))}
-        </div>
+          ) : null,
+        )}
       </div>
-
-      {/* Incomplete Challenges */}
-      <div className="mb-16">
-        <div className="flex items-center gap-3 mb-6">
-          <h2 className="text-2xl font-bold text-red-400">
-            Challenges to Master
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {incompleteChallenges.map(challenge => (
-            <div
-              key={challenge.id}
-              className="bg-gray-800/50 border border-red-500/30 rounded-lg p-5 hover:border-red-500/50 transition-all"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-semibold text-white">
-                  {challenge.title}
-                </h3>
-              </div>
-
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-white font-bold">Attempts</span>
-                  <span className="text-white font-bold">
-                    {challenge.attempts}
-                  </span>
-                </div>
-                <div className="pt-2">
-                  <span
-                    className={`text-xs px-3 py-1 rounded-full ${getDifficultyColor(challenge.difficulty)}`}
-                  >
-                    {challenge.difficulty}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => scrollToSolution(challenge.id)}
-                className="w-full bg-blue-800 text-white font-medium py-2.5 px-4 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2"
-              >
-                Understand Solution
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Solutions Section */}
-      {incompleteChallenges.length > 0 && (
-        <div className="border-t border-gray-700 pt-12">
-          <div className="flex items-center gap-3 mb-8">
-            <h2 className="text-2xl font-bold text-white">
-              Challenge Solutions & Strategies
-            </h2>
-          </div>
-
-          <div className="space-y-6">
-            {incompleteChallenges.map(challenge => (
-              <div
-                key={challenge.id}
-                ref={el => {
-                  solutionRefs.current[challenge.id] = el;
-                }}
-                className="bg-gradient-to-br from-gray-800 to-gray-800/50 border border-gray-500/30 rounded-xl p-8 scroll-mt-24 transition-all duration-500"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white mb-2">
-                      Challenge Solution
-                    </h3>
-                    <span
-                      className={`text-xs px-3 py-1 rounded-full ${getDifficultyColor(challenge.difficulty)}`}
-                    >
-                      {challenge.difficulty}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-6 mt-4">
-                  <h4 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                    {challenge.title}
-                  </h4>
-                  <div className="space-y-4">
-                    {challenge.segments.map((seg, idx) => {
-                      switch (seg.type) {
-                        case 'text':
-                          return (
-                            <p
-                              key={idx}
-                              className="text-gray-300 leading-relaxed"
-                            >
-                              {seg.content}
-                            </p>
-                          );
-                        case 'heading':
-                          return (
-                            <h4
-                              key={idx}
-                              className="text-lg font-semibold text-white"
-                            >
-                              {seg.content}
-                            </h4>
-                          );
-                        case 'code':
-                          return <CodeBlock key={idx} content={seg.content} />;
-                        default:
-                          return null;
-                      }
-                    })}
-                    {challenge.resources && (
-                      <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                        <h4 className="font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                          📚 Additional Resources
-                        </h4>
-                        <div className="space-y-2">
-                          {challenge.resources.map((resource, i) => (
-                            <a
-                              key={i}
-                              href={resource}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block text-blue-300 hover:text-blue-200 transition-colors underline"
-                            >
-                              {resource}
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default Reports;
+const GameReportsPage = () => {
+  const router = useRouter();
+  const {currentUser} = useAuth();
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchReports = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Find all finished sessions the user participated in
+        const sessionsQuery = query(
+          collection(db, 'finishedSessions'),
+          where('gameParticipants', 'array-contains', currentUser.uid),
+        );
+        const sessionsSnap = await getDocs(sessionsQuery);
+
+        if (sessionsSnap.empty) {
+          console.log('No finished sessions found for this user.');
+          setIsLoading(false);
+          return;
+        }
+
+        // Get all unique scenario IDs from those sessions
+        const scenarioIds = new Set<string>();
+        sessionsSnap.docs.forEach(doc => {
+          const id = doc.data().scenarioId;
+          if (id) {
+            scenarioIds.add(id);
+          }
+        });
+
+        const uniqueIds = Array.from(scenarioIds);
+
+        //Fetch the scenario details for each unique ID
+        const reportPromises = uniqueIds.map(async id => {
+          const scenarioRef = doc(db, 'scenarios', id);
+          const scenarioSnap = await getDoc(scenarioRef);
+
+          if (scenarioSnap.exists()) {
+            const data = scenarioSnap.data();
+            return {
+              id: scenarioSnap.id,
+              scenarioTitle: data.scenario_title || 'Untitled Scenario',
+              solution: data.solution || {blocks: []}, // Ensure solution exists
+            } as Report;
+          }
+          return null; // Return null if scenario doc doesn't exist
+        });
+
+        // 4. Wait for all fetches and filter out any nulls
+        const fetchedReports = (await Promise.all(reportPromises)).filter(
+          (report): report is Report => report !== null,
+        );
+
+        setReports(fetchedReports);
+      } catch (err) {
+        console.error('Error fetching game reports:', err);
+        setError('Failed to load game reports. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchReports();
+  }, [currentUser]);
+
+  return (
+    <div className="flex flex-col min-h-screen pt-20 sm:pt-40 bg-[#2f2f2f] text-white">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <h1 className="text-3xl font-bold">Game Reports</h1>
+          <button
+            className="px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+            onClick={() => router.push('/dashboard')}
+          >
+            Back to Dashboard
+          </button>
+        </header>
+
+        <div>
+          {isLoading && (
+            <div className="flex items-center justify-center gap-3 p-6 bg-[#1e1e1e] rounded-2xl">
+              <div className="animate-spin h-6 w-6 border-2 border-blue-400 border-t-transparent rounded-full"></div>
+              <span className="text-gray-300 text-lg">
+                Loading completed game reports...
+              </span>
+            </div>
+          )}
+
+          {!isLoading && error && (
+            <div className="p-6 bg-red-900/30 border border-red-500 rounded-2xl">
+              <p className="text-red-400 font-semibold">{error}</p>
+            </div>
+          )}
+
+          {!isLoading && !error && reports.length === 0 && (
+            <div className="p-6 bg-[#1e1e1e] rounded-2xl text-center">
+              <h2 className="text-2xl font-semibold text-gray-400 mb-2">
+                No Reports Found
+              </h2>
+              <p className="text-gray-500">
+                You haven't completed any games yet. Finish a game to see its
+                solution and report here!
+              </p>
+            </div>
+          )}
+
+          {!isLoading && !error && reports.length > 0 && (
+            <>
+              <Reports reports={reports} />
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default GameReportsPage;
