@@ -1,5 +1,7 @@
 'use client';
 import React, {useEffect, useRef} from 'react';
+import logo from '../public/images/title_logo.png';
+import Image from 'next/image';
 
 const MatrixBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -37,13 +39,19 @@ const MatrixBackground = () => {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Green text
-      ctx.fillStyle = '#00ff41';
+      ctx.fillStyle = '#dc302f';
       ctx.font = '16px monospace';
 
       for (let i = 0; i < drops.length; i++) {
         if (drops[i] > 0) {
           const text = Math.random() > 0.8 ? '1' : '0';
           ctx.fillText(text, i * 20, drops[i] * 20);
+        }
+
+        if (i % 2 === 0) {
+          ctx.fillStyle = '#266cab';
+        } else {
+          ctx.fillStyle = '#dc302f';
         }
 
         if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
@@ -78,10 +86,17 @@ export default function HomePage() {
       <div className="relative z-10">
         <div className="">
           <section className="h-screen flex flex-col items-center justify-center text-center">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold text-white mb-2 drop-shadow-lg">
-              CyberBattl.es
-            </h1>
-            <p className="text-md sm:text-lg md:text-xl text-white-500 drop-shadow-lg italic font-bold p-4">
+            <div className="p-5 pb-0 w-sm md:w-2xl select-none">
+              <Image
+                src={logo}
+                alt="website logo"
+                width={600}
+                height={300}
+                className="object-contain"
+                draggable={false}
+              />
+            </div>
+            <p className="text-md sm:text-lg md:text-xl text-white-500 drop-shadow-lg font-bold p-4">
               An educational attack and defence CTF platform.
             </p>
           </section>

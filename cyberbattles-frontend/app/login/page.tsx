@@ -2,7 +2,7 @@
 import React, {useState} from 'react';
 import Image from 'next/image';
 import {auth} from '../../lib/firebase';
-import cyberbattles from '../../public/images/cyberbattles.png';
+import cyberbattles from '../../public/images/title_logo.png';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -54,10 +54,9 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       if (err instanceof FirebaseError) {
-        setError("Incorrect password, please try again.");
-      }
-      else {
-        setError("An unexpected error occurred");
+        setError('Incorrect password, please try again.');
+      } else {
+        setError('An unexpected error occurred');
         // i don't THINK it would ever hit this block
         // just had to specify a type for the error to make the linter happy
       }
@@ -72,9 +71,10 @@ export default function LoginPage() {
             <Image
               src={cyberbattles}
               alt="website logo"
-              width={150}
-              height={100}
+              width={300}
+              height={200}
               className="object-contain"
+              draggable={false}
             />
             <h2 className="text-3xl font-semibold text-white font-bold">
               {isRegister ? 'Create Account' : 'Login'}

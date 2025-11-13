@@ -1,5 +1,4 @@
-import logo from '../public/images/logo.png';
-import cyberbattles from '../../public/images/cyberbattles.png';
+import cyberbattles from '../../public/images/title_logo.png';
 import Image from 'next/image';
 import React from 'react';
 import Link from 'next/link';
@@ -50,8 +49,11 @@ export default function CreateAccountPage() {
                   <Image
                     src={cyberbattles}
                     alt="text based logo of the website"
+                    width={300}
+                    height={200}
                     layout="fill"
                     objectFit="contain"
+                    draggable={false}
                   />
                 </div>
               </div>

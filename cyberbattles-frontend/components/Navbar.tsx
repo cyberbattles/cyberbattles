@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import logo from '../public/images/logo.png';
+import logo from '../public/images/logo.svg';
 import {IoMenu} from 'react-icons/io5';
 import React, {useEffect, useState} from 'react';
 import {useAuth} from '@/components/Auth';
@@ -117,7 +117,8 @@ function Navbar() {
               <Image
                 src={logo}
                 alt="logo"
-                className="md:flex hidden max-w-[150px] flex-shrink-0"
+                className="md:flex hidden max-w-[150px] flex-shrink-0 p-8"
+                draggable={false}
               />
             </div>
           </Link>
@@ -181,6 +182,7 @@ function Navbar() {
             <Link href="/account" className="w-16 h-16 sm:w-24 sm:h-24">
               <Image
                 src={photoURL}
+                draggable={false}
                 width="100"
                 height="100"
                 alt="avatar"
