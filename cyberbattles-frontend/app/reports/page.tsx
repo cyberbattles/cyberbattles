@@ -88,7 +88,7 @@ const Reports = () => {
           content:
             'To access the flag attackers can use this always-true payload to access the server and solve the challenge.',
         },
-        {type: 'code', content: "'OR '1'='1"},
+        {type: 'code', content: "admin' OR 1=1 --"},
         {type: 'heading', content: 'Defence Side'},
         {
           type: 'text',
@@ -111,46 +111,6 @@ const Reports = () => {
         },
       ],
       resources: ['https://www.w3schools.com/sql/sql_injection.asp'],
-    },
-
-    {
-      id: 2,
-      title: 'PWN in chess',
-      difficulty: 'Advanced',
-      completed: true,
-      attempts: 2,
-      segments: [
-        {type: 'text', content: 'This challenge requires root access.'},
-        {type: 'code', content: 'sudo su'},
-        {type: 'heading', content: 'Tips'},
-        {type: 'text', content: 'Try using ls -la to check hidden files.'},
-      ],
-    },
-    {
-      id: 3,
-      title: 'Accessing Root',
-      difficulty: 'Intermediate',
-      completed: true,
-      attempts: 2,
-      segments: [
-        {type: 'text', content: 'This challenge requires root access.'},
-        {type: 'code', content: 'sudo su'},
-        {type: 'heading', content: 'Tips'},
-        {type: 'text', content: 'Try using ls -la to check hidden files.'},
-      ],
-    },
-    {
-      id: 4,
-      title: 'OSINT ONLY',
-      difficulty: 'Beginner',
-      completed: true,
-      attempts: 2,
-      segments: [
-        {type: 'text', content: 'This challenge requires root access.'},
-        {type: 'code', content: 'sudo su'},
-        {type: 'heading', content: 'Tips'},
-        {type: 'text', content: 'Try using ls -la to check hidden files.'},
-      ],
     },
   ]);
 

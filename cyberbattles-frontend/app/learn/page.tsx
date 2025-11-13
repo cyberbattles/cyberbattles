@@ -126,7 +126,7 @@ export default function ModernLearnPage() {
         {
           type: 'text',
           content:
-            "Welcome to your cybersecurity journey! Before diving into the exciting world of CyberBattles, it's crucial to build a solid foundation of key cybersecurity concepts. These fundamentals are not just academic—they're the same principles used by professionals in the industry every day.",
+            "Welcome to your cybersecurity journey! Before diving into the exciting world of CyberBattles, it's crucial to build a solid foundation of key cybersecurity concepts. These fundamentals are not just academic, they're the same principles used by professionals in the industry every day.",
         },
         {
           type: 'text',
@@ -178,7 +178,7 @@ export default function ModernLearnPage() {
         {
           type: 'text',
           content:
-            "Blue teaming is the defensive backbone of cybersecurity—the vigilant guardians who protect organizational assets from both external threats and internal vulnerabilities. They're the digital first responders who detect, analyze, and neutralize security incidents.",
+            "Blue teaming is the defensive backbone of cybersecurity, the vigilant guardians who protect organizational assets from both external threats and internal vulnerabilities. They're the digital first responders who detect, analyze, and neutralize security incidents.",
         },
         {
           type: 'text',
@@ -220,7 +220,7 @@ export default function ModernLearnPage() {
         {
           type: 'text',
           content:
-            'Why SSH is Secure: SSH employs public key cryptography, creating an unbreakable authentication system. Each user generates a mathematically linked key pair—a private key (kept secret) and a public key (shared freely). Only when these keys match can identity be verified and secure communication established.',
+            'Why SSH is Secure: SSH employs public key cryptography, creating an unbreakable authentication system. Each user generates a mathematically linked key pair, a private key (kept secret) and a public key (shared freely). Only when these keys match can identity be verified and secure communication established.',
         },
         {
           type: 'text',
@@ -637,7 +637,7 @@ export default function ModernLearnPage() {
                         {item.resources && (
                           <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                             <h4 className="font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                              📚 Additional Resources
+                              Additional Resources
                             </h4>
                             <div className="space-y-2">
                               {item.resources.map((resource, i) => (
