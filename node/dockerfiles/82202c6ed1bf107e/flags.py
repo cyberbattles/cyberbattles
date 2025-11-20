@@ -2,7 +2,6 @@
 # It now runs as a Flask web server to handle API requests.
 
 import requests
-import sys
 import hashlib
 from flask import Flask, request, jsonify
 
@@ -16,7 +15,7 @@ def inject_flag(ip, port, flag):
     """
     base_url = f"http://{ip}:{port}"
     flagHash = hashlib.md5(flag.encode()).hexdigest()[:10]
-    credentials = {"user": flagHash, "passwd": flagHash}
+    credentials = {"user": "admin", "passwd": flagHash}
 
     with requests.Session() as s:
         try:
@@ -69,4 +68,3 @@ def inject():
 if __name__ == "__main__":
     # This will run the Flask development server.
     app.run(host="0.0.0.0", port=8080)
-
