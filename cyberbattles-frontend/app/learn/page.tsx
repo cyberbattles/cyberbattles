@@ -1,20 +1,16 @@
 'use client';
-import {useAuth} from '@/components/Auth';
-import {auth, db} from '@/lib/firebase';
-import {onAuthStateChanged} from 'firebase/auth';
-import {collection, doc, getDocs, updateDoc} from 'firebase/firestore';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   FaLock,
   FaUnlock,
   FaPlay,
   FaBook,
-  FaGraduationCap,
   FaShieldAlt,
   FaTerminal,
   FaServer,
   FaChevronRight,
   FaCheck,
+  FaClock,
 } from 'react-icons/fa';
 
 type ContentSegment =
@@ -30,33 +26,24 @@ type LearnItem = {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   estimatedTime: string;
 };
-// Code Highlighter Component
+
 const CodeBlock = ({content}: {content: string}) => {
   return (
-    <div className="relative group">
-      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-      <div className="relative bg-gray-900/90 backdrop-blur-sm border border-cyan-500/30 rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-800/50 border-b border-gray-700/50">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-            <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-          </div>
-          <span className="text-xs text-gray-400">bash</span>
-        </div>
-        <pre className="p-4 text-sm text-green-500 font-mono overflow-x-auto">
-          <code>{content}</code>
-        </pre>
+    <div className="my-4 bg-black rounded-md overflow-hidden">
+      <div className="flex items-center px-4 py-2 bg-gray-500 border-b border-gray-800">
+        <span className="text-xs font-mono text-white font-bold">terminal</span>
       </div>
+      <pre className="p-4 text-sm text-shadow-white font-mono overflow-x-auto whitespace-pre-wrap">
+        <code>{content}</code>
+      </pre>
     </div>
   );
 };
 
 export default function ModernLearnPage() {
-  const {currentUser} = useAuth();
-  const [loggedin, setLoggedin] = useState<boolean | null>(null);
-  const [uid, setUid] = useState<string | null>(null);
-  const [completedModules, setCompletedModules] = useState([
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const [completedModules, setCompletedModules] = useState<boolean[]>([
     false,
     false,
     false,
@@ -64,7 +51,8 @@ export default function ModernLearnPage() {
     false,
     false,
   ]);
-  const [isLocked, setIsLocked] = useState([
+
+  const [isLocked, setIsLocked] = useState<boolean[]>([
     false,
     true,
     true,
@@ -72,54 +60,11 @@ export default function ModernLearnPage() {
     true,
     true,
   ]);
-
-  // Check if user has visitedd the page before via a firebase call.
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (!user) {
-        console.log('user not logged in');
-        return;
-      }
-      setUid(user.uid);
-
-      try {
-        // Fetch information from login database
-        const userRef = collection(db, 'login');
-        const userSnap = await getDocs(userRef);
-        const userId = user.uid;
-
-        for (const userDoc of userSnap.docs) {
-          const userData = userDoc.data();
-
-          if (userId === userData.UID && userData.learnStarted === true) {
-            setCompletedModules(userData.learnActivity);
-            setIsLocked(userData.lockActivity);
-            const completed = userData.learnActivity;
-          }
-          const userRef = doc(db, 'login', userId);
-          if (
-            userId === userData.UID &&
-            (userData.learnStarted === false ||
-              userData.learnStarted === undefined)
-          ) {
-            await updateDoc(userRef, {
-              learnActivity: [false, false, false, false, false, false],
-              learnStarted: true,
-              lockActivity: [false, true, true, true, true, true],
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching learn activity');
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   const learnItems: LearnItem[] = [
     {
       title: 'Getting Started',
-      icon: <FaPlay className="text-lg" />,
+      icon: <FaPlay />,
       difficulty: 'Beginner',
       estimatedTime: '1 min',
       segments: [
@@ -137,7 +82,7 @@ export default function ModernLearnPage() {
     },
     {
       title: 'Ethical Hacking',
-      icon: <FaShieldAlt className="text-lg" />,
+      icon: <FaShieldAlt />,
       difficulty: 'Intermediate',
       estimatedTime: '5 min',
       segments: [
@@ -171,7 +116,7 @@ export default function ModernLearnPage() {
     },
     {
       title: 'Blue Teaming',
-      icon: <FaShieldAlt className="text-lg" />,
+      icon: <FaShieldAlt />,
       difficulty: 'Intermediate',
       estimatedTime: '5 min',
       segments: [
@@ -208,7 +153,7 @@ export default function ModernLearnPage() {
     },
     {
       title: 'Basics of SSH',
-      icon: <FaTerminal className="text-lg" />,
+      icon: <FaTerminal />,
       difficulty: 'Intermediate',
       estimatedTime: '15 min',
       segments: [
@@ -267,7 +212,7 @@ export default function ModernLearnPage() {
     },
     {
       title: 'Capture the Flags',
-      icon: <FaTerminal className="text-lg" />,
+      icon: <FaTerminal />,
       difficulty: 'Advanced',
       estimatedTime: '25 min',
       segments: [
@@ -302,7 +247,7 @@ export default function ModernLearnPage() {
         {
           type: 'code',
           content:
-            'ciphertext = "fdwfk_wkh_iodj"\ndef decrypt(text, shift):\n   result = ""\n   for c in text:\n     if c.isalpha():\n       shift_base = ord(A) if c.isupper() else ord(a)\n       result += chr((ord(c) - shift_base - shift) % 26 + shift_base)\n     else:\n     result += c\n   return result',
+            'ciphertext = "fdwfk_wkh_iodj"\ndef decrypt(text, shift):\n   result = ""\n   for c in text:\n     if c.isalpha():\n       shift_base = ord(A) if c.isupper() else ord(a)\n       result += chr((ord(c) - shift_base - shift) % 26 + shift_base)\n     else:\n      result += c\n   return result',
         },
         {
           type: 'code',
@@ -382,7 +327,7 @@ export default function ModernLearnPage() {
     },
     {
       title: 'Importance of Uptime',
-      icon: <FaServer className="text-lg" />,
+      icon: <FaServer />,
       difficulty: 'Beginner',
       estimatedTime: '10 min',
       segments: [
@@ -400,87 +345,75 @@ export default function ModernLearnPage() {
     },
   ];
 
-  const [selectedIndex, setSelectedIndex] = useState(0);
-
-  const handleModuleComplete = async () => {
-    const newCompleted = [...completedModules];
-    newCompleted[selectedIndex] = true;
-    setCompletedModules(newCompleted);
-    if (!uid) {
-      console.log('user not logged in');
-      setLoggedin(false);
-
-      return;
-    }
-
+  // Load progress from LocalStorage on mount
+  useEffect(() => {
     try {
-      setLoggedin(true);
-      const userRef = collection(db, 'login');
-      const userSnap = await getDocs(userRef);
-      const userId = uid;
-
-      for (const userDoc of userSnap.docs) {
-        const userData = userDoc.data();
-
-        if (userId === userData.UID && userData.learnStarted === true) {
-          const updateRef = doc(db, 'login', userId);
-
-          const updatedLearnActivity = [...userData.learnActivity];
-          const updatedLockActivity = [...userData.lockActivity];
-          updatedLearnActivity[selectedIndex] = true;
-          updatedLockActivity[selectedIndex] = false;
-          if (selectedIndex + 1 < updatedLockActivity.length) {
-            updatedLockActivity[selectedIndex + 1] = false;
-          }
-
-          await updateDoc(updateRef, {
-            learnActivity: updatedLearnActivity,
-            lockActivity: updatedLockActivity,
-          });
+      const savedProgress = localStorage.getItem('cyber_learn_progress');
+      if (savedProgress) {
+        const parsed = JSON.parse(savedProgress);
+        // Validate structure briefly or just trust localstorage
+        if (parsed.completedModules && parsed.isLocked) {
+          setCompletedModules(parsed.completedModules);
+          setIsLocked(parsed.isLocked);
         }
       }
-
-      // Unlock next module
-      if (selectedIndex + 1 < isLocked.length) {
-        const newLocked = [...isLocked];
-        newLocked[selectedIndex + 1] = false;
-        setIsLocked(newLocked);
-      }
-    } catch {
-      console.log('update failed');
+    } catch (e) {
+      console.error('Failed to load progress', e);
     }
+  }, []);
+
+  // Save progress handler
+  const saveProgressToStorage = (completed: boolean[], locked: boolean[]) => {
+    localStorage.setItem(
+      'cyber_learn_progress',
+      JSON.stringify({
+        completedModules: completed,
+        isLocked: locked,
+      }),
+    );
+  };
+
+  const handleModuleComplete = () => {
+    const newCompleted = [...completedModules];
+    newCompleted[selectedIndex] = true;
+
+    // Unlock next module logic
+    const newLocked = [...isLocked];
+    if (selectedIndex + 1 < newLocked.length) {
+      newLocked[selectedIndex + 1] = false;
+    }
+
+    // Update State
+    setCompletedModules(newCompleted);
+    setIsLocked(newLocked);
+
+    // Persist
+    saveProgressToStorage(newCompleted, newLocked);
   };
 
   const progressPercentage =
     (completedModules.filter(Boolean).length / learnItems.length) * 100;
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      <div className="relative pt-24 pb-12">
-        <div className="container mx-auto px-6">
-          {/* Header Section */}
+    <div className="min-h-screen bg-[#2f2f2f] text-white pt-25 sm:pt-40">
+      <div className="pt-16 pb-12">
+        <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-12">
-            <h1 className="text-6xl font-black mb-5 pt-20">
-              <span className="bg-white bg-clip-text text-transparent">
-                Learn
-              </span>
-            </h1>
+            <h1 className="text-5xl font-bold mb-4 text-white">Learn</h1>
 
-            <p className="text-xl text-white/70 max-w-3xl mx-auto leading-relaxed">
-              Master cybersecurity fundamentals through hands-on modules
-              designed by industry experts. Build the skills that matter in
-              real-world scenarios.
+            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+              Learn how to defend and attack in the world of cybersecurity with
+              realistic modules designed to build your skills step-by-step.
             </p>
 
-            {/* Progress Bar */}
-            <div className="max-w-md mx-auto mt-8">
-              <div className="flex items-center justify-between text-sm text-white/60 mb-2">
-                <span>Overall Progress</span>
+            <div className="max-w-md mx-auto mt-8 bg-[#1e1e1e] rounded p-4 ">
+              <div className="flex items-center justify-between text-sm text-white mb-2 font-mono">
+                <span>Learning Progress</span>
                 <span>{Math.round(progressPercentage)}%</span>
               </div>
-              <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+              <div className="w-full bg-black h-4 rounded-sm overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-green-400 to-green-900 rounded-full transition-all duration-700 ease-out"
+                  className="h-full bg-green-600 "
                   style={{width: `${progressPercentage}%`}}
                 ></div>
               </div>
@@ -488,70 +421,53 @@ export default function ModernLearnPage() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
-            {/* Enhanced Sidebar */}
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* Sidebar Navigation */}
             <div className="lg:col-span-1">
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 sticky top-28 shadow-2xl">
-                <div className="flex items-center gap-3 mb-6">
-                  <FaBook className="text-white-400 text-xl" />
-                  <h3 className="text-xl font-bold text-white">
-                    Learning Path
-                  </h3>
+              <div className=" bg-[#1e1e1e] rounded-lg  p-4 sticky top-24 md:top-45">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
+                  <FaBook className="text-gray-200" />
+                  <h3 className="text-lg font-bold text-gray-200">Modules</h3>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {learnItems.map((item, index) => (
                     <button
                       key={index}
                       onClick={() =>
                         !isLocked[index] && setSelectedIndex(index)
                       }
-                      className={`w-full text-left p-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${
-                        selectedIndex === index
-                          ? 'bg-gradient-to-r from-blue-800/20 to-blue-500/20 border border-cyan-50/30 shadow-lg scale-105'
-                          : isLocked[index]
-                            ? 'bg-gray-800/30 border border-gray-700/30 cursor-not-allowed opacity-50'
-                            : 'bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 hover:scale-102 cursor-pointer'
-                      }`}
                       disabled={isLocked[index]}
+                      className={`w-full text-left p-3 rounded transition-colors flex items-center justify-between group ${
+                        selectedIndex === index
+                          ? 'bg-gray-500 border-l-4  text-white'
+                          : isLocked[index]
+                            ? 'opacity-50 cursor-not-allowed text-gray-600'
+                            : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
+                      }`}
                     >
-                      {!isLocked[index] && selectedIndex === index && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent animate-pulse"></div>
-                      )}
-
-                      <div className="relative flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`p-2 rounded-lg ${
-                              selectedIndex === index
-                                ? 'bg-cyan-200/20 text-white-300'
-                                : isLocked[index]
-                                  ? 'bg-gray-700 text-gray-500'
-                                  : 'bg-white/10 text-white/70'
-                            }`}
-                          >
-                            {item.icon}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-white text-sm">
-                              {item.title}
-                            </div>
-                            <div className="text-xs text-white/50">
-                              {item.estimatedTime}
-                            </div>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`text-sm ${selectedIndex === index ? 'text-white' : 'text-gray-500'}`}
+                        >
+                          {item.icon}
+                        </div>
+                        <div>
+                          <div className="font-medium text-sm">
+                            {item.title}
                           </div>
                         </div>
+                      </div>
 
-                        <div className="flex items-center gap-2">
-                          {completedModules[index] && (
-                            <FaCheck className="text-green-400 text-sm" />
-                          )}
-                          {isLocked[index] ? (
-                            <FaLock className="text-gray-400 text-sm" />
-                          ) : (
-                            <FaUnlock className="text-blue-400 text-sm" />
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2">
+                        {completedModules[index] && (
+                          <FaCheck className="text-green-500 text-xs" />
+                        )}
+                        {isLocked[index] ? (
+                          <FaLock className="text-xs" />
+                        ) : (
+                          <FaUnlock className="text-xs text-gray-600 group-hover:text-gray-400" />
+                        )}
                       </div>
                     </button>
                   ))}
@@ -559,58 +475,58 @@ export default function ModernLearnPage() {
               </div>
             </div>
 
-            {/* Enhanced Content Area */}
+            {/* Content Area */}
             <div className="lg:col-span-3">
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
+              <div className="bg-[#1e1e1e] rounded-lg overflow-hidden min-h-[600px]">
                 {learnItems.map((item, index) => (
                   <div
                     key={index}
-                    className={`transition-all duration-500 ${selectedIndex === index ? 'block' : 'hidden'}`}
+                    className={selectedIndex === index ? 'block' : 'hidden'}
                   >
-                    {/* Enhanced Header */}
-                    <div className="bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm p-8 border-b border-white/10">
+                    {/* Module Header */}
+                    <div className="bg-gray-850 p-8 border-b border-[#333333]">
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="flex items-center gap-4 mb-3">
-                            <div className="p-3 bg-cyan-400/20 rounded-xl text-cyan-300">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3 bg-gray-800 rounded border border-gray-700">
                               {item.icon}
                             </div>
                             <div>
-                              <h2 className="text-3xl font-bold text-white mb-1">
+                              <h2 className="text-2xl font-bold text-white mb-1">
                                 {item.title}
                               </h2>
-                              <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-4 text-sm font-mono text-gray-400">
                                 <span
-                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  className={`px-2 py-0.5 rounded text-xs border ${
                                     item.difficulty === 'Beginner'
-                                      ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                      ? 'border-green-900 text-green-500 bg-green-900/20'
                                       : item.difficulty === 'Intermediate'
-                                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                                        : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                        ? 'border-yellow-900 text-yellow-500 bg-yellow-900/20'
+                                        : 'border-red-900 text-red-500 bg-red-900/20'
                                   }`}
                                 >
                                   {item.difficulty}
                                 </span>
-                                <span className="text-white/60">
-                                  ⏱️ {item.estimatedTime}
+                                <span className="flex items-center gap-1">
+                                  <FaClock className="text-xs" />{' '}
+                                  {item.estimatedTime}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="w-20 h-1 bg-gradient-to-r from-cyan-900 to-blue-500 rounded-full"></div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Enhanced Content Body */}
-                    <div className="p-8 max-h-[500px] overflow-y-auto custom-scrollbar">
-                      <div className="space-y-6">
+                    {/* Module Content */}
+                    <div className="p-8">
+                      <div className="space-y-6 max-w-4xl">
                         {item.segments.map((seg, i) => {
                           if (seg.type === 'text') {
                             return (
                               <div
                                 key={i}
-                                className="text-white/80 leading-relaxed whitespace-pre-line text-lg"
+                                className="text-gray-300 leading-7 whitespace-pre-line"
                               >
                                 {seg.content}
                               </div>
@@ -619,7 +535,7 @@ export default function ModernLearnPage() {
                             return (
                               <h3
                                 key={i}
-                                className="text-2xl font-bold text-white mt-8 mb-4"
+                                className="text-xl font-bold text-white mt-8 mb-2 border-b border-gray-800 pb-2"
                               >
                                 {seg.content}
                               </h3>
@@ -630,132 +546,96 @@ export default function ModernLearnPage() {
                                 <CodeBlock content={String(seg.content)} />
                               </div>
                             );
-                          } else {
-                            return null;
                           }
+                          return null;
                         })}
+
                         {item.resources && (
-                          <div className="mt-8 p-6 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                            <h4 className="font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                              Additional Resources
+                          <div className="mt-10 p-6 bg-[#2f2f2f] rounded">
+                            <h4 className="font-bold text-gray-200 mb-3 flex items-center gap-2">
+                              References
                             </h4>
-                            <div className="space-y-2">
+                            <ul className="list-disc list-inside space-y-1 text-sm">
                               {item.resources.map((resource, i) => (
-                                <a
-                                  key={i}
-                                  href={resource}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="block text-blue-300 hover:text-blue-200 transition-colors underline"
-                                >
-                                  {resource}
-                                </a>
+                                <li key={i}>
+                                  <a
+                                    href={resource}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-shadow-white hover:underline"
+                                  >
+                                    {resource}
+                                  </a>
+                                </li>
                               ))}
-                            </div>
+                            </ul>
                           </div>
                         )}
                       </div>
 
-                      {/* Enhanced Progress Section */}
-                      <div className="mt-8 pt-6 border-t border-white/10">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-white/60">
-                            Module {selectedIndex + 1} of {learnItems.length}
-                          </div>
-                          <div className="flex gap-2">
-                            {learnItems.map((_, i) => (
-                              <div
-                                key={i}
-                                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                                  i === selectedIndex
-                                    ? 'bg-cyan-900 scale-125'
-                                    : completedModules[i]
-                                      ? 'bg-green-400'
-                                      : 'bg-white/20'
-                                }`}
-                              />
-                            ))}
-                          </div>
+                      {/* Footer Controls */}
+                      <div className="mt-12 pt-6 border-t  flex items-center justify-between">
+                        <button
+                          onClick={() =>
+                            setSelectedIndex(Math.max(0, selectedIndex - 1))
+                          }
+                          disabled={selectedIndex === 0}
+                          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                            selectedIndex === 0
+                              ? 'text-gray-600 cursor-not-allowed'
+                              : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                          }`}
+                        >
+                          &larr; Previous
+                        </button>
+
+                        <div className="flex gap-4">
+                          {isLocked[selectedIndex]
+                            ? null
+                            : !completedModules[selectedIndex] && (
+                                <button
+                                  onClick={handleModuleComplete}
+                                  className="px-6 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded text-sm transition-colors"
+                                >
+                                  Mark Complete
+                                </button>
+                              )}
+
+                          {learnItems.length === selectedIndex + 1 ? null : (
+                            <button
+                              onClick={() => {
+                                const newIndex = Math.min(
+                                  learnItems.length - 1,
+                                  selectedIndex + 1,
+                                );
+                                if (!isLocked[newIndex]) {
+                                  setSelectedIndex(newIndex);
+                                }
+                              }}
+                              disabled={
+                                selectedIndex === learnItems.length - 1 ||
+                                isLocked[selectedIndex + 1]
+                              }
+                              className={`flex items-center gap-2 px-6 py-2 rounded text-sm font-bold transition-colors ${
+                                selectedIndex === learnItems.length - 1 ||
+                                isLocked[selectedIndex + 1]
+                                  ? 'bg-red-500 cursor-not-allowed'
+                                  : 'text-white bg-blue-600 cursor-pointer hover:bg-blue-500'
+                              }`}
+                            >
+                              Next <FaChevronRight className="text-xs" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Enhanced Navigation */}
-              <div className="flex justify-between items-center mt-6">
-                <button
-                  onClick={() =>
-                    setSelectedIndex(Math.max(0, selectedIndex - 1))
-                  }
-                  disabled={selectedIndex === 0}
-                  className={`cursor-pointer flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-                    selectedIndex === 0
-                      ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
-                      : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 backdrop-blur-sm border border-white/20'
-                  }`}
-                >
-                  ← Previous
-                </button>
-
-                <button
-                  onClick={handleModuleComplete}
-                  className="cursor-pointer px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
-                >
-                  Mark Complete
-                </button>
-
-                <button
-                  onClick={() => {
-                    const newIndex = Math.min(
-                      learnItems.length - 1,
-                      selectedIndex + 1,
-                    );
-                    if (!isLocked[newIndex]) {
-                      setSelectedIndex(newIndex);
-                    }
-                  }}
-                  disabled={
-                    selectedIndex === learnItems.length - 1 ||
-                    isLocked[selectedIndex + 1]
-                  }
-                  className={`cursor-pointer flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-                    selectedIndex === learnItems.length - 1 ||
-                    isLocked[selectedIndex + 1]
-                      ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:shadow-lg hover:scale-105'
-                  }`}
-                >
-                  Next <FaChevronRight className="text-sm" />
-                </button>
-              </div>
-              {loggedin === false && (
-                <div className="text-center mt-5 ml-10 font-bold italic">
-                  Login to complete the learn modules.
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(96, 165, 250, 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(96, 165, 250, 0.7);
-        }
-      `}</style>
     </div>
   );
 }
