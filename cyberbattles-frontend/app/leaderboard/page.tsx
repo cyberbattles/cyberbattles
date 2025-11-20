@@ -37,13 +37,13 @@ interface LeaderboardRowProps {
 const getRankStyle = (position: number) => {
   switch (position) {
     case 1:
-      return 'from-yellow-400/20 to-amber-600/20 border-yellow-400/30 ';
+      return 'bg-amber-300 border-amber-200';
     case 2:
-      return 'from-gray-300/20 to-gray-500/20 border-gray-300/30 ';
+      return 'bg-gray-300 border-gray-200';
     case 3:
-      return 'from-amber-600/20 to-orange-600/20 border-amber-600/30 ';
+      return 'bg-amber-950 border-amber-900';
     default:
-      return 'from-gray-800/50 to-gray-900/50 border-gray-700/30 hover:border-cyan-500/30';
+      return 'bg-gray-800 border-gray-700';
   }
 };
 
@@ -57,23 +57,22 @@ const LeaderboardRow = ({item, position, delay}: LeaderboardRowProps) => {
 
   return (
     <div
-      className={`transform transition-all duration-700 ease-out ${
+      className={`transform   ${
         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
       }`}
     >
       <div
         className={`
           relative bg-gradient-to-r ${getRankStyle(position)}
-          border rounded-xl p-6 mb-4 backdrop-blur-sm
-          hover:scale-[1.02] transition-all duration-300
-          shadow-lg hover:shadow-2xl
+          border rounded-md p-6 mb-2 text-shadow-md
+          hover:scale-[1.02] transition-all duration-100
         `}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
             {/* Rank */}
-            <div className="flex items-center justify-center w-12 h-12 bg-black/20 rounded-full flex-shrink-0">
-              <span className="text-xs font-bold text-white mt-1">
+            <div className="flex items-center justify-center">
+              <span className="text-xl font-bold text-white mt-1">
                 #{position}
               </span>
             </div>
@@ -267,17 +266,9 @@ export default function LeaderboardPage() {
     <div className="min-h-screen">
       {/* Header */}
       <section className="flex flex-col items-center justify-center pt-50 pb-12">
-        <div
-          className={`transform transition-all duration-1000 ease-out ${
-            animationStarted
-              ? 'translate-y-0 opacity-100'
-              : 'translate-y-12 opacity-0'
-          }`}
-        >
-          <h1 className="text-6xl font-extrabold text-white mb-4 drop-shadow-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-center">
-            CyberBattles Leaderboard
-          </h1>
-        </div>
+        <h1 className="text-6xl font-extrabold text-white mb-4 drop-shadow-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-center">
+          CyberBattles Leaderboard
+        </h1>
       </section>
 
       {/* Toggle Section */}
@@ -342,24 +333,11 @@ export default function LeaderboardPage() {
                 : 'translate-y-8 opacity-0'
             }`}
           >
-            <div className="mt-12 text-center">
-              <div className="inline-flex items-center space-x-8 bg-gray-800/50 backdrop-blur-sm rounded-full px-8 py-4 border border-gray-700/50">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-cyan-400">
-                    {currentLeaderboardData.length}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {isClanView ? 'Clans' : 'Teams in Game'}
-                  </div>
-                </div>
-                <div className="w-px h-8 bg-gray-600"></div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-cyan-400">
-                    {currentLeaderboardData
-                      .reduce((sum, item) => sum + (item.totalScore || 0), 0)
-                      .toLocaleString()}
-                  </div>
-                  <div className="text-sm text-gray-400">Total Points</div>
+            <div className="mt-12 text-center border-t border-gray-700">
+              <div className="inline-flex items-center space-x-8 p-8 py-4">
+                <div className="font-bold text-3xl">
+                  {currentLeaderboardData.length}
+                  {isClanView ? '  Clans Total' : '  Teams in Game'}
                 </div>
               </div>
             </div>
