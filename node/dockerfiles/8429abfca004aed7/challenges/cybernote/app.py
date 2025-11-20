@@ -86,7 +86,6 @@ def signupPage():
                 <a href="/signup"><button type="button">back</button></a>
             """
 
-        # TODO check valid character
         whitelist = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
 
         if not all(c in whitelist for c in user):
@@ -176,9 +175,7 @@ def home():
             return redirect("/")
 
         username = request.cookies.get("username")
-        # password = request.cookies.get("password")
 
-        # sql = "SELECT note FROM users WHERE id = ? AND passwd = ?"
         sql = "SELECT note FROM users WHERE id = ?"
         con = getDb()
         cur = con.cursor()
