@@ -125,11 +125,13 @@ const NetworkTraffic = () => {
             return;
           }
 
-          const response = await ApiClient.get(`/captures/${teamIdResult}/${jwt}`,
+          const response = await ApiClient.get(
+            `/captures/${teamIdResult}/${jwt}`,
             {
-              params: { t: new Date().getTime() },
-              responseType: 'blob' 
-            });
+              params: {t: new Date().getTime()},
+              responseType: 'blob',
+            },
+          );
 
           if (response.status == 200) {
             const pcapBlob = await response.data;
@@ -180,12 +182,11 @@ const NetworkTraffic = () => {
         return;
       }
 
-      const response = await ApiClient.get(`/captures/${teamId}/${jwt}`,
-            {
-              params: { t: new Date().getTime() },
-              responseType: 'blob' 
-            }); 
-      // ew I probably should have just called runFetches() here rather 
+      const response = await ApiClient.get(`/captures/${teamId}/${jwt}`, {
+        params: {t: new Date().getTime()},
+        responseType: 'blob',
+      });
+      // ew I probably should have just called runFetches() here rather
       // than duplicating code but it is what it is -Liam
 
       if (response.status == 200) {

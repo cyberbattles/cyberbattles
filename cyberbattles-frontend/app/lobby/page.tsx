@@ -580,8 +580,10 @@ const Lobby = () => {
       try {
         const token = await currentUser.getIdToken();
 
-        const response = await ApiClient.get(`/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`);
-        
+        const response = await ApiClient.get(
+          `/config/${gameSessionId}/${gameTeamId}/${currentUser.uid}/${token}`,
+        );
+
         if (response.status != 200) {
           console.error(`Failed to fetch config file: ${response.status}`);
           return;

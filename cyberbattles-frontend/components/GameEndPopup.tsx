@@ -211,13 +211,13 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
               View Leaderboard
             </button>
 
-              <button
-                onClick={handleViewMaterials}
-                className="cursor-pointer flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
-              >
-                <span className="text-xl"></span>
-                View Game Reports
-              </button>
+            <button
+              onClick={handleViewMaterials}
+              className="cursor-pointer flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
+            >
+              <span className="text-xl"></span>
+              View Game Reports
+            </button>
           </div>
 
           {/* Footer Actions */}
