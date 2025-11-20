@@ -8,14 +8,17 @@ import {
   doc,
   getDoc,
   getDocs,
+  updateDoc,
 } from 'firebase/firestore';
 import {useAuth} from '@/components/Auth';
 import {useRouter} from 'next/navigation';
 import {FaLink} from 'react-icons/fa';
 
 interface SolutionBlock {
-  type: 'heading' | 'paragraph' | 'code' | 'link';
-  content: string;
+  type: 'heading' | 'paragraph' | 'code' | 'link' | 'list';
+  content?: string;
+  items?: string[];
+  style?: 'ordered' | 'unordered';
   language?: string;
   url?: string;
   text?: string;
@@ -50,7 +53,7 @@ const SolutionRenderer: React.FC<SolutionRendererProps> = ({solution}) => {
         return (
           <h3
             key={index}
-            className="text-2xl font-bold text-blue-300 mt-6 mb-3"
+            className="text-2xl font-bold text-blue-300 mt-8 mb-4 border-b border-gray-700 pb-2"
           >
             {block.content}
           </h3>
@@ -63,34 +66,57 @@ const SolutionRenderer: React.FC<SolutionRendererProps> = ({solution}) => {
         );
       case 'code':
         return (
-          <pre
+          <div key={index} className="my-4 relative group">
+            <div className="absolute top-0 right-0 px-2 py-1 text-xs text-gray-500 bg-gray-800 rounded-bl-lg border-l border-b border-gray-700">
+              {block.language || 'code'}
+            </div>
+            <pre className="bg-[#151515] p-4 rounded-lg overflow-x-auto border border-gray-700 shadow-inner">
+              <code className={`font-mono text-sm text-white`}>
+                {block.content}
+              </code>
+            </pre>
+          </div>
+        );
+      case 'list':
+        const ListTag = block.style === 'ordered' ? 'ol' : 'ul';
+        const listStyles =
+          block.style === 'ordered' ? 'list-decimal' : 'list-disc';
+        return (
+          <ListTag
             key={index}
-            className="bg-[#1e1e1e] p-4 rounded-lg overflow-x-auto my-4 border border-gray-700"
+            className={`${listStyles} list-outside ml-6 mb-6 text-gray-300 space-y-2 marker:text-blue-400`}
           >
-            <code className={`font-mono text-sm text-green-300`}>
-              {block.content}
-            </code>
-          </pre>
+            {block.items?.map((item, i) => (
+              <li key={i} className="pl-2">
+                {item}
+              </li>
+            ))}
+          </ListTag>
         );
       case 'link':
         return (
-          <a
-            key={index}
-            href={block.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-blue-400 hover:text-blue-300 hover:underline transition-colors"
-          >
-            <FaLink size={14} />
-            <span>{block.text || block.url}</span>
-          </a>
+          <div key={index} className="mb-2">
+            <a
+              href={block.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-blue-100 hover:text-blue-300 hover:underline transition-colors bg-blue-900 px-3 py-1.5 rounded-md border border-blue-900/50"
+            >
+              <FaLink size={12} />
+              <span>{block.text || block.url}</span>
+            </a>
+          </div>
         );
       default:
         return null;
     }
   };
 
-  return <div className="prose-dark">{solution.blocks.map(renderBlock)}</div>;
+  return (
+    <div className="prose-dark max-w-4xl">
+      {solution.blocks.map(renderBlock)}
+    </div>
+  );
 };
 
 interface DesignProps {
@@ -107,7 +133,7 @@ const Reports: React.FC<DesignProps> = ({reports}) => {
           <button
             key={report.id}
             onClick={() => setActiveTab(report.id)}
-            className={`w-full p-4 text-left font-medium rounded-lg transition-colors ${
+            className={`w-full p-4 text-left font-semibold rounded-lg transition-colors cursor-pointer ${
               activeTab === report.id
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-300 hover:bg-[#2a2a2a]'
@@ -208,6 +234,31 @@ const GameReportsPage = () => {
     fetchReports();
   }, [currentUser]);
 
+  // const addSolutionToScenario = async () => {
+  //   // 1. SET THE SCENARIO ID YOU WANT TO UPDATE
+  //   const SCENARIO_ID_TO_UPDATE = '8429abfca004aed7'; // <--- !!! SET THIS
+  //
+  //   // 2. THE DATA TO ADD (as you provided)
+  //   s const solutionData = {}
+  //   // 3. THE FIRESTORE LOGIC
+  //   try {
+  //     console.log(`Updating scenario: ${SCENARIO_ID_TO_UPDATE}...`);
+  //     const scenarioRef = doc(db, 'scenarios', SCENARIO_ID_TO_UPDATE);
+  //
+  //     // Use updateDoc to add/merge the 'solution' field
+  //     // This will not overwrite the whole document
+  //     await updateDoc(scenarioRef, solutionData);
+  //
+  //     alert(`SUCCESS! Scenario ${SCENARIO_ID_TO_UPDATE} was updated.`);
+  //     console.log(`SUCCESS! Scenario ${SCENARIO_ID_TO_UPDATE} was updated.`);
+  //   } catch (error) {
+  //     console.error('Error updating document:', error);
+  //     alert(
+  //       `Error: ${(error as Error).message}. Check console and security rules.`,
+  //     );
+  //   }
+  // };
+
   return (
     <div className="flex flex-col min-h-screen pt-20 sm:pt-40 bg-[#2f2f2f] text-white">
       <main className="flex-1 p-4 md:p-8 overflow-y-auto">
@@ -220,6 +271,23 @@ const GameReportsPage = () => {
             Back to Dashboard
           </button>
         </header>
+
+        {/* <div className="bg-yellow-800 border border-yellow-500 p-4 rounded-lg mb-6 text-center"> */}
+        {/*   <h3 className="text-xl font-bold text-yellow-200">Developer Tool</h3> */}
+        {/*   <p className="text-yellow-300 mb-3"> */}
+        {/*     Click this button to add the solution to the scenario specified in */}
+        {/*     the code. */}
+        {/*   </p> */}
+        {/*   <button */}
+        {/*     onClick={addSolutionToScenario} */}
+        {/*     className="px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-500" */}
+        {/*   > */}
+        {/*     !!! Run Temporary Solution-Adder !!! */}
+        {/*   </button> */}
+        {/*   <p className="text-yellow-400 mt-2 text-sm"> */}
+        {/*     (Remember to remove this code after use) */}
+        {/*   </p> */}
+        {/* </div> */}
 
         <div>
           {isLoading && (
