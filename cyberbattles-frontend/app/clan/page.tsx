@@ -124,13 +124,13 @@ const ClanSelection = () => {
           {/* Team Action Buttons */}
           <section className="flex flex-col items-center space-y-8">
             <button
-              className="w-80 py-6 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
+              className="cursor-pointer w-80 py-6 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-blue-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
               onClick={handleCreateTeam}
             >
               Create Clan
             </button>
             <button
-              className="w-80 py-6 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-green-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
+              className="cursor-pointer w-80 py-6 px-8 bg-[#2f2f2f] border border-gray-600 rounded-2xl hover:border-green-400 hover:bg-[#3a3a3a] transition font-bold text-xl shadow-md"
               onClick={handleJoinTeam}
             >
               Join Clan

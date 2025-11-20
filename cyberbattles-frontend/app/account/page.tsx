@@ -369,7 +369,7 @@ export default function ProfilePage() {
               {learnItems.map((item, index) => (
                 <button
                   key={index}
-                  className={`flex-1 py-4 px-6 text-center font-medium transition-colors duration-200 focus:outline-none ${
+                  className={`cursor-pointer flex-1 py-4 px-6 text-center font-medium transition-colors duration-200 focus:outline-none ${
                     selectedIndex === index
                       ? 'border-b-2 border-gray-50 text-white'
                       : 'text-gray-400 hover:bg-gray-500/50'
@@ -447,14 +447,14 @@ export default function ProfilePage() {
                           <button
                             type="button"
                             onClick={() => setIsChangingPassword(true)}
-                            className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold mr-5"
+                            className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold mr-5"
                           >
                             Change Password
                           </button>
                           <button
                             type="button"
                             onClick={handlePasswordReset}
-                            className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                            className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
                           >
                             Reset Password
                           </button>
@@ -465,7 +465,7 @@ export default function ProfilePage() {
                             <button
                               type="button"
                               onClick={() => setIsChangingPassword(false)}
-                              className="text-gray-400 hover:text-white transition"
+                              className="cursor-pointer text-gray-400 hover:text-white transition"
                             >
                               {/* Back Arrow SVG */}
                               <svg
@@ -526,7 +526,7 @@ export default function ProfilePage() {
                           <button
                             type="button"
                             onClick={handleChangePassword}
-                            className="bg-gray-600 rounded-lg text-white py-2 mt-2 px-6 w-full hover:bg-gray-700 disabled:opacity-50 transition font-bold"
+                            className="cursor-pointer bg-gray-600 rounded-lg text-white py-2 mt-2 px-6 w-full hover:bg-gray-700 disabled:opacity-50 transition font-bold"
                           >
                             Update Password
                           </button>
@@ -540,7 +540,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="bg-blue-600 rounded-lg text-white py-2.5 px-6 hover:bg-blue-700 transition font-bold"
+                      className="cursor-pointer bg-blue-600 rounded-lg text-white py-2.5 px-6 hover:bg-blue-700 transition font-bold"
                     >
                       Logout
                     </button>
@@ -549,7 +549,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={handleCancel}
-                        className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                        className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
                       >
                         Cancel
                       </button>
@@ -561,7 +561,7 @@ export default function ProfilePage() {
                           photoError !== '' ||
                           isChangingPassword
                         }
-                        className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+                        className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
                       >
                         Save Changes
                       </button>
@@ -605,7 +605,7 @@ export default function ProfilePage() {
                   <button
                     disabled={loading}
                     onClick={handleDelete}
-                    className="bg-red-600 rounded-lg text-white py-3 px-6 w-full hover:bg-red-700 disabled:opacity-50 transition font-bold"
+                    className="cursor-pointer bg-red-600 rounded-lg text-white py-3 px-6 w-full hover:bg-red-700 disabled:opacity-50 transition font-bold"
                   >
                     I understand, delete my account
                   </button>
@@ -650,7 +650,7 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={loading || photoError !== ''}
-                className="bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+                className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
               >
                 Save Changes
               </button>

@@ -690,7 +690,7 @@ export default function ModernLearnPage() {
                     setSelectedIndex(Math.max(0, selectedIndex - 1))
                   }
                   disabled={selectedIndex === 0}
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+                  className={`cursor-pointer flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                     selectedIndex === 0
                       ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'
                       : 'bg-white/10 text-white hover:bg-white/20 hover:scale-105 backdrop-blur-sm border border-white/20'
@@ -701,7 +701,7 @@ export default function ModernLearnPage() {
 
                 <button
                   onClick={handleModuleComplete}
-                  className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
+                  className="cursor-pointer px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
                 >
                   Mark Complete
                 </button>
@@ -720,7 +720,7 @@ export default function ModernLearnPage() {
                     selectedIndex === learnItems.length - 1 ||
                     isLocked[selectedIndex + 1]
                   }
-                  className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+                  className={`cursor-pointer flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
                     selectedIndex === learnItems.length - 1 ||
                     isLocked[selectedIndex + 1]
                       ? 'bg-gray-700/30 text-gray-500 cursor-not-allowed'

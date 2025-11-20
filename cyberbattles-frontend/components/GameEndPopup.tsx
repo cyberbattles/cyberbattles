@@ -205,7 +205,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             {/* View Leaderboard */}
             <button
               onClick={handleViewLeaderboard}
-              className="flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white sm:col-span-2"
+              className="cursor-pointer flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white sm:col-span-2"
             >
               <span className="text-xl"></span>
               View Leaderboard
@@ -213,7 +213,7 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
 
               <button
                 onClick={handleViewMaterials}
-                className="flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
+                className="cursor-pointer flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
               >
                 <span className="text-xl"></span>
                 View Game Reports
@@ -225,14 +225,14 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
             {continueAdministering ? (
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
+                className="cursor-pointer flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
               >
                 Close
               </button>
             ) : (
               <button
                 onClick={handleBackToDashboard}
-                className="flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
+                className="cursor-pointer flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
               >
                 Back to Dashboard
               </button>

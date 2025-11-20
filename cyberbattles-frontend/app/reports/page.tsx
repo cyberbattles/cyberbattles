@@ -265,7 +265,7 @@ const GameReportsPage = () => {
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-3xl font-bold">Game Reports</h1>
           <button
-            className="px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+            className="cursor-pointer px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
             onClick={() => router.push('/dashboard')}
           >
             Back to Dashboard
@@ -280,7 +280,7 @@ const GameReportsPage = () => {
         {/*   </p> */}
         {/*   <button */}
         {/*     onClick={addSolutionToScenario} */}
-        {/*     className="px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-500" */}
+        {/*     className="cursor-pointer px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-500" */}
         {/*   > */}
         {/*     !!! Run Temporary Solution-Adder !!! */}
         {/*   </button> */}

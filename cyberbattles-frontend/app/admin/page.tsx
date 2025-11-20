@@ -145,7 +145,7 @@ const Admin = () => {
                     </a>
                     <button
                       onClick={() => handleCopy(url)}
-                      className="flex-shrink-0 h-9 w-9 p-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors duration-200"
+                      className="cursor-pointer flex-shrink-0 h-9 w-9 p-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors duration-200"
                       title="Copy URL"
                     >
                       <FaRegCopy className="w-4 h-4" />
@@ -762,7 +762,7 @@ const Admin = () => {
               <h1 className="text-3xl font-bold">Admin Panel</h1>
               <button
                 onClick={handleCreateSession}
-                className="flex items-center gap-2 px-3 py-2 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold text-sm "
+                className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold text-sm "
                 title="Create New Session"
               >
                 <IoIosAddCircleOutline size={20} />
@@ -801,7 +801,7 @@ const Admin = () => {
                 Actions
               </h2>
               <button
-                className="w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+                className="cursor-pointer w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
                 onClick={handlePushShell}
               >
                 Go to Shell
@@ -809,7 +809,7 @@ const Admin = () => {
               <div className="border-t border-gray-700 my-2"></div>
 
               <button
-                className="w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
+                className="cursor-pointer w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
                 onClick={openVpnModal}
               >
                 VPN Setup Guide
@@ -867,7 +867,7 @@ const Admin = () => {
                       <button
                         onClick={handleStartGame}
                         disabled={gameStatus === 'starting'}
-                        className={`w-full px-4 py-3 rounded-xl font-bold transition ${
+                        className={`cursor-pointer w-full px-4 py-3 rounded-xl font-bold transition ${
                           gameStatus !== 'starting'
                             ? 'bg-blue-600 hover:bg-blue-500 '
                             : 'bg-gray-600 cursor-not-allowed opacity-50'
@@ -886,7 +886,7 @@ const Admin = () => {
                     <button
                       onClick={handleEndGame}
                       disabled={gameStatus === 'ending'}
-                      className={`w-full px-4 py-3 rounded-xl font-bold transition ${
+                      className={`cursor-pointer w-full px-4 py-3 rounded-xl font-bold transition ${
                         gameStatus !== 'ending'
                           ? 'bg-red-600 hover:bg-red-500 '
                           : 'bg-gray-600 cursor-not-allowed opacity-50'
@@ -970,7 +970,7 @@ const Admin = () => {
                         )
                       }
                       disabled={!frontendUrl}
-                      className="flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="cursor-pointer flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Copy Team ID"
                     >
                       <FaRegCopy className="w-4 h-4" />
@@ -1014,14 +1014,14 @@ const Admin = () => {
                 </select>
                 <div className="flex justify-center gap-x-6 mt-4">
                   <button
-                    className="px-6 py-2.5 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold"
+                    className="cursor-pointer px-6 py-2.5 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold"
                     onClick={() => fetchVpnConfigForTeam(vpnTeamSelectId)}
                     disabled={!vpnTeamSelectId || teams.size === 0}
                   >
                     Get Config
                   </button>
                   <button
-                    className="px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold"
+                    className="cursor-pointer px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold"
                     onClick={closeVpnModal}
                   >
                     Cancel
@@ -1078,19 +1078,19 @@ const Admin = () => {
 
                 <div className="flex justify-center gap-x-6 flex-shrink-0">
                   <button
-                    className="px-6 py-2.5 bg-gray-600 rounded-xl hover:bg-gray-500 transition font-bold"
+                    className="cursor-pointer px-6 py-2.5 bg-gray-600 rounded-xl hover:bg-gray-500 transition font-bold"
                     onClick={() => setSelectedTeamIdForVpn(null)}
                   >
                     Back
                   </button>
                   <button
-                    className="px-6 py-2.5 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold"
+                    className="cursor-pointer px-6 py-2.5 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold"
                     onClick={handleDownloadConfig}
                   >
                     Download Config
                   </button>
                   <button
-                    className="px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold"
+                    className="cursor-pointer px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold"
                     onClick={closeVpnModal}
                   >
                     Close

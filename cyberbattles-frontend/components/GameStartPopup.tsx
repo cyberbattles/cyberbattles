@@ -50,7 +50,7 @@ const GameStartPopup: React.FC<GameStartPopupProps> = ({
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-b-xl transition font-semibold text-white"
+            className="cursor-pointer flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-b-xl transition font-semibold text-white"
           >
             Close
           </button>

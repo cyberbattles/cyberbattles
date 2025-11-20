@@ -89,7 +89,7 @@ const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
                   {/* Copy Button */}
                   <button
                     onClick={() => handleCopy(url)}
-                    className="flex-shrink-0 h-9 w-9 p-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors duration-200"
+                    className="cursor-pointer flex-shrink-0 h-9 w-9 p-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors duration-200"
                     title="Copy URL"
                   >
                     <FaRegCopy className="w-4 h-4" />
@@ -678,13 +678,13 @@ const Lobby = () => {
             <h1 className="text-3xl font-bold">Session Lobby</h1>
             <div className="flex gap-4">
               <button
-                className="px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold "
+                className="cursor-pointer px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold "
                 onClick={handleLeaveLobby}
               >
                 Leave Lobby
               </button>
               <button
-                className="px-5 py-2.5 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
+                className="cursor-pointer px-5 py-2.5 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
                 onClick={handleLogout}
               >
                 Logout
@@ -797,14 +797,14 @@ const Lobby = () => {
               </h2>
               {/* Shell Button */}
               <button
-                className="w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+                className="cursor-pointer w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
                 onClick={handlePushShell}
               >
                 Go to Shell
               </button>
               {/* Traffic Button */}
               <button
-                className="w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+                className="cursor-pointer w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
                 onClick={handlePushTraffic}
               >
                 View Network Traffic
@@ -814,14 +814,14 @@ const Lobby = () => {
 
               {/* Show VPN Button */}
               <button
-                className="w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
+                className="cursor-pointer w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
                 onClick={() => setShowVpn(true)}
               >
                 VPN Setup Guide
               </button>
               {/* Download VPN Button */}
               <button
-                className="w-full px-4 py-3 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold "
+                className="cursor-pointer w-full px-4 py-3 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold "
                 onClick={handleDownloadConfig}
               >
                 Download VPN Config
@@ -877,13 +877,13 @@ const Lobby = () => {
             {/* Download/Close Buttons */}
             <div className="flex justify-center gap-x-6 flex-shrink-0">
               <button
-                className="px-6 py-2.5 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold "
+                className="cursor-pointer px-6 py-2.5 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold "
                 onClick={handleDownloadConfig}
               >
                 Download Config
               </button>
               <button
-                className="px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold "
+                className="cursor-pointer px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold "
                 onClick={() => setShowVpn(false)}
               >
                 Close

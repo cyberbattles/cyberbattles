@@ -186,14 +186,14 @@ const JoinClan = () => {
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className="w-80 py-4 px-8 bg-green-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="cursor-pointer w-80 py-4 px-8 bg-green-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleJoinTeam}
                 disabled={isLoading || !currentUser}
               >
                 {isLoading ? 'Joining...' : 'Join Clan'}
               </button>
               <button
-                className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md disabled:opacity-50"
+                className="cursor-pointer w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md disabled:opacity-50"
                 onClick={handleBackToSelection}
                 disabled={isLoading}
               >

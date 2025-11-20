@@ -142,7 +142,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className={`${
+              className={`cursor-pointer ${
                 isRegister ? 'bg-green-600' : 'bg-blue-600'
               } rounded-xl text-white py-2 px-6 hover:opacity-90 transition font-bold`}
             >

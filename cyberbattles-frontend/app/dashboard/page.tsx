@@ -257,7 +257,7 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold">Welcome, {currentUsername}!</h1>
             <div className="flex gap-4">
               <button
-                className="px-5 py-2.5 bg-red-600 rounded-lg font-bold text-white transition-all duration-300 hover:bg-red-700 "
+                className="cursor-pointer px-5 py-2.5 bg-red-600 rounded-lg font-bold text-white transition-all duration-300 hover:bg-red-700 "
                 onClick={handleLogout}
               >
                 Log Out
@@ -279,13 +279,13 @@ const Dashboard = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   onClick={handleGoToJoin}
-                  className="px-8 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-300 font-bold text-white text-center"
+                  className="cursor-pointer px-8 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-300 font-bold text-white text-center"
                 >
                   Join a Game
                 </button>
                 <button
                   onClick={handleGoToCreation}
-                  className="px-8 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-300 font-bold text-white text-center"
+                  className="cursor-pointer px-8 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-300 font-bold text-white text-center"
                 >
                   Create a Game
                 </button>
@@ -332,7 +332,7 @@ const Dashboard = () => {
                   </div>
                   <button
                     onClick={handleLeaveClan}
-                    className="px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 transition font-bold"
+                    className="cursor-pointer px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 transition font-bold"
                   >
                     Leave Clan
                   </button>
@@ -359,7 +359,7 @@ const Dashboard = () => {
                   </p>
                   <button
                     onClick={handleGoToClan}
-                    className="px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-700 transition font-bold mb-2"
+                    className="cursor-pointer px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-700 transition font-bold mb-2"
                   >
                     Join or Create Clan
                   </button>

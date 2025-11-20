@@ -194,7 +194,7 @@ const CreateSession = () => {
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className={`w-80 h-[60px] flex items-center justify-center py-4 px-8 bg-[#2f2f2f] border rounded-2xl transition font-bold shadow-md ${
+                className={`cursor-pointer w-80 h-[60px] flex items-center justify-center py-4 px-8 bg-[#2f2f2f] border rounded-2xl transition font-bold shadow-md ${
                   errorMessage
                     ? 'border-red-500 text-red-400'
                     : 'border-gray-600 hover:border-blue-400 hover:bg-[#3a3a3a]'
@@ -230,7 +230,7 @@ const CreateSession = () => {
                 )}
               </button>
               <button
-                className="w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
+                className="cursor-pointer w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
                 onClick={handleBackToSelection}
               >
                 Back to Selection

@@ -209,7 +209,7 @@ export default function FlagPopup() {
             />
 
             <button
-              className="h-[44px] bg-black dark:text-white rounded-lg mt-4 w-full font-medium transition-all disabled:bg-gray-700"
+              className="cursor-pointer h-[44px] bg-black dark:text-white rounded-lg mt-4 w-full font-medium transition-all disabled:bg-gray-700"
               onClick={handleFlagSubmit}
               disabled={loading}
             >

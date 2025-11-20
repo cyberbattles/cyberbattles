@@ -66,7 +66,7 @@ export default function CreateAccountPage() {
                 >
                   Already have an account?
                 </Link>
-                <button className="outline-solid rounded-xl text-white py-2 px-6 hover:scale-105 duration-300">
+                <button className="cursor-pointer outline-solid rounded-xl text-white py-2 px-6 hover:scale-105 duration-300">
                   Create Account
                 </button>
               </div>

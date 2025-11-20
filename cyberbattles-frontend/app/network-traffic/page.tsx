@@ -233,7 +233,7 @@ const NetworkTraffic = () => {
           <div className="flex gap-8 items-center">
             <button
               onClick={handlePcapDownload}
-              className="px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
+              className="cursor-pointer px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
             >
               Download
               <Image
@@ -246,7 +246,7 @@ const NetworkTraffic = () => {
 
             <button
               onClick={handleRefresh}
-              className="px-4 py-2 bg-blue-400 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
+              className="cursor-pointer px-4 py-2 bg-blue-400 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
             >
               Refresh
               <Image src={SyncIcon} alt="refresh icon" width={20} height={20} />
