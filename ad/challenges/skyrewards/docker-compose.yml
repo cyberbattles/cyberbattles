@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  skyrewards:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - SECRET_KEY=super_secret_ctf_key_123
+      # This is the flag the attackers are trying to get
+      - FLAG=CTF{n3gative_numb3rs_p0sitiv3_pr0fit}
+    # volumes:
+    #   - ./instance:/app/instance
+    restart: always
