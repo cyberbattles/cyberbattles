@@ -37,13 +37,13 @@ interface LeaderboardRowProps {
 const getRankStyle = (position: number) => {
   switch (position) {
     case 1:
-      return 'bg-amber-300 border-amber-200';
+      return 'text-amber-300 border-amber-200';
     case 2:
-      return 'bg-gray-300 border-gray-200';
+      return 'text-gray-300 border-gray-200';
     case 3:
-      return 'bg-amber-950 border-amber-900';
+      return 'text-amber-800 border-amber-900';
     default:
-      return 'bg-gray-800 border-gray-700';
+      return 'text-gray-400 border-gray-700';
   }
 };
 
@@ -57,14 +57,14 @@ const LeaderboardRow = ({item, position, delay}: LeaderboardRowProps) => {
 
   return (
     <div
-      className={`transform   ${
+      className={`transform  ${
         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
       }`}
     >
       <div
         className={`
           relative bg-gradient-to-r ${getRankStyle(position)}
-          border rounded-md p-6 mb-2 text-shadow-md
+          border-2 rounded-md p-6 mb-2 text-shadow-lg
           hover:scale-[1.02] transition-all duration-100
         `}
       >
@@ -72,15 +72,13 @@ const LeaderboardRow = ({item, position, delay}: LeaderboardRowProps) => {
           <div className="flex items-center space-x-6">
             {/* Rank */}
             <div className="flex items-center justify-center">
-              <span className="text-xl font-bold text-white mt-1">
-                #{position}
-              </span>
+              <span className="text-xl font-bold mt-1">#{position}</span>
             </div>
 
             {/* Name */}
             <div>
               <h3
-                className="text-xl font-bold text-white truncate"
+                className="text-xl font-bold truncate"
                 title={
                   item instanceof Object && 'clanTag' in item
                     ? item.clanTag
@@ -96,7 +94,7 @@ const LeaderboardRow = ({item, position, delay}: LeaderboardRowProps) => {
 
           {/* Points */}
           <div className="text-right ml-4 flex-shrink-0">
-            <div className="text-2xl font-bold text-white">
+            <div className="text-2xl font-bold">
               {item.totalScore?.toLocaleString() ?? 0}
             </div>
             <div className="text-sm text-gray-400">points</div>
@@ -304,7 +302,7 @@ export default function LeaderboardPage() {
       </section>
 
       {/* Leaderboard */}
-      <section className="max-w-4xl mx-auto px-6 pb-20">
+      <section className="max-w-4xl mx-auto px-6 pb-20 bg-">
         <div className="space-y-0">
           {currentLeaderboardData.length > 0 ? (
             currentLeaderboardData.map((item, index) => (
