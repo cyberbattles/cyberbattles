@@ -1,0 +1,52 @@
+{
+  "name": "cyberbattles-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "format": "prettier -w components/*.tsx app/*.tsx app/*/*.tsx",
+    "lint": "eslint components/*.tsx app/*.tsx app/*/*.tsx",
+    "fix": "eslint --fix components/*.tsx app/*.tsx app/*/*.tsx",
+    "prepare": "next build",
+    "pretest": "next build",
+    "posttest": "npm run lint"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^7.3.4",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "axios": "^1.11.0",
+    "firebase": "^12.1.0",
+    "lucide-react": "^0.544.0",
+    "next": "^15.5.3",
+    "pcap-element": "^3.0.2",
+    "postcss": "^8.5.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-icons": "^5.5.0",
+    "react-image-crop": "^11.0.10",
+    "react-qr-code": "^2.0.18",
+    "react-select": "^5.10.2",
+    "recharts": "^3.2.1",
+    "vaul": "^1.1.2",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^22.7.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.6",
+    "gts": "^6.0.2",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.6.3"
+  }
+}
