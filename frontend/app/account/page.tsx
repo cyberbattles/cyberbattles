@@ -247,6 +247,8 @@ export default function ProfilePage() {
     setPhotoError('');
     setUsername('');
     setUsernameError('');
+
+    window.history.go(-1);
   };
 
   const handleDelete = async () => {
