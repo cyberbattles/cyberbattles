@@ -4,9 +4,7 @@ import * as serviceAccount from '../../cyberbattles-dd31f-18566f4ef322.json';
 
 initializeApp({
   credential: cert(serviceAccount as ServiceAccount),
-  // storageBucket: 'cyberbattles-dd31f.firebasestorage.app',
 });
 
 export const db = getFirestore();
 export const scenariosCollection = db.collection('scenarios');
-// const bucket = admin.storage().bucket();

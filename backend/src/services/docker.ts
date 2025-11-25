@@ -52,7 +52,7 @@ async function handleStream(stream: NodeJS.ReadableStream): Promise<boolean> {
 
 /**
  * Retrieves the list of available scenario Docker images.
- * If the SCENARIOS array is empty, it starts the build process for all scenarios.
+ * If the SCENARIOS array is empty, it checks for the existence of the images.
  * @returns A Promise that resolves to an array of scenario image tags.
  */
 export async function getScenarios(): Promise<string[]> {
@@ -67,14 +67,14 @@ export async function getScenarios(): Promise<string[]> {
 }
 
 /**
- * Builds all provided scenarios found in the dockerfilesPath directory.
+ *  Checks if docker images for all local scenarios exist.
  * Stores the built image tags in the SCENARIOS array.
  * @param dockerfilesPath The path to the directory containing scenario subdirectories with Dockerfiles.
  */
 async function buildImages(dockerfilesPath: string): Promise<void> {
   const dockerfiles = await fs.readdir(dockerfilesPath);
 
-  // Iterate over each Dockerfile and build the image
+  // Iterate over each Dockerfile
   for (const file of dockerfiles) {
     const imageTag = `${file}`;
 
@@ -238,12 +238,13 @@ export async function createTeamContainer(
   teamId: string,
   networkName: string,
   sessionId: string,
+  teamPassword: string,
 ): Promise<string> {
   const container = await docker.createContainer({
     Image: image,
     name: `teamcon-${teamName}-${teamId}`,
     Tty: true,
-    Env: ['PUID=1000', 'PGID=1000'],
+    Env: ['PUID=1000', 'PGID=1000', `ADMIN_PASS=${teamPassword}`],
     HostConfig: {
       CapAdd: ['NET_ADMIN'],
       Dns: ['1.0.0.1', '1.1.1.1'],
@@ -336,7 +337,7 @@ export async function createWgRouter(
       `PEERS=${numTeams * numMembersPerTeamIncAdmin + numTeams}`,
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
-      `SERVERURL=${process.env.SERVERURL ? process.env.SERVERURL : wgRouterIp}`,
+      `SERVERURL=${process.env.SERVER_URL ? process.env.SERVER_URL : wgRouterIp}`,
       `SERVERPORT=${wireguardPort}`,
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
