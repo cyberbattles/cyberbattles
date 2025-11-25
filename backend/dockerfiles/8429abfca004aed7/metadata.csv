@@ -1,5 +1,6 @@
 scenario_title, Cybernote
 scenario_description, A super security note taking web app.
 scenario_difficulty, Easy
-
 scenario_id,8429abfca004aed7
+scoring_bot_id,82202c6ed1bf107e
+challenge_services,5000:cybernote

@@ -7,13 +7,15 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
+PORT = 5000
 
-def inject_flag(ip, port, flag):
+
+def inject_flag(ip, flag):
     """
     This function contains the original flag injection logic.
     It takes ip, port, and flag as arguments and returns the result.
     """
-    base_url = f"http://{ip}:{port}"
+    base_url = f"http://{ip}:{PORT}"
     flagHash = hashlib.md5(flag.encode()).hexdigest()[:10]
     credentials = {"user": "admin", "passwd": flagHash}
 
@@ -44,20 +46,19 @@ def inject_flag(ip, port, flag):
 def inject():
     """
     This is the API endpoint. It expects a POST request with a JSON body
-    containing 'ip', 'port', and 'flag'.
+    containing 'ip' and 'flag'.
     """
     data = request.get_json()
-    if not data or "ip" not in data or "port" not in data or "flag" not in data:
+    if not data or "ip" not in data or "flag" not in data:
         return (
             jsonify({"status": "error", "message": "Missing required parameters"}),
             400,
         )
 
     ip = data["ip"]
-    port = data["port"]
     flag = data["flag"]
 
-    result = inject_flag(ip, port, flag)
+    result = inject_flag(ip, flag)
 
     if result == "SUCCESS":
         return jsonify({"status": "success"})

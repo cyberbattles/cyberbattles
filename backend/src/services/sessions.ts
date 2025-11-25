@@ -8,8 +8,9 @@ import {
   StartSessionResult,
   Team,
   User,
+  Scenario,
 } from '../types';
-import {db} from './firebase';
+import {db, scenariosCollection} from './firebase';
 import {
   getScenarios,
   createNetwork,
@@ -29,8 +30,6 @@ import {
 } from '../helpers';
 import {startTrafficCap} from './trafficcap';
 import {flagService} from './flags';
-
-const CYBERNOTE_ID = '8429abfca004aed7';
 
 // Get a unique ID for this server instance
 const serverId = machineIdSync();
@@ -53,6 +52,8 @@ export async function createTeam(
   networkName: string,
   teamId: string,
 ): Promise<Team> {
+  const teamPassword = generateId().slice(0, 12);
+
   // Create a container for the team
   const containerId = await createTeamContainer(
     scenarioId,
@@ -60,6 +61,7 @@ export async function createTeam(
     teamId,
     networkName,
     sessionId,
+    teamPassword,
   );
 
   try {
@@ -81,6 +83,7 @@ export async function createTeam(
       totalCount: 0,
       totalScore: 100,
       activeFlags: [],
+      password: teamPassword,
     };
   } catch (error) {
     throw new Error(
@@ -116,6 +119,14 @@ export async function createSession(
     );
   }
 
+  const scenarioDoc = await scenariosCollection.doc(scenarioId).get();
+  if (!scenarioDoc.exists) {
+    throw new Error(
+      'Invalid scenario selected. Configuration not found in Firestore.',
+    );
+  }
+  const scenario = scenarioDoc.data() as Scenario;
+
   // Generate a unique ID for the session
   const sessionId: string = generateId();
 
@@ -150,11 +161,12 @@ export async function createSession(
     teamIds.push(generateId());
   }
 
+  // Logic to determine if we need a scoring bot based on Firestore data
   let numTeamsWithScoringBot = numTeams;
   let scoringBotTeamId = 'NOT_IMPLEMENTED';
   let teamIdsWithScorer = teamIds;
-  if (scenarioId === CYBERNOTE_ID) {
-    // Predefine values for adding the scoring bot as a special team
+
+  if (scenario.scoring_bot_id) {
     numTeamsWithScoringBot = numTeams + 1;
     scoringBotTeamId = sessionId;
     teamIdsWithScorer = teamIds.concat([scoringBotTeamId]);
@@ -211,14 +223,14 @@ export async function createSession(
     console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
-  // Create the scoring bot container as a special team
+  // Create the scoring bot container
   let scoringBotContainerId = '';
-  if (scenarioId === CYBERNOTE_ID) {
+  if (scenario.scoring_bot_id) {
     try {
       const scoringBotTeam = await createTeam(
         'scoring-bot',
         1,
-        '82202c6ed1bf107e', // Currently hardcoded to the default scenario
+        scenario.scoring_bot_id,
         sessionId,
         networkName,
         scoringBotTeamId,
@@ -360,13 +372,18 @@ export async function startSession(
   }
 
   if (sessionData.scoringContainerId !== '') {
-    // Get the IP Address of the scoring bot container
     const scoringBotIp = await getContainerIpAddress(
       sessionData.scoringContainerId,
     );
 
-    // Start the flag service for the session
-    flagService(teams, scoringBotIp);
+    // Fetch scenario config to get services
+    const scenarioDoc = await scenariosCollection
+      .doc(sessionData.scenarioId)
+      .get();
+    const scenario = scenarioDoc.data() as Scenario;
+
+    // Pass the scenario configuration to the flag service
+    flagService(teams, scoringBotIp, scenario);
   }
 
   // Update the session to mark it as started
@@ -477,9 +494,11 @@ export async function cleanupSession(session: Session): Promise<void> {
 
   // Remove the scoring bot container
   try {
-    const scoringContainer = docker.getContainer(session.scoringContainerId);
-    await scoringContainer.stop();
-    await scoringContainer.remove();
+    if (session.scoringContainerId !== '') {
+      const scoringContainer = docker.getContainer(session.scoringContainerId);
+      await scoringContainer.stop();
+      await scoringContainer.remove();
+    }
   } catch (error) {
     console.error(
       `Cleanup error: Scoring bot container not found or already removed.`,

@@ -40,6 +40,8 @@ export interface Team {
   totalScore: number;
   /** The list of active flags for this team. */
   activeFlags: string[];
+  /** A unique password for use in challenge services. */
+  password: string;
 }
 
 /**
@@ -76,6 +78,28 @@ export interface Session {
   id: string;
   /** The timestamp when the session was created. */
   createdAt: admin.firestore.Timestamp;
+}
+
+/**
+ * An interface representing a Scenario document in Firestore.
+ */
+export interface Scenario {
+  /** The unique ID of the scenario. */
+  scenario_id: string;
+  /** The display title of the scenario. */
+  scenario_title: string;
+  /** A description of the scenario. */
+  scenario_description: string;
+  /** The difficulty level (e.g., "Easy", "Hard"). */
+  scenario_difficulty: string;
+  /** The timestamp when the scenario was uploaded. */
+  timestamp: admin.firestore.Timestamp;
+  /** The ID (and Docker image tag) of the scoring bot. If present, a bot container is created. */
+  scoring_bot_id?: string;
+  /** A comma-separated list of the flag services for this scenario. ("8081:email,8082:skyrewards") */
+  bot_services?: string;
+  /** A comma-separated list of the challenge services for this scenario. ("9999:email,5000:skyrewards") */
+  challenge_services?: string;
 }
 
 /**
