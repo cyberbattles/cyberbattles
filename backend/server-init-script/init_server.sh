@@ -21,30 +21,30 @@ echo "Set server ListenPort to ${wireguard_port}" >>"$LOG_FILE"
 total_confs=$(((num_teams * num_players) + num_teams))
 
 # Add the static NAT and default-deny SSH rules
-# sed -i "/\[Interface\]/a PostUp = iptables -t nat -A POSTROUTING -o wg+ -j MASQUERADE" $SERVER_CONF
-# sed -i "/\[Interface\]/a PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp --dport 22 -j DROP" $SERVER_CONF
-#
-# # Add rules to allow each player to SSH into their own team's container
-# player_index_offset=0
-# for ((t = 0; t < num_teams; t++)); do
-#   # Team's IP is based on its index
-#   team_ip_octet=$((t + 2))
-#   team_ip="${IP_PREFIX}.${team_ip_octet}"
-#
-#   for ((p = 0; p < num_players; p++)); do
-#     # Player's IP is calculated based on its overall index after all team IPs
-#     player_ip_octet=$((num_teams + player_index_offset + 2))
-#     player_ip="${IP_PREFIX}.${player_ip_octet}"
-#
-#     # Construct and add the specific ACCEPT rule for this player-to-team connection
-#     rule="PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp -s ${player_ip} -d ${team_ip} --dport 22 -j ACCEPT"
-#     sed -i "/\[Interface\]/a ${rule}" $SERVER_CONF
-#
-#     echo "Allowing SSH from ${player_ip} to ${team_ip}" >>"$LOG_FILE"
-#
-#     ((player_index_offset++))
-#   done
-# done
+sed -i "/\[Interface\]/a PostUp = iptables -t nat -A POSTROUTING -o wg+ -j MASQUERADE" $SERVER_CONF
+sed -i "/\[Interface\]/a PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp --dport 22 -j DROP" $SERVER_CONF
+
+# Add rules to allow each player to SSH into their own team's container
+player_index_offset=0
+for ((t = 0; t < num_teams; t++)); do
+  # Team's IP is based on its index
+  team_ip_octet=$((t + 2))
+  team_ip="${IP_PREFIX}.${team_ip_octet}"
+
+  for ((p = 0; p < num_players; p++)); do
+    # Player's IP is calculated based on its overall index after all team IPs
+    player_ip_octet=$((num_teams + player_index_offset + 2))
+    player_ip="${IP_PREFIX}.${player_ip_octet}"
+
+    # Construct and add the specific ACCEPT rule for this player-to-team connection
+    rule="PostUp = iptables -A FORWARD -i wg0 -o wg0 -p tcp -s ${player_ip} -d ${team_ip} --dport 22 -j ACCEPT"
+    sed -i "/\[Interface\]/a ${rule}" $SERVER_CONF
+
+    echo "Allowing SSH from ${player_ip} to ${team_ip}" >>"$LOG_FILE"
+
+    ((player_index_offset++))
+  done
+done
 
 # Remove DNS, and modify ListenPort in each configuration
 for ((i = 1; i <= $total_confs; i++)); do

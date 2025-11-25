@@ -336,7 +336,7 @@ export async function createWgRouter(
       `PEERS=${numTeams * numMembersPerTeamIncAdmin + numTeams}`,
       'INTERNAL_SUBNET=10.12.0.0/24',
       'ALLOWEDIPS=10.12.0.0/24',
-      `SERVERURL=${process.env.SERVERURL ? process.env.SERVERURL : wgRouterIp}`,
+      `SERVERURL=${process.env.SERVER_URL ? process.env.SERVER_URL : wgRouterIp}`,
       `SERVERPORT=${wireguardPort}`,
       'PERSISTENTKEEPALIVE_PEERS=all',
       `NUM_TEAMS=${numTeams}`,
