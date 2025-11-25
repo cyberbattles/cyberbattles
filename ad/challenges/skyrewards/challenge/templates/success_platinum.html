@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto text-center mt-12">
+    <div class="bg-green-100 text-green-900 p-8 rounded-xl shadow-lg border border-green-200">
+        <h2 class="text-3xl font-bold mb-4">Purchase Complete — Platinum VIP Access</h2>
+        <div class="text-lg bg-white p-6 rounded border border-green-300">
+            Congratulations on purchasing Platinum VIP Access.
+            Your exclusive access token is below:
+            <pre class="font-mono mt-4 p-4 bg-gray-50 rounded border border-gray-200 break-all">{{ flag }}</pre>
+        </div>
+        <div class="mt-8">
+            <a href="{{ url_for('dashboard') }}" class="text-green-700 font-bold hover:underline">Return to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    
+    <!-- Account Card -->
+    <div class="bg-white rounded-xl shadow-md p-8 border-t-4 border-blue-500">
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Hello, {{ user.username }}</h2>
+        <p class="text-slate-500 mb-6">Member since 2025</p>
+        
+        <div class="bg-slate-50 rounded-lg p-6 text-center border border-slate-200">
+            <p class="text-sm uppercase tracking-wide text-slate-500 font-semibold">Current Balance</p>
+            <div class="text-5xl font-bold text-blue-900 my-2">{{ "{:,}".format(user.points) }}</div>
+            <p class="text-blue-500 text-sm font-medium">SkyPoints</p>
+        </div>
+
+        <div class="mt-6 flex justify-center">
+            <a href="{{ url_for('store') }}" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-2">
+                Visit Rewards Store &rarr;
+            </a>
+        </div>
+    </div>
+
+    <!-- Transfer Card -->
+    <div class="bg-white rounded-xl shadow-md p-8">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Family & Friends Transfer</h2>
+        <p class="text-slate-600 mb-6 text-sm">Send SkyPoints to other SkyRewards members instantly.</p>
+
+        <form action="{{ url_for('transfer') }}" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Recipient Username</label>
+                <input type="text" name="recipient" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700">Amount to Transfer</label>
+                <input type="number" name="amount" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <p class="text-xs text-slate-400 mt-1">Please double check details before sending.</p>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition font-semibold shadow-sm">
+                Send Points
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="mt-8 bg-blue-50 rounded-xl p-6 border border-blue-100">
+    <h3 class="text-lg font-semibold text-blue-900 mb-2">Did you know?</h3>
+    <p class="text-blue-800">SkyRewards Platinum members get access to our exclusive lounge logic. Hoarding points is discouraged; our Fraud Daemon sweeps accounts with over 2,000,000 points every minute!</p>
+</div>
+{% endblock %}
