@@ -1,0 +1,6 @@
+scenario_title, Skyline Corp Network
+scenario_description, A vulnerable network containing a poorly written email service and a rewards application with multiple security flaws.
+scenario_difficulty, Hard
+scenario_id, er74yzxi22egek75
+scoring_bot_id, skyline-corp-flag-bot
+challenge_services, 8081:email,8082:skyrewards

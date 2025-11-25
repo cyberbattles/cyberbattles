@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold text-slate-800 mb-8 text-center">Frequently Asked Questions</h1>
+
+    <div class="space-y-6">
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-blue-900 mb-2">How do I earn points?</h3>
+            <p class="text-slate-600">Currently, points are awarded upon account creation (10,000 pts). We are working on flight integration.</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-blue-900 mb-2">Can I transfer points to family?</h3>
+            <p class="text-slate-600">Yes! Use the dashboard to instantly transfer points to any other registered username.</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-blue-900 mb-2">Why did my points disappear?</h3>
+            <p class="text-slate-600">To ensure fairness and prevent inflation, our automated system resets accounts that hold excessive unverified balances (over 500k). Also, purchasing VIP items may require emptying your account balance as part of the transaction cost.</p>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-blue-900 mb-2">How do I get Platinum Status?</h3>
+            <p class="text-slate-600">Platinum status allows access to the Flag Lounge. It costs 1,000,000 points. Good luck saving up!</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
