@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev_key")
+app.secret_key = os.environ.get("ADMIN_PASS", "supersecretkey")
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "instance", "skyrewards.db")
 
@@ -17,7 +17,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 ADMIN_TOKEN = os.environ.get("ADMIN_PASS")
-CURRENT_FLAG = os.environ.get("FLAG", "CTF{default_flag}")
+CURRENT_FLAG = os.environ.get("FLAG", "SKY{default_flag}")
 
 
 class User(db.Model):
@@ -39,20 +39,22 @@ class Product(db.Model):
 def fraud_daemon():
     """
     Runs every 60 seconds.
-    Checks for balances over 500k and resets them to 10k.
+    Checks for balances over 2m and resets them to 10k.
     """
     while True:
         time.sleep(60)
         with app.app_context():
             try:
-                suspicious_users = User.query.filter(User.points > 500000).all()
+                suspicious_users = User.query.filter(
+                    User.points > 2000000, User.points < 0
+                ).all()
                 if suspicious_users:
-                    print("[Fraud Bot] Detected suspicious accounts. Resetting points.")
+                    print(f"Fraud daemon found suspicious accounts. Resetting points.")
                     for user in suspicious_users:
                         user.points = 10000
                     db.session.commit()
             except Exception as e:
-                print(f"[Fraud Bot Error] {e}")
+                print(f"Fraud daemon error: {e}")
 
 
 daemon_thread = threading.Thread(target=fraud_daemon, daemon=True)
@@ -108,7 +110,12 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    user = User.query.get(session["user_id"])
+    user = db.session.get(User, session["user_id"])
+
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+
     return render_template("dashboard.html", user=user)
 
 
@@ -120,9 +127,7 @@ def faq():
 @app.route("/transfer", methods=["POST"])
 def transfer():
     """
-    -- Vulnerable Endpoint --
-    Contains a logic error in handling balance transfer.
-    The code does not check if the amount is positive.
+    Transfer points to another user.
     """
     if "user_id" not in session:
         return redirect(url_for("login"))
@@ -134,20 +139,26 @@ def transfer():
         sender = User.query.get(session["user_id"])
         recipient = User.query.filter_by(username=recipient_name).first()
 
-        if not recipient:
-            flash("Recipient not found.")
+        MAX_TRANSFER = 1_000_000_000_000
+        MIN_TRANSFER = -1_000_000_000_000
+
+        if amount > MAX_TRANSFER:
+            flash(f"Transfer amount exceeds maximum limit of {MAX_TRANSFER} points.")
             return redirect(url_for("dashboard"))
 
-        if sender.id == recipient.id:
+        if amount < MIN_TRANSFER:
+            flash(f"Transfer amount must be at least {MIN_TRANSFER} points.")
+            return redirect(url_for("dashboard"))
+
+        if not recipient:
+            sender.points -= amount
+
+        elif sender.id == recipient.id:
             flash("Cannot transfer to yourself.")
             return redirect(url_for("dashboard"))
-
-        if sender.points < amount:
-            flash("Insufficient points.")
-            return redirect(url_for("dashboard"))
-
-        sender.points -= amount
-        recipient.points += amount
+        else:
+            recipient.points += amount
+            sender.points -= amount
 
         db.session.commit()
         flash(f"Successfully transferred {amount} points to {recipient_name}.")
@@ -179,27 +190,32 @@ def buy(product_id):
         return redirect(url_for("login"))
 
     user = User.query.get(session["user_id"])
+    if not user:
+        flash("User not found. Please login.")
+        session.pop("user_id", None)
+        session.pop("username", None)
+        return redirect(url_for("login"))
+
     product = Product.query.get(product_id)
 
     if not product:
         return "Product not found", 404
 
     if user.points >= product.price:
-        msg = ""
         if product.is_flag:
+            # Reveal flag and reset balance to prevent repeat purchases
             msg = f"ACCESS GRANTED. SECRET CODE: {CURRENT_FLAG}"
-
-            user.points = 0
-            flash("VIP Purchase Complete. Your balance has been reset to 0.")
+            user.points = 10000
+            flash("VIP Purchase Complete. Your balance has been reset to 10,000.")
+            db.session.commit()
+            return render_template("success_platinum.html", flag=CURRENT_FLAG)
         else:
             user.points -= product.price
-            msg = f"You purchased {product.name}!"
-            flash(msg)
-
-        db.session.commit()
-        return render_template("store_success.html", message=msg)
+            db.session.commit()
+            flash(f"You purchased {product.name}!")
+            return redirect(url_for("success", product_name=product.name))
     else:
-        flash("Insufficient Points! You need more loyalty points.")
+        flash("Insufficient Points! You need more SkyPoints.")
         return redirect(url_for("store"))
 
 
@@ -251,7 +267,7 @@ def init_db():
                 ),
                 Product(
                     name="PLATINUM VIP ACCESS",
-                    description="Contains the Flag.",
+                    description="Get your exclusive access token to our VIP memebership",
                     price=1000000,
                     is_flag=True,
                 ),
@@ -262,6 +278,28 @@ def init_db():
                 User(username="root", password=generate_password_hash("root"), points=1)
             )
             db.session.commit()
+
+
+from flask import render_template, request, redirect, url_for
+
+
+@app.route("/success/<path:product_name>")
+def success(product_name):
+    """
+    Redirects to success pages after purchase.
+    """
+    product = Product.query.filter_by(name=product_name).first()
+    if not product:
+        return redirect(url_for("store"))
+
+    if product.is_flag:
+        return render_template("success_platinum.html", flag=CURRENT_FLAG)
+
+    message = (
+        f"Thank you for your purchase of {product.name}. "
+        "Please see one of our friendly staff at the airport to complete pickup."
+    )
+    return render_template("success.html", message=message)
 
 
 if __name__ == "__main__":
