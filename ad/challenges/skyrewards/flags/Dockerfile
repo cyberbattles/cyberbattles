@@ -1,5 +1,7 @@
 FROM python:3.13-slim-bullseye
 
+ENV ADMIN_TOKEN="yLetRzCWJZTs0v6LYs63S5hHwtf6Tp"
+
 WORKDIR /
 
 COPY requirements.txt .

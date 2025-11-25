@@ -1,5 +1,7 @@
 FROM ubuntu:24.04
 
+ENV ADMIN_TOKEN="yLetRzCWJZTs0v6LYs63S5hHwtf6Tp"
+
 RUN apt update && \
   apt install vim openssh-server sudo supervisor python3 pipwireguard curl iproute2 tcpdump -y
 
@@ -19,7 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY supervisord.conf /etc/supervisord.conf
 
-#RUN mkdir -p instance
+RUN mkdir -p instance
 
 RUN echo 'echo -e "\e[1;32mWelcome!\e[0m\n\e[1;34mChallenges are under /challenges folder.\e[0m\n\e[1;33mMake sure to restart the service with \`supervisorctl restart <challenge name>\` after patching the program.\e[0m"' >> /etc/bash.bashrc
 
