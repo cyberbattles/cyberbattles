@@ -494,9 +494,11 @@ export async function cleanupSession(session: Session): Promise<void> {
 
   // Remove the scoring bot container
   try {
-    const scoringContainer = docker.getContainer(session.scoringContainerId);
-    await scoringContainer.stop();
-    await scoringContainer.remove();
+    if (session.scoringContainerId !== '') {
+      const scoringContainer = docker.getContainer(session.scoringContainerId);
+      await scoringContainer.stop();
+      await scoringContainer.remove();
+    }
   } catch (error) {
     console.error(
       `Cleanup error: Scoring bot container not found or already removed.`,
