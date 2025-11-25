@@ -1,4 +1,5 @@
 import os
+import secrets
 import threading
 import time
 from flask import Flask, render_template, request, redirect, url_for, flash, session
@@ -7,7 +8,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev_key')
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/skyrewards.db'
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'instance', 'skyrewards.db')
 
@@ -16,13 +16,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# --- MODELS ---
+ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN')
+CURRENT_FLAG = os.environ.get('FLAG', 'CTF{default_flag}')
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    # All users start with 10,000 points
+    # 10k Starting points
     points = db.Column(db.Integer, default=10000) 
 
 class Product(db.Model):
@@ -32,34 +34,26 @@ class Product(db.Model):
     price = db.Column(db.Integer, nullable=False)
     is_flag = db.Column(db.Boolean, default=False)
 
-# --- BACKGROUND FRAUD DAEMON (Method 1) ---
-# In a real CTF, this would be an external script or cron job.
-# For this standalone service, we run it as a background thread.
 def fraud_daemon():
     """
     Runs every 60 seconds.
-    Checks for users with suspicious balances (over 500,000)
-    and resets them to 10,000 to prevent hoarding.
+    Checks for balances over 500k and resets them to 10k.
     """
     while True:
         time.sleep(60)
         with app.app_context():
             try:
-                # Anyone with enough to buy the flag halfway gets wiped
                 suspicious_users = User.query.filter(User.points > 500000).all()
                 if suspicious_users:
-                    print(f"[FRAUD DAEMON] Detected {len(suspicious_users)} suspicious accounts. Resetting...")
+                    print(f"[Fraud Bot] Detected suspicious accounts. Resetting points.")
                     for user in suspicious_users:
                         user.points = 10000
                     db.session.commit()
             except Exception as e:
-                print(f"[FRAUD DAEMON ERROR] {e}")
+                print(f"[Fraud Bot Error] {e}")
 
-# Start the daemon
 daemon_thread = threading.Thread(target=fraud_daemon, daemon=True)
 daemon_thread.start()
-
-# --- ROUTES ---
 
 @app.route('/')
 def index():
@@ -115,12 +109,9 @@ def faq():
 @app.route('/transfer', methods=['POST'])
 def transfer():
     """
-    VULNERABLE ENDPOINT
-    Vulnerability: Logic Error / Integer Underflow intent.
-    The code does not check if 'amount' is positive.
-    Sending -1,000,000 results in:
-    Sender = Sender - (-1M) = Sender + 1M
-    Receiver = Receiver + (-1M) = Receiver - 1M
+    -- Vulnerable Endpoint --
+    Contains a logic error in handling balance transfer.
+    The code does not check if the amount is positive.
     """
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -140,15 +131,10 @@ def transfer():
             flash('Cannot transfer to yourself.')
             return redirect(url_for('dashboard'))
 
-        # --- VULNERABILITY IS HERE ---
-        # MISSING: if amount < 0: return error
-        
-        # Basic check for positive balance flow, but flawed math for negatives
         if sender.points < amount: 
             flash('Insufficient points.')
             return redirect(url_for('dashboard'))
 
-        # Perform Transfer
         sender.points -= amount
         recipient.points += amount
         
@@ -172,8 +158,9 @@ def store():
 @app.route('/buy/<int:product_id>', methods=['POST'])
 def buy(product_id):
     """
-    ANTI-HOARDING MECHANIC (Method 2)
-    If the user buys the flag, they are bankrupted to 0 points.
+    Doubly makes sure users can't hoard points
+    to buy the flag multiple times.
+    Simply resets balance on flag purchase.
     """
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -187,14 +174,10 @@ def buy(product_id):
     if user.points >= product.price:
         msg = ""
         if product.is_flag:
-            # REVEAL FLAG
-            flag_content = os.environ.get('FLAG', 'CTF{test_flag}')
-            msg = f"ACCESS GRANTED. SECRET CODE: {flag_content}"
+            msg = f"ACCESS GRANTED. SECRET CODE: {CURRENT_FLAG}"
             
-            # METHOD 2: BANKRUPTCY
-            # Reset points to 0 to prevent hoarding
             user.points = 0
-            flash("VIP Purchase Complete. Your loyalty balance has been reset to 0.")
+            flash("VIP Purchase Complete. Your balance has been reset to 0.")
         else:
             user.points -= product.price
             msg = f"You purchased {product.name}!"
@@ -205,22 +188,41 @@ def buy(product_id):
     else:
         flash("Insufficient Points! You need more loyalty points.")
         return redirect(url_for('store'))
+    
+@app.route('/admin/update_flag', methods=['POST'])
+def admin_update_flag():
+    """
+    Updates flag, requires ADMIN_TOKEN in X-API-KEY header.
+    """
+    global CURRENT_FLAG
 
-# --- INITIALIZATION ---
+    # Check auth
+    request_key = request.headers.get('X-API-KEY')
+    if not request_key or not ADMIN_TOKEN or not secrets.compare_digest(request_key, ADMIN_TOKEN):
+        return "UNAUTHORISED", 401
+
+    new_flag = request.form.get('flag')
+    if not new_flag:
+        return "No flag", 400
+
+    # Update current flag
+    CURRENT_FLAG = new_flag
+    
+    return "SUCCESS", 200
+
 def init_db():
     with app.app_context():
         db.create_all()
         if not Product.query.first():
-            # Seed Items
             items = [
-                Product(name="Economy Comfort Upgrade", description="Legroom is a luxury.", price=5000),
-                Product(name="Lounge Access (Day Pass)", description="Free pretzels and Wi-Fi.", price=15000),
+                Product(name="Business Class Upgrade", description="Fly in luxury.", price=5000),
+                Product(name="Lounge Access (Day Pass)", description="Treat yourself to refreshments on us.", price=15000),
                 Product(name="Priority Boarding", description="Get on the plane first.", price=20000),
                 Product(name="PLATINUM VIP ACCESS", description="Contains the Flag.", price=1000000, is_flag=True)
             ]
             db.session.add_all(items)
-            # Seed a dummy target for transfer testing
-            db.session.add(User(username="admin", password=generate_password_hash("admin"), points=100))
+            # Create default root user
+            db.session.add(User(username="root", password=generate_password_hash("root"), points=1))
             db.session.commit()
 
 if __name__ == '__main__':
