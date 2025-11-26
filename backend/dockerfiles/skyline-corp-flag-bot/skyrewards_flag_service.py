@@ -87,10 +87,10 @@ def run_healthcheck(target_host, flag):
         elif "Insufficient Points" in r.text:
             return "SUCCESS"
         else:
-            return "FAILURE"
+            return "vulnerability test failed"
 
     except Exception as e:
-        return "FAILURE"
+        return e.__str__()
 
 
 @app.route("/inject", methods=["POST"])
