@@ -217,15 +217,23 @@ const Dashboard = () => {
       )}
 
       {/* Dashboard Layout */}
-      <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
+      <div
+        className="flex min-h-screen flex-col bg-[#2f2f2f] pt-25 text-white
+          sm:pt-40 md:flex-row"
+      >
         {/* Sidebar */}
-        <aside className="w-full md:w-72 bg-[#1e1e1e] shadow-2xl flex-shrink-0 border-r border-gray-800">
+        <aside
+          className="w-full flex-shrink-0 border-r border-gray-800 bg-[#1e1e1e]
+            shadow-2xl md:w-72"
+        >
           <nav className="p-6 pt-8">
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/dashboard"
-                  className="flex items-center px-4 py-3 rounded-lg bg-blue-600 text-white font-bold transition-all duration-200 hover:bg-blue-500"
+                  className="flex items-center rounded-lg bg-blue-600 px-4 py-3
+                    font-bold text-white transition-all duration-200
+                    hover:bg-blue-500"
                 >
                   Overview
                 </Link>
@@ -233,7 +241,8 @@ const Dashboard = () => {
               <li>
                 <Link
                   href="/reports"
-                  className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
+                  className="flex items-center rounded-lg px-4 py-3 font-bold
+                    text-white transition-all duration-200 hover:bg-gray-800"
                 >
                   Game Reports
                 </Link>
@@ -241,7 +250,8 @@ const Dashboard = () => {
               <li>
                 <Link
                   href="/account"
-                  className="flex items-center px-4 py-3 rounded-lg text-white font-bold transition-all duration-200 hover:bg-gray-800"
+                  className="flex items-center rounded-lg px-4 py-3 font-bold
+                    text-white transition-all duration-200 hover:bg-gray-800"
                 >
                   Account Details
                 </Link>
@@ -251,13 +261,18 @@ const Dashboard = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {/* Header */}
-          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <header
+            className="mb-8 flex flex-col items-start justify-between gap-4
+              sm:flex-row sm:items-center"
+          >
             <h1 className="text-3xl font-bold">Welcome, {currentUsername}!</h1>
             <div className="flex gap-4">
               <button
-                className="cursor-pointer px-5 py-2.5 bg-red-600 rounded-lg font-bold text-white transition-all duration-300 hover:bg-red-700 "
+                className="cursor-pointer rounded-lg bg-red-600 px-5 py-2.5
+                  font-bold text-white transition-all duration-300
+                  hover:bg-red-700"
                 onClick={handleLogout}
               >
                 Log Out
@@ -268,24 +283,28 @@ const Dashboard = () => {
           {/* Dashboard Widgets: Full-width stacked */}
           <section className="space-y-6">
             {/* Join or Create Game Banner */}
-            <div className="p-8 bg-[#1e1e1e] rounded-2xl shadow-md text-center">
-              <h3 className="text-2xl font-bold mb-4 text-gray-100">
+            <div className="rounded-2xl bg-[#1e1e1e] p-8 text-center shadow-md">
+              <h3 className="mb-4 text-2xl font-bold text-gray-100">
                 Ready to Play?
               </h3>
-              <p className="text-gray-400 mb-8 max-w-lg mx-auto">
+              <p className="mx-auto mb-8 max-w-lg text-gray-400">
                 Jump into an active game lobby or launch a new session as an
                 admin.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <button
                   onClick={handleGoToJoin}
-                  className="cursor-pointer px-8 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-300 font-bold text-white text-center"
+                  className="cursor-pointer rounded-lg bg-blue-600 px-8 py-3
+                    text-center font-bold text-white transition-all duration-300
+                    hover:bg-blue-700"
                 >
                   Join a Game
                 </button>
                 <button
                   onClick={handleGoToCreation}
-                  className="cursor-pointer px-8 py-3 bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-300 font-bold text-white text-center"
+                  className="cursor-pointer rounded-lg bg-red-600 px-8 py-3
+                    text-center font-bold text-white transition-all duration-300
+                    hover:bg-red-700"
                 >
                   Create a Game
                 </button>
@@ -293,18 +312,18 @@ const Dashboard = () => {
             </div>
 
             {/* Join a clan */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
+            <div className="rounded-2xl bg-[#1e1e1e] p-6 shadow-md">
               {clanLoading ? (
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold mb-2">Clan Status</h3>
+                  <h3 className="mb-2 text-lg font-semibold">Clan Status</h3>
                   <p className="text-gray-400">Loading...</p>
                 </div>
               ) : userClan ? (
                 // User is in a clan - show clan info and leave button
                 <div>
-                  <h3 className="text-lg font-semibold mb-4">Your Clan</h3>
-                  <div className="bg-[#2f2f2f] p-4 rounded-xl mb-4">
-                    <div className="flex justify-between items-start mb-2">
+                  <h3 className="mb-4 text-lg font-semibold">Your Clan</h3>
+                  <div className="mb-4 rounded-xl bg-[#2f2f2f] p-4">
+                    <div className="mb-2 flex items-start justify-between">
                       <div>
                         <h4 className="text-xl font-bold text-blue-400">
                           [{userClan.clanTag}]
@@ -332,7 +351,8 @@ const Dashboard = () => {
                   </div>
                   <button
                     onClick={handleLeaveClan}
-                    className="cursor-pointer px-4 py-2 bg-red-600 rounded-xl hover:bg-red-700 transition font-bold"
+                    className="cursor-pointer rounded-xl bg-red-600 px-4 py-2
+                      font-bold transition hover:bg-red-700"
                   >
                     Leave Clan
                   </button>
@@ -342,7 +362,7 @@ const Dashboard = () => {
                         leaveMessage.type === 'success'
                           ? 'text-green-400'
                           : 'text-red-400'
-                      }`}
+                        }`}
                     >
                       {leaveMessage.text}
                     </p>
@@ -351,15 +371,16 @@ const Dashboard = () => {
               ) : (
                 // User is not in a clan - show join/create button
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">
+                  <h3 className="mb-2 text-lg font-semibold">
                     Join or Create a Clan
                   </h3>
-                  <p className="text-gray-400 mb-4">
+                  <p className="mb-4 text-gray-400">
                     Team up with other players to compete together.
                   </p>
                   <button
                     onClick={handleGoToClan}
-                    className="cursor-pointer px-4 py-2 bg-blue-600 rounded-xl hover:bg-blue-700 transition font-bold mb-2"
+                    className="mb-2 cursor-pointer rounded-xl bg-blue-600 px-4
+                      py-2 font-bold transition hover:bg-blue-700"
                   >
                     Join or Create Clan
                   </button>

@@ -29,11 +29,17 @@ type LearnItem = {
 
 const CodeBlock = ({content}: {content: string}) => {
   return (
-    <div className="my-4 bg-black rounded-md overflow-hidden">
-      <div className="flex items-center px-4 py-2 bg-gray-500 border-b border-gray-800">
-        <span className="text-xs font-mono text-white font-bold">terminal</span>
+    <div className="my-4 overflow-hidden rounded-md bg-black">
+      <div
+        className="flex items-center border-b border-gray-800 bg-gray-500 px-4
+          py-2"
+      >
+        <span className="font-mono text-xs font-bold text-white">terminal</span>
       </div>
-      <pre className="p-4 text-sm text-shadow-white font-mono overflow-x-auto whitespace-pre-wrap">
+      <pre
+        className="overflow-x-auto p-4 font-mono text-sm whitespace-pre-wrap
+          text-shadow-white"
+      >
         <code>{content}</code>
       </pre>
     </div>
@@ -395,25 +401,31 @@ export default function ModernLearnPage() {
     (completedModules.filter(Boolean).length / learnItems.length) * 100;
 
   return (
-    <div className="min-h-screen bg-[#2f2f2f] text-white pt-25 sm:pt-40">
+    <div className="min-h-screen bg-[#2f2f2f] pt-25 text-white sm:pt-40">
       <div className="pt-16 pb-12">
-        <div className="container mx-auto px-6 max-w-7xl">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold mb-4 text-white">Learn</h1>
+        <div className="container mx-auto max-w-7xl px-6">
+          <div className="mb-12 text-center">
+            <h1 className="mb-4 text-5xl font-bold text-white">Learn</h1>
 
-            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+            <p
+              className="mx-auto max-w-3xl text-xl leading-relaxed
+                text-white/90"
+            >
               Learn how to defend and attack in the world of cybersecurity with
               realistic modules designed to build your skills step-by-step.
             </p>
 
-            <div className="max-w-md mx-auto mt-8 bg-[#1e1e1e] rounded p-4 ">
-              <div className="flex items-center justify-between text-sm text-white mb-2 font-mono">
+            <div className="mx-auto mt-8 max-w-md rounded bg-[#1e1e1e] p-4">
+              <div
+                className="mb-2 flex items-center justify-between font-mono
+                  text-sm text-white"
+              >
                 <span>Learning Progress</span>
                 <span>{Math.round(progressPercentage)}%</span>
               </div>
-              <div className="w-full bg-black h-4 rounded-sm overflow-hidden">
+              <div className="h-4 w-full overflow-hidden rounded-sm bg-black">
                 <div
-                  className="h-full bg-green-600 "
+                  className="h-full bg-green-600"
                   style={{width: `${progressPercentage}%`}}
                 ></div>
               </div>
@@ -421,11 +433,16 @@ export default function ModernLearnPage() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid lg:grid-cols-4 gap-8">
+          <div className="grid gap-8 lg:grid-cols-4">
             {/* Sidebar Navigation */}
             <div className="lg:col-span-1">
-              <div className=" bg-[#1e1e1e] rounded-lg  p-4 sticky top-24 md:top-45">
-                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-700">
+              <div
+                className="sticky top-24 rounded-lg bg-[#1e1e1e] p-4 md:top-45"
+              >
+                <div
+                  className="mb-6 flex items-center gap-3 border-b
+                    border-gray-700 pb-4"
+                >
                   <FaBook className="text-gray-200" />
                   <h3 className="text-lg font-bold text-gray-200">Modules</h3>
                 </div>
@@ -438,22 +455,25 @@ export default function ModernLearnPage() {
                         !isLocked[index] && setSelectedIndex(index)
                       }
                       disabled={isLocked[index]}
-                      className={`w-full text-left p-3 rounded transition-colors flex items-center justify-between group ${
+                      className={`group flex w-full items-center justify-between
+                      rounded p-3 text-left transition-colors ${
                         selectedIndex === index
-                          ? 'bg-gray-500 border-l-4  text-white'
+                          ? 'border-l-4 bg-gray-500 text-white'
                           : isLocked[index]
-                            ? 'opacity-50 cursor-not-allowed text-gray-600'
-                            : 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
+                            ? 'cursor-not-allowed text-gray-600 opacity-50'
+                            : `text-gray-400 hover:bg-gray-800
+                              hover:text-gray-200`
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`text-sm ${selectedIndex === index ? 'text-white' : 'text-gray-500'}`}
+                          className={`text-sm
+                          ${selectedIndex === index ? 'text-white' : 'text-gray-500'}`}
                         >
                           {item.icon}
                         </div>
                         <div>
-                          <div className="font-medium text-sm">
+                          <div className="text-sm font-medium">
                             {item.title}
                           </div>
                         </div>
@@ -461,12 +481,15 @@ export default function ModernLearnPage() {
 
                       <div className="flex items-center gap-2">
                         {completedModules[index] && (
-                          <FaCheck className="text-green-500 text-xs" />
+                          <FaCheck className="text-xs text-green-500" />
                         )}
                         {isLocked[index] ? (
                           <FaLock className="text-xs" />
                         ) : (
-                          <FaUnlock className="text-xs text-gray-600 group-hover:text-gray-400" />
+                          <FaUnlock
+                            className="text-xs text-gray-600
+                              group-hover:text-gray-400"
+                          />
                         )}
                       </div>
                     </button>
@@ -477,32 +500,45 @@ export default function ModernLearnPage() {
 
             {/* Content Area */}
             <div className="lg:col-span-3">
-              <div className="bg-[#1e1e1e] rounded-lg overflow-hidden min-h-[600px]">
+              <div
+                className="min-h-[600px] overflow-hidden rounded-lg
+                  bg-[#1e1e1e]"
+              >
                 {learnItems.map((item, index) => (
                   <div
                     key={index}
                     className={selectedIndex === index ? 'block' : 'hidden'}
                   >
                     {/* Module Header */}
-                    <div className="bg-gray-850 p-8 border-b border-[#333333]">
+                    <div className="bg-gray-850 border-b border-[#333333] p-8">
                       <div className="flex items-start justify-between">
                         <div>
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="p-3 bg-gray-800 rounded border border-gray-700">
+                          <div className="mb-4 flex items-center gap-4">
+                            <div
+                              className="rounded border border-gray-700
+                                bg-gray-800 p-3"
+                            >
                               {item.icon}
                             </div>
                             <div>
-                              <h2 className="text-2xl font-bold text-white mb-1">
+                              <h2 className="mb-1 text-2xl font-bold text-white">
                                 {item.title}
                               </h2>
-                              <div className="flex items-center gap-4 text-sm font-mono text-gray-400">
+                              <div
+                                className="flex items-center gap-4 font-mono
+                                  text-sm text-gray-400"
+                              >
                                 <span
-                                  className={`px-2 py-0.5 rounded text-xs border ${
+                                  className={`rounded border px-2 py-0.5 text-xs
+                                  ${
                                     item.difficulty === 'Beginner'
-                                      ? 'border-green-900 text-green-500 bg-green-900/20'
+                                      ? `border-green-900 bg-green-900/20
+                                        text-green-500`
                                       : item.difficulty === 'Intermediate'
-                                        ? 'border-yellow-900 text-yellow-500 bg-yellow-900/20'
-                                        : 'border-red-900 text-red-500 bg-red-900/20'
+                                        ? `border-yellow-900 bg-yellow-900/20
+                                          text-yellow-500`
+                                        : `border-red-900 bg-red-900/20
+                                          text-red-500`
                                   }`}
                                 >
                                   {item.difficulty}
@@ -520,13 +556,14 @@ export default function ModernLearnPage() {
 
                     {/* Module Content */}
                     <div className="p-8">
-                      <div className="space-y-6 max-w-4xl">
+                      <div className="max-w-4xl space-y-6">
                         {item.segments.map((seg, i) => {
                           if (seg.type === 'text') {
                             return (
                               <div
                                 key={i}
-                                className="text-gray-300 leading-7 whitespace-pre-line"
+                                className="leading-7 whitespace-pre-line
+                                  text-gray-300"
                               >
                                 {seg.content}
                               </div>
@@ -535,7 +572,8 @@ export default function ModernLearnPage() {
                             return (
                               <h3
                                 key={i}
-                                className="text-xl font-bold text-white mt-8 mb-2 border-b border-gray-800 pb-2"
+                                className="mt-8 mb-2 border-b border-gray-800
+                                  pb-2 text-xl font-bold text-white"
                               >
                                 {seg.content}
                               </h3>
@@ -551,18 +589,25 @@ export default function ModernLearnPage() {
                         })}
 
                         {item.resources && (
-                          <div className="mt-10 p-6 bg-[#2f2f2f] rounded">
-                            <h4 className="font-bold text-gray-200 mb-3 flex items-center gap-2">
+                          <div className="mt-10 rounded bg-[#2f2f2f] p-6">
+                            <h4
+                              className="mb-3 flex items-center gap-2 font-bold
+                                text-gray-200"
+                            >
                               References
                             </h4>
-                            <ul className="list-disc list-inside space-y-1 text-sm">
+                            <ul
+                              className="list-inside list-disc space-y-1
+                                text-sm"
+                            >
                               {item.resources.map((resource, i) => (
                                 <li key={i}>
                                   <a
                                     href={resource}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-shadow-white hover:underline"
+                                    className="text-shadow-white
+                                      hover:underline"
                                   >
                                     {resource}
                                   </a>
@@ -574,16 +619,21 @@ export default function ModernLearnPage() {
                       </div>
 
                       {/* Footer Controls */}
-                      <div className="mt-12 pt-6 border-t  flex items-center justify-between">
+                      <div
+                        className="mt-12 flex items-center justify-between
+                          border-t pt-6"
+                      >
                         <button
                           onClick={() =>
                             setSelectedIndex(Math.max(0, selectedIndex - 1))
                           }
                           disabled={selectedIndex === 0}
-                          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                          className={`rounded px-4 py-2 text-sm font-medium
+                          transition-colors ${
                             selectedIndex === 0
-                              ? 'text-gray-600 cursor-not-allowed'
-                              : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                              ? 'cursor-not-allowed text-gray-600'
+                              : `text-gray-300 hover:bg-gray-800
+                                hover:text-white`
                           }`}
                         >
                           &larr; Previous
@@ -595,7 +645,9 @@ export default function ModernLearnPage() {
                             : !completedModules[selectedIndex] && (
                                 <button
                                   onClick={handleModuleComplete}
-                                  className="px-6 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded text-sm transition-colors"
+                                  className="rounded bg-green-700 px-6 py-2
+                                    text-sm font-bold text-white
+                                    transition-colors hover:bg-green-600"
                                 >
                                   Mark Complete
                                 </button>
@@ -616,12 +668,14 @@ export default function ModernLearnPage() {
                                 selectedIndex === learnItems.length - 1 ||
                                 isLocked[selectedIndex + 1]
                               }
-                              className={`flex items-center gap-2 px-6 py-2 rounded text-sm font-bold transition-colors ${
-                                selectedIndex === learnItems.length - 1 ||
-                                isLocked[selectedIndex + 1]
-                                  ? 'bg-red-500 cursor-not-allowed'
-                                  : 'text-white bg-blue-600 cursor-pointer hover:bg-blue-500'
-                              }`}
+                              className={`flex items-center gap-2 rounded px-6
+                                py-2 text-sm font-bold transition-colors ${
+                                  selectedIndex === learnItems.length - 1 ||
+                                  isLocked[selectedIndex + 1]
+                                    ? 'cursor-not-allowed bg-red-500'
+                                    : `cursor-pointer bg-blue-600 text-white
+                                      hover:bg-blue-500`
+                                }`}
                             >
                               Next <FaChevronRight className="text-xs" />
                             </button>

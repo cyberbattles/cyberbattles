@@ -57,28 +57,26 @@ const LeaderboardRow = ({item, position, delay}: LeaderboardRowProps) => {
 
   return (
     <div
-      className={`transform  ${
+      className={`transform ${
         isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
       }`}
     >
       <div
-        className={`
-          relative bg-gradient-to-r ${getRankStyle(position)}
-          border-2 rounded-md p-6 mb-2 text-shadow-lg
-          hover:scale-[1.02] transition-all duration-100
-        `}
+        className={`relative bg-gradient-to-r ${getRankStyle(position)} mb-2
+          rounded-md border-2 p-6 transition-all duration-100 text-shadow-lg
+          hover:scale-[1.02]`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
             {/* Rank */}
             <div className="flex items-center justify-center">
-              <span className="text-xl font-bold mt-1">#{position}</span>
+              <span className="mt-1 text-xl font-bold">#{position}</span>
             </div>
 
             {/* Name */}
             <div>
               <h3
-                className="text-xl font-bold truncate"
+                className="truncate text-xl font-bold"
                 title={
                   item instanceof Object && 'clanTag' in item
                     ? item.clanTag
@@ -93,7 +91,7 @@ const LeaderboardRow = ({item, position, delay}: LeaderboardRowProps) => {
           </div>
 
           {/* Points */}
-          <div className="text-right ml-4 flex-shrink-0">
+          <div className="ml-4 flex-shrink-0 text-right">
             <div className="text-2xl font-bold">
               {item.totalScore?.toLocaleString() ?? 0}
             </div>
@@ -246,13 +244,18 @@ export default function LeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-white text-xl">Loading Leaderboard...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-xl text-white">Loading Leaderboard...</p>
         <div
-          className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+          className="inline-block h-8 w-8 animate-spin rounded-full border-4
+            border-solid border-current border-r-transparent align-[-0.125em]
+            motion-reduce:animate-[spin_1.5s_linear_infinite]"
           role="status"
         >
-          <span className="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
+          <span
+            className="!absolute !-m-px !h-px !w-px !overflow-hidden !border-0
+              !p-0 !whitespace-nowrap ![clip:rect(0,0,0,0)]"
+          >
             Loading...
           </span>
         </div>
@@ -264,33 +267,39 @@ export default function LeaderboardPage() {
     <div className="min-h-screen">
       {/* Header */}
       <section className="flex flex-col items-center justify-center pt-50 pb-12">
-        <h1 className="text-6xl font-extrabold text-white mb-4 drop-shadow-2xl bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-center">
+        <h1
+          className="mb-4 bg-gradient-to-r from-cyan-400 to-blue-500
+            bg-clip-text text-center text-6xl font-extrabold text-white
+            drop-shadow-2xl"
+        >
           CyberBattles Leaderboard
         </h1>
       </section>
 
       {/* Toggle Section */}
-      <section className="max-w-4xl mx-auto px-6 mb-8 -mt-10">
+      <section className="mx-auto -mt-10 mb-8 max-w-4xl px-6">
         <div className="flex justify-center">
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-full">
+          <div className="rounded-full bg-gray-800/50 backdrop-blur-sm">
             <div className="flex">
               <button
                 onClick={() => setViewMode('clan')}
-                className={`cursor-pointer px-6 py-3 rounded-full transition-all duration-300 font-bold ${
-                  viewMode === 'clan'
-                    ? 'bg-blue-500 text-white '
-                    : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
-                }`}
+                className={`cursor-pointer rounded-full px-6 py-3 font-bold
+                  transition-all duration-300 ${
+                    viewMode === 'clan'
+                      ? 'bg-blue-500 text-white'
+                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                  }`}
               >
                 Clan Leaderboard
               </button>
               {isInSession && (
                 <button
                   onClick={() => setViewMode('game')}
-                  className={`cursor-pointer px-6 py-3 rounded-full transition-all duration-300 font-bold ${
+                  className={`cursor-pointer rounded-full px-6 py-3 font-bold
+                  transition-all duration-300 ${
                     viewMode === 'game'
                       ? 'bg-blue-500 text-white'
-                      : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
                   }`}
                 >
                   Game Leaderboard
@@ -302,7 +311,7 @@ export default function LeaderboardPage() {
       </section>
 
       {/* Leaderboard */}
-      <section className="max-w-4xl mx-auto px-6 pb-20 bg-">
+      <section className="bg- mx-auto max-w-4xl px-6 pb-20">
         <div className="space-y-0">
           {currentLeaderboardData.length > 0 ? (
             currentLeaderboardData.map((item, index) => (
@@ -314,7 +323,7 @@ export default function LeaderboardPage() {
               />
             ))
           ) : (
-            <p className="text-center text-gray-400 mt-8">
+            <p className="mt-8 text-center text-gray-400">
               {isClanView
                 ? 'No clans found.'
                 : 'No teams found in this game session yet.'}
@@ -325,15 +334,16 @@ export default function LeaderboardPage() {
         {/* Stats Footer */}
         {currentLeaderboardData.length > 0 && (
           <div
-            className={`transform transition-all duration-1000 delay-1000 ease-out ${
+            className={`transform transition-all delay-1000 duration-1000
+            ease-out ${
               animationStarted
                 ? 'translate-y-0 opacity-100'
                 : 'translate-y-8 opacity-0'
             }`}
           >
-            <div className="mt-12 text-center border-t border-gray-700">
+            <div className="mt-12 border-t border-gray-700 text-center">
               <div className="inline-flex items-center space-x-8 p-8 py-4">
-                <div className="font-bold text-3xl">
+                <div className="text-3xl font-bold">
                   {currentLeaderboardData.length}
                   {isClanView ? '  Clans Total' : '  Teams in Game'}
                 </div>

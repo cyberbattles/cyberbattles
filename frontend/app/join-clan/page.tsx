@@ -158,10 +158,10 @@ const JoinClan = () => {
 
   return (
     <>
-      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
-        <main className="flex-1 flex flex-col items-center justify-center p-8">
-          <header className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Join Clan</h1>
+      <div className="flex h-screen bg-[#2f2f2f] pt-40 text-white">
+        <main className="flex flex-1 flex-col items-center justify-center p-8">
+          <header className="mb-12 text-center">
+            <h1 className="mb-4 text-4xl font-bold">Join Clan</h1>
             <p className="text-lg text-gray-300">Enter your Clan ID to join.</p>
           </header>
 
@@ -169,7 +169,7 @@ const JoinClan = () => {
             <div className="w-80">
               <label
                 htmlFor="teamCode"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-300"
               >
                 Clan Code
               </label>
@@ -180,20 +180,28 @@ const JoinClan = () => {
                 onChange={e => setClanId(e.target.value)}
                 placeholder="Enter Clan ID"
                 disabled={isLoading}
-                className="w-full px-4 py-3 bg-[#1e1e1e] border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-2xl border border-gray-600
+                  bg-[#1e1e1e] px-4 py-3 text-white placeholder-gray-400
+                  transition focus:border-blue-400 focus:ring-1
+                  focus:ring-blue-400 focus:outline-none
+                  disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className="cursor-pointer w-80 py-4 px-8 bg-green-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-80 cursor-pointer rounded-2xl bg-green-600 px-8
+                  py-4 text-xl font-bold shadow-md transition hover:opacity-90
+                  disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleJoinTeam}
                 disabled={isLoading || !currentUser}
               >
                 {isLoading ? 'Joining...' : 'Join Clan'}
               </button>
               <button
-                className="cursor-pointer w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md disabled:opacity-50"
+                className="w-80 cursor-pointer rounded-2xl bg-gray-600 px-8 py-3
+                  text-lg font-semibold shadow-md transition hover:opacity-90
+                  disabled:opacity-50"
                 onClick={handleBackToSelection}
                 disabled={isLoading}
               >

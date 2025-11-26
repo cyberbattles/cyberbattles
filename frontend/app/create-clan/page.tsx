@@ -169,10 +169,10 @@ const CreateClan = () => {
 
   return (
     <>
-      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
-        <main className="flex-1 flex flex-col items-center justify-center p-8">
-          <header className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Create Clan</h1>
+      <div className="flex h-screen bg-[#2f2f2f] pt-40 text-white">
+        <main className="flex flex-1 flex-col items-center justify-center p-8">
+          <header className="mb-12 text-center">
+            <h1 className="mb-4 text-4xl font-bold">Create Clan</h1>
             <p className="text-lg text-gray-300">
               Create your own clan and invite members.
             </p>
@@ -182,7 +182,7 @@ const CreateClan = () => {
             <div className="w-80">
               <label
                 htmlFor="clanTag"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-300"
               >
                 Clan Tag
               </label>
@@ -194,15 +194,15 @@ const CreateClan = () => {
                 placeholder="Enter Clan Tag"
                 disabled={isLoading}
                 maxLength={20}
-                className="w-full px-4 py-3 bg-[#1e1e1e] border border-gray-600 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-2xl border border-gray-600 bg-[#1e1e1e] px-4 py-3 text-white placeholder-gray-400 transition focus:border-blue-400 focus:ring-1 focus:ring-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
               />
-              <p className="text-xs text-gray-400 mt-1">3-20 characters</p>
+              <p className="mt-1 text-xs text-gray-400">3-20 characters</p>
             </div>
 
             <div className="w-80">
               <label
                 htmlFor="numMembers"
-                className="block text-sm font-medium text-gray-300 mb-2"
+                className="mb-2 block text-sm font-medium text-gray-300"
               >
                 Maximum Members: {numMembers}
               </label>
@@ -215,9 +215,9 @@ const CreateClan = () => {
                 value={numMembers}
                 onChange={e => setNumMembers(parseInt(e.target.value))}
                 disabled={isLoading}
-                className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider disabled:opacity-50 disabled:cursor-not-allowed"
+                className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#1e1e1e] disabled:cursor-not-allowed disabled:opacity-50"
               />
-              <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <div className="mt-1 flex justify-between text-xs text-gray-400">
                 <span>5</span>
                 <span>50</span>
               </div>
@@ -225,14 +225,14 @@ const CreateClan = () => {
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className="cursor-pointer w-80 py-4 px-8 bg-blue-600 rounded-2xl hover:opacity-90 transition font-bold text-xl shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-80 cursor-pointer rounded-2xl bg-blue-600 px-8 py-4 text-xl font-bold shadow-md transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={handleCreateClan}
                 disabled={isLoading || !currentUser}
               >
                 {isLoading ? 'Creating...' : 'Create Clan'}
               </button>
               <button
-                className="cursor-pointer w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md disabled:opacity-50"
+                className="w-80 cursor-pointer rounded-2xl bg-gray-600 px-8 py-3 text-lg font-semibold shadow-md transition hover:opacity-90 disabled:opacity-50"
                 onClick={handleBackToSelection}
                 disabled={isLoading}
               >
@@ -240,7 +240,7 @@ const CreateClan = () => {
               </button>
               {createMessage.text && (
                 <p
-                  className={`mt-3 text-sm text-center max-w-80 ${
+                  className={`mt-3 max-w-80 text-center text-sm ${
                     createMessage.type === 'success'
                       ? 'text-green-400'
                       : 'text-red-400'
