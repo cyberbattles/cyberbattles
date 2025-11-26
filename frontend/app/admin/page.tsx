@@ -60,11 +60,96 @@ interface SessionTeamInfo {
   ipAddress: string;
 }
 
+interface ServiceInfo {
+  port: number;
+  protocol: string;
+}
+
+interface ChallengeServices {
+  [serviceName: string]: ServiceInfo;
+}
+
 interface NetworkLocationsProps {
   teams: SessionTeamInfo[];
-  port: number | string | undefined;
+  challengeServices: ChallengeServices | undefined;
   handleCopy: (text: string) => void;
 }
+
+const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
+  ({teams, challengeServices, handleCopy}) => {
+    // Check if services exist
+    const hasServices =
+      challengeServices && Object.keys(challengeServices).length > 0;
+
+    if (!hasServices || teams.length === 0) {
+      return (
+        <div className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md lg:col-span-3">
+          <h2 className="mb-4 text-xl font-semibold text-gray-400">
+            Network Locations
+          </h2>
+          <p className="text-gray-500">
+            Network locations will be shown here once the game is active.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md lg:col-span-3">
+        <h2 className="mb-6 text-xl font-semibold text-gray-100">
+          Network Locations
+        </h2>
+        <div className="flex flex-wrap gap-4">
+          {teams.map(team => (
+            <div
+              key={team.id}
+              className="min-w-[240px] flex-grow rounded-xl border border-gray-700 bg-[#2a2a2a] p-4"
+            >
+              {/* Team Name */}
+              <p className="mb-3 text-sm font-bold text-gray-400 border-b border-gray-600 pb-2">
+                {team.name}
+              </p>
+
+              {/* Iterate through all services in the map */}
+              <div className="flex flex-col gap-3">
+                {Object.entries(challengeServices!).map(([name, service]) => {
+                  const protocol = service.protocol || 'http';
+                  const url = `${protocol}://${team.ipAddress}:${service.port}`;
+
+                  return (
+                    <div key={name} className="flex flex-col">
+                      <span className="text-xs uppercase text-gray-500 mb-1">
+                        {name.replace(/_/g, ' ')}
+                      </span>
+                      <div className="flex items-center justify-between gap-4">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="truncate font-mono text-md font-bold text-blue-400 hover:text-blue-300 hover:underline"
+                          title={`Open ${url}`}
+                        >
+                          {url}
+                        </a>
+                        <button
+                          onClick={() => handleCopy(url)}
+                          className="flex h-8 w-8 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg bg-gray-800 text-gray-400 transition-colors duration-200 hover:bg-gray-700"
+                          title="Copy URL"
+                        >
+                          <FaRegCopy className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  },
+);
 
 const formatElapsedTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -102,72 +187,6 @@ const Admin = () => {
   const [showEndGame, setShowEndGame] = useState(false);
   const [endedSessionId, setEndedSessionId] = useState<string>('');
   const [frontendUrl, setFrontendUrl] = useState<string>('');
-
-  const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
-    ({teams, port, handleCopy}) => {
-      if (!port || teams.length === 0) {
-        return (
-          <div
-            className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md
-              lg:col-span-3"
-          >
-            <h2 className="mb-4 text-xl font-semibold text-gray-400">
-              Network Locations
-            </h2>
-            <p className="text-gray-500">
-              Network locations will be shown here once the game is active.
-            </p>
-          </div>
-        );
-      }
-      return (
-        <div
-          className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md
-            lg:col-span-3"
-        >
-          <h2 className="mb-6 text-xl font-semibold text-gray-100">
-            Network Locations
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            {teams.map(team => {
-              const url = `http://${team.ipAddress}:${port}`;
-              return (
-                <div
-                  key={team.id}
-                  className="min-w-[240px] flex-grow rounded-xl border
-                    border-gray-700 bg-[#2a2a2a] p-4"
-                >
-                  <p className="mb-1 text-sm text-gray-400">{team.name}</p>
-                  <div className="flex items-center justify-between gap-4">
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="truncate font-mono text-lg font-bold
-                        text-blue-400 hover:text-blue-300 hover:underline"
-                      title={`Open ${url} in new tab`}
-                    >
-                      {url}
-                    </a>
-                    <button
-                      onClick={() => handleCopy(url)}
-                      className="h-9 w-9 flex-shrink-0 cursor-pointer rounded-lg
-                        bg-gray-800 p-2.5 text-gray-400 transition-colors
-                        duration-200 hover:bg-gray-700"
-                      title="Copy URL"
-                    >
-                      <FaRegCopy className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    },
-  );
-  NetworkLocations.displayName = 'NetworkLocations';
 
   async function getSessions(uid: string) {
     try {
@@ -433,7 +452,9 @@ const Admin = () => {
 
       const team = teamSnap.data();
       const teamName: string = team.name;
-      const uptime: number = team.downCount / team.totalCount;
+      const uptime: number =
+        (team.downCount === 0 ? 1 : team.downCount) /
+        (team.totalCount === 0 ? 1 : team.totalCount); // Don't devise by zero
       const score: number = team.totalScore * uptime;
 
       // Safe access to members
@@ -1006,92 +1027,132 @@ const Admin = () => {
             </div>
 
             {/* Teams List */}
-            {Array.from(teams.values()).map(value => (
-              <div
-                className="col-span-1 flex flex-col gap-5 rounded-2xl
-                  bg-[#1e1e1e] p-5 shadow-md"
-                key={value.id}
-              >
-                <div className="flex flex-row items-center justify-between">
-                  <h2 className="text-xl font-semibold text-green-400">
-                    {value.name}
-                  </h2>
-                </div>
-                <div className="flex flex-col gap-5">
-                  {value.memberIds.map((uid: string) => (
-                    <div
-                      className="flex items-center justify-between rounded-lg
-                        bg-[#2f2f2f] p-3"
-                      key={uid}
-                    >
-                      <div>
-                        {players &&
-                          players.get(uid) &&
-                          players.get(uid).userName}
-                      </div>
-                      <div
-                        className="cursor-pointer text-red-400
-                          hover:text-red-300"
-                        onClick={() => removePlayer(value.id, uid)}
-                      >
-                        <IoIosClose size={30} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {Array.from(teams.values()).map(value => {
+              // Calculate Uptime
+              const total = value.totalCount || 0;
+              const down = value.downCount || 0;
+              // If total is 0, default to 100%, otherwise calculate percentage
+              const uptimePercent =
+                total > 0 ? ((total - down) / total) * 100 : 100;
 
-                <div className="mt-4 flex h-full items-end align-bottom">
-                  <div
-                    className="flex w-full flex-row items-center justify-between
-                      border-t border-gray-700 px-2 pt-3"
-                  >
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <span
-                        className="text-md flex-shrink-0 font-semibold
-                          text-white"
-                      >
-                        Team ID:
-                      </span>
-                      <a
-                        href={
-                          frontendUrl
-                            ? `${frontendUrl}/join-team?teamId=${value.id}`
-                            : '#'
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="truncate text-sm font-semibold text-blue-400
-                          hover:text-blue-300 hover:underline"
-                        title="Open join link in new tab"
-                      >
-                        {value.id}
-                      </a>
+              return (
+                <div
+                  className="col-span-1 flex flex-col gap-5 rounded-2xl
+                  bg-[#1e1e1e] p-5 shadow-md"
+                  key={value.id}
+                >
+                  {/* Header: Centered Title, Score, Uptime */}
+                  <div className="flex flex-col items-center justify-center gap-2 text-center">
+                    <h2 className="text-2xl font-bold text-green-400">
+                      {value.name}
+                    </h2>
+
+                    <div className="flex gap-4 rounded-lg bg-[#2f2f2f] px-4 py-2 text-sm font-semibold">
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-xs uppercase tracking-wider">
+                          Score
+                        </span>
+                        <span className="text-white">
+                          {Math.floor(value.totalScore || 0)}
+                        </span>
+                      </div>
+                      <div className="w-[1px] bg-gray-600"></div>
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-xs uppercase tracking-wider">
+                          Uptime
+                        </span>
+                        <span
+                          className={
+                            uptimePercent >= 90
+                              ? 'text-green-400'
+                              : 'text-yellow-400'
+                          }
+                        >
+                          {uptimePercent.toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
-                    <button
-                      onClick={() =>
-                        handleCopy(
-                          frontendUrl
-                            ? `${frontendUrl}/join-team?teamId=${value.id}`
-                            : '',
-                        )
-                      }
-                      disabled={!frontendUrl}
-                      className="flex-shrink-0 cursor-pointer rounded-lg
+                  </div>
+
+                  {/* Members List */}
+                  <div className="flex flex-col gap-3">
+                    {value.memberIds.map((uid: string) => (
+                      <div
+                        className="flex items-center justify-between rounded-lg
+                        bg-[#2f2f2f] p-3"
+                        key={uid}
+                      >
+                        <div className="font-medium text-gray-200">
+                          {players &&
+                            players.get(uid) &&
+                            players.get(uid).userName}
+                        </div>
+                        <div
+                          className="cursor-pointer text-red-400
+                          transition hover:scale-110 hover:text-red-300"
+                          onClick={() => removePlayer(value.id, uid)}
+                          title="Remove Player"
+                        >
+                          <IoIosClose size={24} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer: Team ID Link */}
+                  <div className="mt-auto flex h-full items-end">
+                    <div
+                      className="flex w-full flex-row items-center justify-between
+                      border-t border-gray-700 px-2 pt-3"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span
+                          className="text-md flex-shrink-0 font-semibold
+                          text-gray-400"
+                        >
+                          ID:
+                        </span>
+                        <a
+                          href={
+                            frontendUrl
+                              ? `${frontendUrl}/join-team?teamId=${value.id}`
+                              : '#'
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="truncate text-sm font-semibold text-blue-400
+                          hover:text-blue-300 hover:underline"
+                          title="Open join link in new tab"
+                        >
+                          {value.id}
+                        </a>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleCopy(
+                            frontendUrl
+                              ? `${frontendUrl}/join-team?teamId=${value.id}`
+                              : '',
+                          )
+                        }
+                        disabled={!frontendUrl}
+                        className="flex-shrink-0 cursor-pointer rounded-lg
                         bg-gray-700 p-2 text-gray-400 transition-colors
                         duration-200 hover:bg-gray-600
                         disabled:cursor-not-allowed disabled:opacity-50"
-                      title="Copy Team ID"
-                    >
-                      <FaRegCopy className="h-4 w-4" />
-                    </button>
+                        title="Copy Team ID"
+                      >
+                        <FaRegCopy className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <NetworkLocations
               teams={sessionTeams}
-              port={currentScenario?.port}
+              challengeServices={currentScenario?.challenge_services}
               handleCopy={handleCopy}
             />
           </section>
