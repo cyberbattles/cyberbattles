@@ -58,14 +58,12 @@ async function sendFlag(
         password: password,
       });
     }
-    console.log('Flag injection response:', response);
 
     if (response.status === 200 && response.data.status === 'success') {
       return true;
     }
     return false;
   } catch (error) {
-    console.error('Error sending flag:', error);
     return false;
   }
 }
