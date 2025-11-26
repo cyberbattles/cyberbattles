@@ -217,6 +217,7 @@ def buy(product_id):
     else:
         return "Insufficient SkyPoints", 403
 
+
 @app.route("/admin/update_flag", methods=["POST"])
 def admin_update_flag():
     """
@@ -276,6 +277,7 @@ def init_db():
                 User(username="root", password=generate_password_hash("root"), points=1)
             )
             db.session.commit()
+
 
 @app.route("/success/<path:product_name>")
 def success(product_name):

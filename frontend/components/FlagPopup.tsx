@@ -168,48 +168,70 @@ export default function FlagPopup() {
 
   return (
     <Drawer.Root>
-      <Drawer.Trigger className="fixed left-10 bottom-10 flex w-15 h-15 flex-shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full bg-white px-4 font-bold shadow-sm transition-all hover:bg-[#FAFAFA] dark:bg-[#ba1e1e] dark:hover:bg-[#981818] dark:text-white text-2xl">
+      <Drawer.Trigger
+        className="fixed bottom-10 left-10 flex h-15 w-15 flex-shrink-0
+          items-center justify-center gap-2 overflow-hidden rounded-full
+          bg-white px-4 text-2xl font-bold shadow-sm transition-all
+          hover:bg-[#FAFAFA] dark:bg-[#ba1e1e] dark:text-white
+          dark:hover:bg-[#981818]"
+      >
         <Image src={flagIcon} alt="Flag icon" width={150} />
       </Drawer.Trigger>
       <Drawer.Portal>
         <Drawer.Overlay className="fixed inset-0 bg-black/65" />
-        <Drawer.Content className="dark:bg-[#ba1e1e] sm:w-1/3  flex fixed right-10 bottom-0 max-h-[70vh] rounded-t-[50px]">
-          <div className="max-w-md w-full mx-auto overflow-auto p-4 rounded-t-[10px]">
+        <Drawer.Content
+          className="fixed right-10 bottom-0 flex max-h-[70vh] rounded-t-[50px]
+            sm:w-1/3 dark:bg-[#ba1e1e]"
+        >
+          <div
+            className="mx-auto w-full max-w-md overflow-auto rounded-t-[10px]
+              p-4"
+          >
             <Drawer.Handle />
-            <Drawer.Title className="font-bold text-center dark:text-white text-2xl mt-8">
+            <Drawer.Title
+              className="mt-8 text-center text-2xl font-bold dark:text-white"
+            >
               Submit Flag
             </Drawer.Title>
 
             {/* Success Message */}
             {successMsg && (
-              <div className="mt-4 p-3 rounded-lg bg-green-100 text-green-800 text-center">
+              <div
+                className="mt-4 rounded-lg bg-green-100 p-3 text-center
+                  text-green-800"
+              >
                 {successMsg}
               </div>
             )}
 
             {/* Error Message */}
             {errorMsg && (
-              <div className="mt-4 p-3 rounded-lg bg-red-100 text-red-800 text-center">
+              <div
+                className="mt-4 rounded-lg bg-red-100 p-3 text-center
+                  text-red-800"
+              >
                 {errorMsg}
               </div>
             )}
 
             <label
               htmlFor="name"
-              className="font-medium text-white text-sm mt-8 mb-2 block"
+              className="mt-8 mb-2 block text-sm font-medium text-white"
             >
               Enter your flag here:
             </label>
             <input
               id="name"
-              className="border border-gray-200 bg-white w-full px-3 h-9 rounded-lg outline-none focus:ring-2 focus:ring-black/5 text-gray-900"
+              className="h-9 w-full rounded-lg border border-gray-200 bg-white
+                px-3 text-gray-900 outline-none focus:ring-2 focus:ring-black/5"
               value={flag}
               onChange={e => setFlag(e.target.value)}
               disabled={loading}
             />
 
             <button
-              className="cursor-pointer h-[44px] bg-black dark:text-white rounded-lg mt-4 w-full font-medium transition-all disabled:bg-gray-700"
+              className="mt-4 h-[44px] w-full cursor-pointer rounded-lg bg-black
+                font-medium transition-all disabled:bg-gray-700 dark:text-white"
               onClick={handleFlagSubmit}
               disabled={loading}
             >

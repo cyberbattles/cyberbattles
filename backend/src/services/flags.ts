@@ -84,22 +84,23 @@ async function sleep(ms: number): Promise<void> {
  * @returns {Promise<void>} A promise that resolves once the database update is complete.
  */
 async function updateFlag(teamId: string, flag: string): Promise<void> {
-  // Generative AI was used to fix this function after the Firebase client SDK was used instead of the correct admin one.
-  const teamRef = db.doc(`teams/${teamId}`);
+  try {
+    const teamRef = db.doc(`teams/${teamId}`);
 
-  await db.runTransaction(async transaction => {
-    const doc = await transaction.get(teamRef);
-    if (!doc.exists) {
-      throw 'Document does not exist!';
-    }
+    await db.runTransaction(async transaction => {
+      const doc = await transaction.get(teamRef);
+      if (!doc.exists) {
+        return;
+      }
 
-    const activeFlags = doc.data()?.activeFlags || [];
+      const activeFlags = doc.data()?.activeFlags || [];
 
-    activeFlags.push(flag);
-    const updatedFlags = activeFlags.slice(-3); // Keeps the 3 newest flags
+      activeFlags.push(flag);
+      const updatedFlags = activeFlags.slice(-3); // Keeps the 3 newest flags
 
-    transaction.update(teamRef, {activeFlags: updatedFlags});
-  });
+      transaction.update(teamRef, {activeFlags: updatedFlags});
+    });
+  } catch (_) {}
 }
 
 /**
@@ -108,10 +109,12 @@ async function updateFlag(teamId: string, flag: string): Promise<void> {
  * @returns {Promise<void>} A promise that resolves once the database update is complete.
  */
 async function updateTotal(teamId: string): Promise<void> {
-  const teamRef = db.doc(`teams/${teamId}`);
-  await teamRef.update({
-    totalCount: FieldValue.increment(1),
-  });
+  try {
+    const teamRef = db.doc(`teams/${teamId}`);
+    await teamRef.update({
+      totalCount: FieldValue.increment(1),
+    });
+  } catch (_) {}
 }
 
 /**
@@ -120,11 +123,13 @@ async function updateTotal(teamId: string): Promise<void> {
  * @returns {Promise<void>} A promise that resolves once the database update is complete.
  */
 async function updateDown(teamId: string): Promise<void> {
-  const teamRef = db.doc(`teams/${teamId}`);
+  try {
+    const teamRef = db.doc(`teams/${teamId}`);
 
-  await teamRef.update({
-    downCount: FieldValue.increment(1),
-  });
+    await teamRef.update({
+      downCount: FieldValue.increment(1),
+    });
+  } catch (_) {}
 }
 
 /**

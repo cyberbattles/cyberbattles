@@ -22,8 +22,6 @@ import {FaRegCopy} from 'react-icons/fa';
 import QRCode from 'react-qr-code';
 import GameEndPopup from '@/components/GameEndPopup';
 
-import {BACKEND_URL} from '@/components/ApiClient';
-
 /**
  * An interface representing a result of starting a session.
  */
@@ -62,11 +60,96 @@ interface SessionTeamInfo {
   ipAddress: string;
 }
 
+interface ServiceInfo {
+  port: number;
+  protocol: string;
+}
+
+interface ChallengeServices {
+  [serviceName: string]: ServiceInfo;
+}
+
 interface NetworkLocationsProps {
   teams: SessionTeamInfo[];
-  port: number | string | undefined;
+  challengeServices: ChallengeServices | undefined;
   handleCopy: (text: string) => void;
 }
+
+const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
+  ({teams, challengeServices, handleCopy}) => {
+    // Check if services exist
+    const hasServices =
+      challengeServices && Object.keys(challengeServices).length > 0;
+
+    if (!hasServices || teams.length === 0) {
+      return (
+        <div className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md lg:col-span-3">
+          <h2 className="mb-4 text-xl font-semibold text-gray-400">
+            Network Locations
+          </h2>
+          <p className="text-gray-500">
+            Network locations will be shown here once the game is active.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md lg:col-span-3">
+        <h2 className="mb-6 text-xl font-semibold text-gray-100">
+          Network Locations
+        </h2>
+        <div className="flex flex-wrap gap-4">
+          {teams.map(team => (
+            <div
+              key={team.id}
+              className="min-w-[240px] flex-grow rounded-xl border border-gray-700 bg-[#2a2a2a] p-4"
+            >
+              {/* Team Name */}
+              <p className="mb-3 text-sm font-bold text-gray-400 border-b border-gray-600 pb-2">
+                {team.name}
+              </p>
+
+              {/* Iterate through all services in the map */}
+              <div className="flex flex-col gap-3">
+                {Object.entries(challengeServices!).map(([name, service]) => {
+                  const protocol = service.protocol || 'http';
+                  const url = `${protocol}://${team.ipAddress}:${service.port}`;
+
+                  return (
+                    <div key={name} className="flex flex-col">
+                      <span className="text-xs uppercase text-gray-500 mb-1">
+                        {name.replace(/_/g, ' ')}
+                      </span>
+                      <div className="flex items-center justify-between gap-4">
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="truncate font-mono text-md font-bold text-blue-400 hover:text-blue-300 hover:underline"
+                          title={`Open ${url}`}
+                        >
+                          {url}
+                        </a>
+                        <button
+                          onClick={() => handleCopy(url)}
+                          className="flex h-8 w-8 flex-shrink-0 cursor-pointer items-center justify-center rounded-lg bg-gray-800 text-gray-400 transition-colors duration-200 hover:bg-gray-700"
+                          title="Copy URL"
+                        >
+                          <FaRegCopy className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  },
+);
 
 const formatElapsedTime = (milliseconds: number): string => {
   const totalSeconds = Math.floor(milliseconds / 1000);
@@ -104,62 +187,6 @@ const Admin = () => {
   const [showEndGame, setShowEndGame] = useState(false);
   const [endedSessionId, setEndedSessionId] = useState<string>('');
   const [frontendUrl, setFrontendUrl] = useState<string>('');
-
-  const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
-    ({teams, port, handleCopy}) => {
-      if (!port || teams.length === 0) {
-        return (
-          <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 lg:col-span-3">
-            <h2 className="text-xl font-semibold mb-4 text-gray-400">
-              Network Locations
-            </h2>
-            <p className="text-gray-500">
-              Network locations will be shown here once the game is active.
-            </p>
-          </div>
-        );
-      }
-      return (
-        <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 lg:col-span-3">
-          <h2 className="text-xl font-semibold mb-6 text-gray-100">
-            Network Locations
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            {teams.map(team => {
-              const url = `http://${team.ipAddress}:${port}`;
-              return (
-                <div
-                  key={team.id}
-                  className="flex-grow p-4 bg-[#2a2a2a] rounded-xl border border-gray-700 min-w-[240px]"
-                >
-                  <p className="text-sm text-gray-400 mb-1">{team.name}</p>
-                  <div className="flex items-center justify-between gap-4">
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-lg font-mono font-bold text-blue-400 truncate hover:text-blue-300 hover:underline"
-                      title={`Open ${url} in new tab`}
-                    >
-                      {url}
-                    </a>
-                    <button
-                      onClick={() => handleCopy(url)}
-                      className="cursor-pointer flex-shrink-0 h-9 w-9 p-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors duration-200"
-                      title="Copy URL"
-                    >
-                      <FaRegCopy className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    },
-  );
-  NetworkLocations.displayName = 'NetworkLocations';
 
   async function getSessions(uid: string) {
     try {
@@ -408,31 +435,35 @@ const Admin = () => {
 
     setGameStatus('ending');
 
-    // Populate the finished session and set the ended session value
     const finishedRef = doc(db, 'finishedSessions', sessionId);
 
     interface ScoreDictionary {
       [key: string]: [string, number, string];
     }
 
-    // Add each team and their score to scoremap
-    let scoreMap: ScoreDictionary = {};
-
+    // Map the promises to return data objects instead of modifying external variables
     const fetchTeamPromises = Array.from(teams.keys()).map(async id => {
       const teamRef = doc(db, 'teams', id);
       const teamSnap = await getDoc(teamRef);
+
       if (!teamSnap.exists()) {
-        return;
+        return null;
       }
+
       const team = teamSnap.data();
       const teamName: string = team.name;
       const uptime: number =
-        team.downCount > 0 ? 1 - team.downCount / team.totalCount : 0;
-      const score: number = team.totalScore > 0 ? team.totalScore * uptime : 0;
+        (team.downCount === 0 ? 1 : team.downCount) /
+        (team.totalCount === 0 ? 1 : team.totalCount); // Don't devise by zero
+      const score: number = team.totalScore * uptime;
 
-      // Lookup the Clan (if any) associated with the team leader
-      const leaderId: string = team.memberIds[0];
+      // Safe access to members
+      const members = team.memberIds || [];
+
+      // Lookup the Clan
+      const leaderId: string = members[0];
       let clanId = '';
+
       if (leaderId) {
         const q = query(
           collection(db, 'clans'),
@@ -444,13 +475,36 @@ const Admin = () => {
         }
       }
 
-      scoreMap[id] = [teamName, score, clanId];
+      return {
+        id,
+        scoreEntry: [teamName, score, clanId] as [string, number, string],
+        members: members as string[],
+      };
     });
 
-    await Promise.all(fetchTeamPromises);
+    // Wait for all data
+    const results = await Promise.all(fetchTeamPromises);
 
+    // Process results into the final structures
+    let scoreMap: ScoreDictionary = {};
+    let allParticipants: string[] = [];
+
+    results.forEach(item => {
+      if (item) {
+        scoreMap[item.id] = item.scoreEntry;
+        allParticipants.push(...item.members);
+      }
+    });
+
+    // Remove duplicates
+    const uniqueParticipants = Array.from(new Set(allParticipants));
+
+    // Write to Firestore
     await setDoc(finishedRef, {
       results: scoreMap,
+      scenarioId: currentScenario?.scenario_id || '',
+      gameParticipants: uniqueParticipants,
+      createdAt: serverTimestamp(),
     });
 
     if (sessionIds.length === 0) {
@@ -485,16 +539,16 @@ const Admin = () => {
     }
   }
 
-  const handleChangeSession = async (sid: string) => {
-    setTeams(new Map());
-    setPlayers(new Map());
-    setSessionId(sid);
-    localStorage.setItem('sessionId', sid);
-    // Reset timers when changing session
-    setElapsedTime('00:00:00');
-    setStartedAt(null);
-    setCreatedAt(null);
-  };
+  // const handleChangeSession = async (sid: string) => {
+  //   setTeams(new Map());
+  //   setPlayers(new Map());
+  //   setSessionId(sid);
+  //   localStorage.setItem('sessionId', sid);
+  //   // Reset timers when changing session
+  //   setElapsedTime('00:00:00');
+  //   setStartedAt(null);
+  //   setCreatedAt(null);
+  // };
 
   const handleStartGame = async () => {
     if (!sessionId || !currentUser) {
@@ -520,33 +574,45 @@ const Admin = () => {
     });
   };
 
+  const setEndingStatus = async (endingSessionId: string) => {
+    if (!endingSessionId) {
+      return;
+    }
+    const sessionRef = doc(db, 'sessions', endingSessionId);
+
+    await updateDoc(sessionRef, {
+      ending: 1,
+    });
+  };
+
   const handleEndGame = async () => {
     if (!sessionId || !currentUser) {
       console.log('No current admin user or session');
       return;
     }
     setEndedSessionId(sessionId);
+    await setEndingStatus(sessionId);
     const endedSessionIdLocal = sessionId;
     const endedTeams = teams;
     setSessionIds(sessionIds.filter(sid => sid !== endedSessionIdLocal));
 
-    if (sessionIds.length - 1 > 0) {
-      await cleanupSession(endedSessionIdLocal, endedTeams);
-      setShowEndGame(true);
-      setSessionId(sessionIds[0]);
-      await getScenario();
-      await getTeams();
-      await getPlayers();
-    } else {
-      await cleanupSession(endedSessionIdLocal, endedTeams);
-      setGameStatus('ended');
-      router.push('/dashboard?sessionId=' + endedSessionIdLocal);
-    }
+    // if (sessionIds.length - 1 > 0) {
+    //   await cleanupSession(endedSessionIdLocal, endedTeams);
+    //   setSessionId(sessionIds[0]);
+    //   await getScenario();
+    //   await getTeams();
+    //   await getPlayers();
+    //   setEndedSessionId('');
+    // } else {
+    await cleanupSession(endedSessionIdLocal, endedTeams);
+    // setGameStatus('ended');
+    router.push('/dashboard?sessionId=' + endedSessionIdLocal);
+    // }
   };
 
-  const handleCreateSession = () => {
-    router.push('/create-session');
-  };
+  // const handleCreateSession = () => {
+  //   router.push('/create-session');
+  // };
 
   // Set the teams, players, and scenario hooks
   useEffect(() => {
@@ -684,6 +750,27 @@ const Admin = () => {
       console.error('Error downloading config:', error);
     }
   };
+
+  useEffect(() => {
+    if (!sessionId) {
+      return;
+    }
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'sessions', endedSessionId),
+      docSnap => {
+        if (docSnap.exists()) {
+          if (docSnap.data().ending !== 0) {
+            setShowEndGame(true);
+          } else {
+            setShowEndGame(false);
+          }
+        }
+      },
+    );
+    return () => unsubscribe();
+  }, [endedSessionId]);
+
   return (
     <>
       {/* End of game popup */}
@@ -701,9 +788,12 @@ const Admin = () => {
           }}
         ></GameEndPopup>
       )}
-      <div className="flex flex-col md:flex-row min-h-screen pt-25 sm:pt-40 bg-[#2f2f2f] text-white">
+      <div
+        className="flex min-h-screen flex-col bg-[#2f2f2f] pt-25 text-white
+          sm:pt-40 md:flex-row"
+      >
         {/* Sidebar */}
-        <aside className="w-full md:w-64 bg-[#1e1e1e] shadow-md flex-shrink-0">
+        <aside className="w-full flex-shrink-0 bg-[#1e1e1e] shadow-md md:w-64">
           <nav className="p-6">
             <ul className="space-y-4">
               <li>
@@ -730,9 +820,9 @@ const Admin = () => {
                   {gameStatus === 'starting' ? 'Starting...' : gameStatus}
                 </div>
               </li>
-              <li className="pt-2 border-t border-gray-700">
+              <li className="border-t border-gray-700 pt-2">
                 <div className="text-sm text-gray-400">Game created at:</div>
-                <div className="font-semibold text-sm">
+                <div className="text-sm font-semibold">
                   {createdAt
                     ? `${createdAt
                         .toDate()
@@ -746,7 +836,7 @@ const Admin = () => {
               {gameStatus === 'started' && startedAt && (
                 <li>
                   <div className="text-sm text-gray-400">Time Elapsed:</div>
-                  <div className="font-semibold text-lg text-blue-300 font-mono">
+                  <div className="font-mono text-lg font-semibold text-blue-300">
                     {elapsedTime}
                   </div>
                 </li>
@@ -755,61 +845,72 @@ const Admin = () => {
           </nav>
         </aside>
 
-        <main className="flex-1 p-4 md:p-8 overflow-auto">
+        <main className="flex-1 overflow-auto p-4 md:p-8">
           {/* Title Section */}
-          <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <header
+            className="mb-8 flex flex-col items-start justify-between gap-4
+              md:flex-row md:items-center"
+          >
             <div className="flex items-center gap-4">
               <h1 className="text-3xl font-bold">Admin Panel</h1>
-              <button
-                onClick={handleCreateSession}
-                className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold text-sm "
-                title="Create New Session"
-              >
-                <IoIosAddCircleOutline size={20} />
-                <span className="hidden sm:inline">New Session</span>
-              </button>
+              {/* <button */}
+              {/*   onClick={handleCreateSession} */}
+              {/*   className="cursor-pointer flex items-center gap-2 px-3 py-2 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold text-sm " */}
+              {/*   title="Create New Session" */}
+              {/* > */}
+              {/*   <IoIosAddCircleOutline size={20} /> */}
+              {/*   <span className="hidden sm:inline">New Session</span> */}
+              {/* </button> */}
             </div>
             {sessionIds.length > 0 && (
               <div className="flex items-center gap-3">
-                <label
-                  htmlFor="session-select"
-                  className="text-sm text-gray-400"
-                >
-                  Active Session:
-                </label>
-                <select
-                  id="session-select"
-                  value={sessionId}
-                  onChange={e => handleChangeSession(e.target.value)}
-                  className="bg-[#1e1e1e] border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full md:w-auto p-2.5"
-                >
-                  {sessionIds.map(id => (
-                    <option key={id} value={id}>
-                      {id}
-                    </option>
-                  ))}
-                </select>
+                <h3 className="text-sm text-gray-400">
+                  Active Session: {sessionId}
+                </h3>
+                {/* <label */}
+                {/*   htmlFor="session-select" */}
+                {/*   className="text-sm text-gray-400" */}
+                {/* > */}
+                {/*   Active Session: */}
+                {/* </label> */}
+                {/* <select */}
+                {/*   id="session-select" */}
+                {/*   value={sessionId} */}
+                {/*   onChange={e => handleChangeSession(e.target.value)} */}
+                {/*   className="bg-[#1e1e1e] border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full md:w-auto p-2.5" */}
+                {/* > */}
+                {/*   {sessionIds.map(id => ( */}
+                {/*     <option key={id} value={id}> */}
+                {/*       {id} */}
+                {/*     </option> */}
+                {/*   ))} */}
+                {/* </select> */}
               </div>
             )}
           </header>
 
           {/* Grid Layout*/}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Actions Widget */}
-            <div className="flex flex-col p-6 gap-4 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1">
-              <h2 className="text-xl font-semibold text-gray-100 mb-2">
+            <div
+              className="col-span-1 flex flex-col gap-4 rounded-2xl bg-[#1e1e1e]
+                p-6 shadow-md"
+            >
+              <h2 className="mb-2 text-xl font-semibold text-gray-100">
                 Actions
               </h2>
               <button
-                className="cursor-pointer w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+                className="w-full cursor-pointer rounded-xl bg-gray-700 px-4
+                  py-3 font-bold transition hover:bg-gray-600"
                 onClick={handlePushShell}
               >
                 Go to Shell
               </button>
-              <div className="border-t border-gray-700 my-2"></div>
+              <div className="my-2 border-t border-gray-700"></div>
 
               <button
-                className="cursor-pointer w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
+                className="w-full cursor-pointer rounded-xl bg-blue-600 px-4
+                  py-3 font-bold transition hover:bg-blue-500"
                 onClick={openVpnModal}
               >
                 VPN Setup Guide
@@ -817,28 +918,42 @@ const Admin = () => {
             </div>
 
             {/* Current Scenario */}
-            <div className="flex flex-col justify-center items-center p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 h-full min-h-[250px]">
+            <div
+              className="col-span-1 flex h-full min-h-[250px] flex-col
+                items-center justify-center rounded-2xl bg-[#1e1e1e] p-6
+                shadow-md"
+            >
               {currentScenario ? (
-                <div className="flex flex-col items-center text-center gap-6">
-                  <div className="flex flex-col items-center text-center gap-3">
-                    <h2 className="text-gray-400 text-sm uppercase tracking-wider">
+                <div className="flex flex-col items-center gap-6 text-center">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <h2 className="text-sm tracking-wider text-gray-400 uppercase">
                       Current Scenario
                     </h2>
                     <h3 className="text-3xl font-bold text-white">
                       {currentScenario.scenario_title}
                     </h3>
-                    <p className="text-gray-300 text-sm max-w-md">
+                    <p className="max-w-md text-sm text-gray-300">
                       {currentScenario.scenario_description}
                     </p>
-                    <span className="mt-2 px-4 py-1.5 bg-[#2f2f2f] text-gray-100 text-sm font-semibold rounded-full border border-gray-600">
+                    <span
+                      className="mt-2 rounded-full border border-gray-600
+                        bg-[#2f2f2f] px-4 py-1.5 text-sm font-semibold
+                        text-gray-100"
+                    >
                       {currentScenario.scenario_difficulty}
                     </span>
                   </div>
                   {gameStatus === 'starting' && (
-                    <div className="p-3 bg-blue-900/30 border border-blue-500 rounded-lg w-full max-w-md">
+                    <div
+                      className="w-full max-w-md rounded-lg border
+                        border-blue-500 bg-blue-900/30 p-3"
+                    >
                       <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                        <span className="text-blue-400 font-semibold">
+                        <div
+                          className="h-4 w-4 animate-spin rounded-full border-2
+                            border-blue-400 border-t-transparent"
+                        ></div>
+                        <span className="font-semibold text-blue-400">
                           Game starting...
                         </span>
                       </div>
@@ -853,24 +968,25 @@ const Admin = () => {
             </div>
 
             {/* Host Controls */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1">
-              <h2 className="text-xl font-semibold mb-4 text-white">
+            <div className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md">
+              <h2 className="mb-4 text-xl font-semibold text-white">
                 Host Controls
               </h2>
-              <div className="space-y-3 gap-5">
+              <div className="gap-5 space-y-3">
                 <div className="space-y-4">
                   {(gameStatus === 'waiting' || gameStatus === 'starting') && (
-                    <div className="p-3 bg-[#2f2f2f] rounded-lg">
-                      <div className="text-sm text-gray-400 mb-5">
+                    <div className="rounded-lg bg-[#2f2f2f] p-3">
+                      <div className="mb-5 text-sm text-gray-400">
                         Begin Session
                       </div>
                       <button
                         onClick={handleStartGame}
                         disabled={gameStatus === 'starting'}
-                        className={`cursor-pointer w-full px-4 py-3 rounded-xl font-bold transition ${
+                        className={`w-full cursor-pointer rounded-xl px-4 py-3
+                        font-bold transition ${
                           gameStatus !== 'starting'
-                            ? 'bg-blue-600 hover:bg-blue-500 '
-                            : 'bg-gray-600 cursor-not-allowed opacity-50'
+                            ? 'bg-blue-600 hover:bg-blue-500'
+                            : 'cursor-not-allowed bg-gray-600 opacity-50'
                         }`}
                       >
                         {gameStatus === 'starting'
@@ -879,18 +995,19 @@ const Admin = () => {
                       </button>
                     </div>
                   )}
-                  <div className="p-3 bg-[#2f2f2f] rounded-lg">
-                    <div className="text-sm text-gray-400 mb-5">
+                  <div className="rounded-lg bg-[#2f2f2f] p-3">
+                    <div className="mb-5 text-sm text-gray-400">
                       End Session
                     </div>
                     <button
                       onClick={handleEndGame}
                       disabled={gameStatus === 'ending'}
-                      className={`cursor-pointer w-full px-4 py-3 rounded-xl font-bold transition ${
-                        gameStatus !== 'ending'
-                          ? 'bg-red-600 hover:bg-red-500 '
-                          : 'bg-gray-600 cursor-not-allowed opacity-50'
-                      }`}
+                      className={`w-full cursor-pointer rounded-xl px-4 py-3
+                        font-bold transition ${
+                          gameStatus !== 'ending'
+                            ? 'bg-red-600 hover:bg-red-500'
+                            : 'cursor-not-allowed bg-gray-600 opacity-50'
+                        }`}
                     >
                       {gameStatus === 'ending' ? 'Ending...' : 'End Session'}
                     </button>
@@ -900,8 +1017,8 @@ const Admin = () => {
             </div>
 
             {/* Teams Title */}
-            <div className="p-6 pb-0 rounded-2xl col-span-1 lg:col-span-3">
-              <div className="flex justify-between items-center">
+            <div className="col-span-1 rounded-2xl p-6 pb-0 lg:col-span-3">
+              <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Teams</h2>
                 <div className="" onClick={() => refreshTeams()}>
                   <IoIosRefresh size={20} className="cursor-pointer" />
@@ -910,79 +1027,132 @@ const Admin = () => {
             </div>
 
             {/* Teams List */}
-            {Array.from(teams.values()).map(value => (
-              <div
-                className="flex flex-col p-5 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1"
-                key={value.id}
-              >
-                <div className="flex flex-row justify-between items-center">
-                  <h2 className="text-xl font-semibold text-green-400">
-                    {value.name}
-                  </h2>
-                </div>
-                <div className="flex flex-col gap-5">
-                  {value.memberIds.map((uid: string) => (
-                    <div
-                      className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
-                      key={uid}
-                    >
-                      <div>
-                        {players &&
-                          players.get(uid) &&
-                          players.get(uid).userName}
-                      </div>
-                      <div
-                        className="cursor-pointer text-red-400 hover:text-red-300"
-                        onClick={() => removePlayer(value.id, uid)}
-                      >
-                        <IoIosClose size={30} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {Array.from(teams.values()).map(value => {
+              // Calculate Uptime
+              const total = value.totalCount || 0;
+              const down = value.downCount || 0;
+              // If total is 0, default to 100%, otherwise calculate percentage
+              const uptimePercent =
+                total > 0 ? ((total - down) / total) * 100 : 100;
 
-                <div className="flex h-full align-bottom items-end mt-4">
-                  <div className="flex flex-row px-2 pt-3 w-full justify-between items-center border-t border-gray-700">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <span className="text-md font-semibold text-white flex-shrink-0">
-                        Team ID:
-                      </span>
-                      <a
-                        href={
-                          frontendUrl
-                            ? `${frontendUrl}/join-team?teamId=${value.id}`
-                            : '#'
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline truncate"
-                        title="Open join link in new tab"
-                      >
-                        {value.id}
-                      </a>
+              return (
+                <div
+                  className="col-span-1 flex flex-col gap-5 rounded-2xl
+                  bg-[#1e1e1e] p-5 shadow-md"
+                  key={value.id}
+                >
+                  {/* Header: Centered Title, Score, Uptime */}
+                  <div className="flex flex-col items-center justify-center gap-2 text-center">
+                    <h2 className="text-2xl font-bold text-green-400">
+                      {value.name}
+                    </h2>
+
+                    <div className="flex gap-4 rounded-lg bg-[#2f2f2f] px-4 py-2 text-sm font-semibold">
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-xs uppercase tracking-wider">
+                          Score
+                        </span>
+                        <span className="text-white">
+                          {Math.floor(value.totalScore || 0)}
+                        </span>
+                      </div>
+                      <div className="w-[1px] bg-gray-600"></div>
+                      <div className="flex flex-col">
+                        <span className="text-gray-400 text-xs uppercase tracking-wider">
+                          Uptime
+                        </span>
+                        <span
+                          className={
+                            uptimePercent >= 90
+                              ? 'text-green-400'
+                              : 'text-yellow-400'
+                          }
+                        >
+                          {uptimePercent.toFixed(1)}%
+                        </span>
+                      </div>
                     </div>
-                    <button
-                      onClick={() =>
-                        handleCopy(
-                          frontendUrl
-                            ? `${frontendUrl}/join-team?teamId=${value.id}`
-                            : '',
-                        )
-                      }
-                      disabled={!frontendUrl}
-                      className="cursor-pointer flex-shrink-0 p-2 rounded-lg bg-gray-700 text-gray-400 hover:bg-gray-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Copy Team ID"
+                  </div>
+
+                  {/* Members List */}
+                  <div className="flex flex-col gap-3">
+                    {value.memberIds.map((uid: string) => (
+                      <div
+                        className="flex items-center justify-between rounded-lg
+                        bg-[#2f2f2f] p-3"
+                        key={uid}
+                      >
+                        <div className="font-medium text-gray-200">
+                          {players &&
+                            players.get(uid) &&
+                            players.get(uid).userName}
+                        </div>
+                        <div
+                          className="cursor-pointer text-red-400
+                          transition hover:scale-110 hover:text-red-300"
+                          onClick={() => removePlayer(value.id, uid)}
+                          title="Remove Player"
+                        >
+                          <IoIosClose size={24} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer: Team ID Link */}
+                  <div className="mt-auto flex h-full items-end">
+                    <div
+                      className="flex w-full flex-row items-center justify-between
+                      border-t border-gray-700 px-2 pt-3"
                     >
-                      <FaRegCopy className="w-4 h-4" />
-                    </button>
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <span
+                          className="text-md flex-shrink-0 font-semibold
+                          text-gray-400"
+                        >
+                          ID:
+                        </span>
+                        <a
+                          href={
+                            frontendUrl
+                              ? `${frontendUrl}/join-team?teamId=${value.id}`
+                              : '#'
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="truncate text-sm font-semibold text-blue-400
+                          hover:text-blue-300 hover:underline"
+                          title="Open join link in new tab"
+                        >
+                          {value.id}
+                        </a>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleCopy(
+                            frontendUrl
+                              ? `${frontendUrl}/join-team?teamId=${value.id}`
+                              : '',
+                          )
+                        }
+                        disabled={!frontendUrl}
+                        className="flex-shrink-0 cursor-pointer rounded-lg
+                        bg-gray-700 p-2 text-gray-400 transition-colors
+                        duration-200 hover:bg-gray-600
+                        disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Copy Team ID"
+                      >
+                        <FaRegCopy className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <NetworkLocations
               teams={sessionTeams}
-              port={currentScenario?.port}
+              challengeServices={currentScenario?.challenge_services}
               handleCopy={handleCopy}
             />
           </section>
@@ -990,12 +1160,19 @@ const Admin = () => {
       </div>
 
       {showVpn && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1e1e1e] text-white p-6 rounded-2xl w-full max-w-4xl relative flex flex-col gap-6 max-h-[90vh] shadow-2xl border border-gray-700">
+        <div
+          className="bg-opacity-80 fixed inset-0 z-50 flex items-center
+            justify-center bg-black p-4"
+        >
+          <div
+            className="relative flex max-h-[90vh] w-full max-w-4xl flex-col
+              gap-6 rounded-2xl border border-gray-700 bg-[#1e1e1e] p-6
+              text-white shadow-2xl"
+          >
             {!selectedTeamIdForVpn && !vpnConfigLoading && (
               // Team Selection View
               <div className="flex flex-col items-center gap-6">
-                <h2 className="text-2xl font-bold text-center">
+                <h2 className="text-center text-2xl font-bold">
                   Select Team for VPN Config
                 </h2>
                 <p className="text-gray-400">
@@ -1004,7 +1181,9 @@ const Admin = () => {
                 <select
                   value={vpnTeamSelectId}
                   onChange={e => setVpnTeamSelectId(e.target.value)}
-                  className="bg-[#2f2f2f] border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full max-w-md p-2.5"
+                  className="block w-full max-w-md rounded-lg border
+                    border-gray-700 bg-[#2f2f2f] p-2.5 text-sm text-white
+                    focus:border-blue-500 focus:ring-blue-500"
                 >
                   {Array.from(teams.values()).map(team => (
                     <option key={team.id} value={team.id}>
@@ -1012,16 +1191,18 @@ const Admin = () => {
                     </option>
                   ))}
                 </select>
-                <div className="flex justify-center gap-x-6 mt-4">
+                <div className="mt-4 flex justify-center gap-x-6">
                   <button
-                    className="cursor-pointer px-6 py-2.5 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold"
+                    className="cursor-pointer rounded-xl bg-blue-600 px-6 py-2.5
+                      font-bold transition hover:bg-blue-500"
                     onClick={() => fetchVpnConfigForTeam(vpnTeamSelectId)}
                     disabled={!vpnTeamSelectId || teams.size === 0}
                   >
                     Get Config
                   </button>
                   <button
-                    className="cursor-pointer px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold"
+                    className="cursor-pointer rounded-xl bg-red-600 px-6 py-2.5
+                      font-bold transition hover:bg-red-500"
                     onClick={closeVpnModal}
                   >
                     Cancel
@@ -1032,8 +1213,14 @@ const Admin = () => {
 
             {vpnConfigLoading && (
               // Loading View
-              <div className="flex flex-col items-center justify-center gap-6 min-h-[300px]">
-                <div className="animate-spin h-10 w-10 border-4 border-blue-400 border-t-transparent rounded-full"></div>
+              <div
+                className="flex min-h-[300px] flex-col items-center
+                  justify-center gap-6"
+              >
+                <div
+                  className="h-10 w-10 animate-spin rounded-full border-4
+                    border-blue-400 border-t-transparent"
+                ></div>
                 <h2 className="text-2xl font-semibold text-blue-300">
                   Fetching Config...
                 </h2>
@@ -1043,30 +1230,35 @@ const Admin = () => {
             {vpnConfig && selectedTeamIdForVpn && !vpnConfigLoading && (
               // Config View
               <>
-                <h2 className="text-2xl font-bold text-center">
+                <h2 className="text-center text-2xl font-bold">
                   VPN Configuration for {teams.get(selectedTeamIdForVpn)?.name}
                 </h2>
 
-                <div className="flex flex-col md:flex-row gap-6 overflow-y-auto">
+                <div className="flex flex-col gap-6 overflow-y-auto md:flex-row">
                   <textarea
                     readOnly
                     value={vpnConfig}
-                    className="flex-1 p-2 bg-[#2f2f2f] border border-gray-700 rounded-md font-mono text-sm text-gray-300 focus:outline-none"
+                    className="flex-1 rounded-md border border-gray-700
+                      bg-[#2f2f2f] p-2 font-mono text-sm text-gray-300
+                      focus:outline-none"
                     rows={16}
                   />
 
                   <div className="flex flex-col items-center gap-4">
-                    <div className="bg-white p-4 rounded-md">
+                    <div className="rounded-md bg-white p-4">
                       <QRCode value={vpnConfig} size={200} />
                     </div>
-                    <div className="font-mono text-xs text-green-300 bg-[#2f2f2f] p-3 rounded-md w-3/4">
+                    <div
+                      className="w-3/4 rounded-md bg-[#2f2f2f] p-3 font-mono
+                        text-xs text-green-300"
+                    >
                       <p># Install wireguard if you haven&apos;t already.</p>
-                      <p className="text-yellow-400 break-all">
+                      <p className="break-all text-yellow-400">
                         sudo wg-quick up ./
                         {username || 'wg1'}
                         .conf
                       </p>
-                      <p className="text-yellow-400 wrap-anywhere mt-2">
+                      <p className="mt-2 wrap-anywhere text-yellow-400">
                         ssh -o StrictHostKeyChecking=no -o
                         UserKnownHostsFile=/dev/null
                         {' ' + username || 'null'}@{vpnTeamSelectIpAddress}
@@ -1076,21 +1268,24 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-center gap-x-6 flex-shrink-0">
+                <div className="flex flex-shrink-0 justify-center gap-x-6">
                   <button
-                    className="cursor-pointer px-6 py-2.5 bg-gray-600 rounded-xl hover:bg-gray-500 transition font-bold"
+                    className="cursor-pointer rounded-xl bg-gray-600 px-6 py-2.5
+                      font-bold transition hover:bg-gray-500"
                     onClick={() => setSelectedTeamIdForVpn(null)}
                   >
                     Back
                   </button>
                   <button
-                    className="cursor-pointer px-6 py-2.5 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold"
+                    className="cursor-pointer rounded-xl bg-green-600 px-6
+                      py-2.5 font-bold transition hover:bg-green-500"
                     onClick={handleDownloadConfig}
                   >
                     Download Config
                   </button>
                   <button
-                    className="cursor-pointer px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold"
+                    className="cursor-pointer rounded-xl bg-red-600 px-6 py-2.5
+                      font-bold transition hover:bg-red-500"
                     onClick={closeVpnModal}
                   >
                     Close

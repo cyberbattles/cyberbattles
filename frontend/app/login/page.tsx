@@ -65,9 +65,9 @@ export default function LoginPage() {
 
   return (
     <>
-      <section className="min-h-screen flex items-center justify-center px-12">
-        <div className="max-w-sm w-full bg-[#2f2f2f] p-8 rounded-2xl shadow-md">
-          <div className="flex flex-col items-center gap-4 mb-6">
+      <section className="flex min-h-screen items-center justify-center px-12">
+        <div className="w-full max-w-sm rounded-2xl bg-[#2f2f2f] p-8 shadow-md">
+          <div className="mb-6 flex flex-col items-center gap-4">
             <Image
               src={cyberbattles}
               alt="website logo"
@@ -76,7 +76,7 @@ export default function LoginPage() {
               className="object-contain"
               draggable={false}
             />
-            <h2 className="text-3xl font-semibold text-white font-bold">
+            <h2 className="text-3xl font-bold font-semibold text-white">
               {isRegister ? 'Create Account' : 'Login'}
             </h2>
           </div>
@@ -84,7 +84,9 @@ export default function LoginPage() {
           <form onSubmit={handleAuth} className="flex flex-col gap-4">
             {isRegister && (
               <input
-                className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                className="rounded-xl border p-3 font-bold text-white
+                  placeholder:text-white focus:ring-2 focus:ring-blue-400
+                  focus:outline-none"
                 type="text"
                 value={username}
                 onChange={e => {
@@ -110,7 +112,9 @@ export default function LoginPage() {
               />
             )}
             <input
-              className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+              className="rounded-xl border p-3 font-bold text-white
+                placeholder:text-white focus:ring-2 focus:ring-blue-400
+                focus:outline-none"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -118,7 +122,9 @@ export default function LoginPage() {
               required
             />
             <input
-              className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+              className="rounded-xl border p-3 font-bold text-white
+                placeholder:text-white focus:ring-2 focus:ring-blue-400
+                focus:outline-none"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
@@ -127,7 +133,9 @@ export default function LoginPage() {
             />
             {isRegister && (
               <input
-                className="p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder:text-white text-white font-bold"
+                className="rounded-xl border p-3 font-bold text-white
+                  placeholder:text-white focus:ring-2 focus:ring-blue-400
+                  focus:outline-none"
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
@@ -135,23 +143,25 @@ export default function LoginPage() {
                 required
               />
             )}
-            <div className="text-red-500 min-h-[2rem] pl-2 pt-1">
+            <div className="min-h-[2rem] pt-1 pl-2 text-red-500">
               {usernameError}
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
 
             <button
               type="submit"
               className={`cursor-pointer ${
                 isRegister ? 'bg-green-600' : 'bg-blue-600'
-              } rounded-xl text-white py-2 px-6 hover:opacity-90 transition font-bold`}
+              } rounded-xl px-6
+                py-2 font-bold text-white transition hover:opacity-90`}
             >
               {isRegister ? 'Create Account' : 'Login'}
             </button>
           </form>
 
           <p
-            className="text-sm text-white cursor-pointer mt-4 hover:underline text-center italic"
+            className="mt-4 cursor-pointer text-center text-sm text-white italic
+              hover:underline"
             onClick={() => setIsRegister(!isRegister)}
           >
             {isRegister

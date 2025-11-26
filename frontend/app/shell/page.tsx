@@ -529,12 +529,18 @@ export default function Shell() {
   const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
   return (
-    <div className="h-screen w-full flex flex-col bg-[#1a1a1a] font-sans pt-25 sm:pt-45">
+    <div
+      className="flex h-screen w-full flex-col bg-[#1a1a1a] pt-25 font-sans
+        sm:pt-45"
+    >
       {gameOver && (
-        <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+        <div className="my-4 rounded-lg border border-red-500 bg-red-900/30 p-3">
           <div className="flex items-center gap-2">
-            <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
-            <span className="text-red-400 font-semibold">
+            <div
+              className="h-4 w-4 animate-spin rounded-full border-2
+                border-red-400 border-t-transparent"
+            ></div>
+            <span className="font-semibold text-red-400">
               The game has ended ...
             </span>
           </div>
@@ -542,7 +548,7 @@ export default function Shell() {
       )}
       <div
         ref={terminalRef}
-        className="flex-1 min-h-0 overflow-hidden px-5 pb-5"
+        className="min-h-0 flex-1 overflow-hidden px-5 pb-5"
       />
       <div>
         <FlagPopup />

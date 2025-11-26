@@ -117,7 +117,7 @@ def inject():
     if result != "SUCCESS":
         return jsonify({"status": "failure", "message": result})
 
-    result = run_healthcheck(ip, flag)
+    # result = run_healthcheck(ip, flag)
 
     if result == "SUCCESS":
         return jsonify({"status": "success"})

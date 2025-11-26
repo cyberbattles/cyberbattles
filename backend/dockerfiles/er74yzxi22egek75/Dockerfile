@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 RUN apt-get update && \
-  apt-get install -y vim openssh-server sudo supervisor python3 python3-flask python3-pip python3-sqlalchemy python3-werkzeug gcc make wireguard curl iproute2 tcpdump netcat-openbsd
+  apt-get install -y vim netcat-traditional iputils-ping openssh-server sudo supervisor python3 python3-flask python3-pip python3-sqlalchemy python3-werkzeug gcc make wireguard curl iproute2 tcpdump netcat-openbsd
 
 RUN mkdir /var/run/sshd
 RUN echo "root:root" | chpasswd

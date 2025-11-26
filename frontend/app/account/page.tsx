@@ -357,21 +357,31 @@ export default function ProfilePage() {
 
   return (
     <>
-      <div className="text-white min-h-screen p-4 sm:p-6 lg:p-10">
-        <section className="w-full max-w-4xl mx-auto flex flex-col items-center gap-10 pt-25 sm:pt-45">
+      <div className="min-h-screen p-4 text-white sm:p-6 lg:p-10">
+        <section
+          className="mx-auto flex w-full max-w-4xl flex-col items-center gap-10
+            pt-25 sm:pt-45"
+        >
           <div>
-            <h1 className="text-5xl lg:text-6xl font-semibold text-gray-100 mt-10">
+            <h1
+              className="mt-10 text-5xl font-semibold text-gray-100 lg:text-6xl"
+            >
               Account Management
             </h1>
           </div>
 
-          <div className="w-full rounded-xl shadow-2xl overflow-hidden border border-white">
+          <div
+            className="w-full overflow-hidden rounded-xl border border-white
+              shadow-2xl"
+          >
             {/* Tab Navigation */}
             <div className="flex border-b border-white">
               {learnItems.map((item, index) => (
                 <button
                   key={index}
-                  className={`cursor-pointer flex-1 py-4 px-6 text-center font-medium transition-colors duration-200 focus:outline-none ${
+                  className={`flex-1 cursor-pointer px-6 py-4 text-center
+                  font-medium transition-colors duration-200 focus:outline-none
+                  ${
                     selectedIndex === index
                       ? 'border-b-2 border-gray-50 text-white'
                       : 'text-gray-400 hover:bg-gray-500/50'
@@ -388,9 +398,12 @@ export default function ProfilePage() {
               {/* Edit Profile Content */}
               {selectedIndex === 0 && (
                 <form onSubmit={handleUpload} className="flex flex-col gap-10">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                  <div
+                    className="grid grid-cols-1 items-center gap-8
+                      md:grid-cols-3"
+                  >
                     {/* Profile Picture */}
-                    <div className="flex flex-col items-center gap-4 w-full">
+                    <div className="flex w-full flex-col items-center gap-4">
                       {currentUser && (
                         <Image
                           src={photoURL}
@@ -402,12 +415,19 @@ export default function ProfilePage() {
                         />
                       )}
                       <input
-                        className="block w-full max-w-xs text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-600 file:text-white hover:file:bg-gray-700"
+                        className="block w-full max-w-xs text-sm text-gray-600
+                          file:mr-4 file:rounded-lg file:border-0
+                          file:bg-gray-600 file:px-4 file:py-2 file:text-sm
+                          file:font-semibold file:text-white
+                          hover:file:bg-gray-700"
                         type="file"
                         accept="image/*"
                         onChange={onSelectFile}
                       />
-                      <div className="text-red-500 min-h-[1.5rem] text-sm pt-1 w-full text-center">
+                      <div
+                        className="min-h-[1.5rem] w-full pt-1 text-center
+                          text-sm text-red-500"
+                      >
                         {photoError}
                       </div>
                     </div>
@@ -416,12 +436,18 @@ export default function ProfilePage() {
                     <div className="md:col-span-2">
                       {!isChangingPassword ? (
                         <div>
-                          <label className="block text-sm font-medium text-gray-300 mb-2">
+                          <label
+                            className="mb-2 block text-sm font-medium
+                              text-gray-300"
+                          >
                             Username
                           </label>
                           {currentUser && (
                             <input
-                              className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                              className="w-full rounded-lg border
+                                border-transparent bg-slate-700 p-3 text-white
+                                placeholder-slate-400 focus:ring-2
+                                focus:ring-white focus:outline-none"
                               type="text"
                               value={username}
                               onChange={e => {
@@ -443,31 +469,38 @@ export default function ProfilePage() {
                               }
                             />
                           )}
-                          <div className="text-red-500 min-h-[1.5rem] text-sm pt-1">
+                          <div
+                            className="min-h-[1.5rem] pt-1 text-sm text-red-500"
+                          >
                             {usernameError}
                           </div>
                           <button
                             type="button"
                             onClick={() => setIsChangingPassword(true)}
-                            className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold mr-5"
+                            className="mr-5 cursor-pointer rounded-lg
+                              bg-gray-600 px-6 py-2.5 font-bold text-white
+                              transition hover:bg-gray-700"
                           >
                             Change Password
                           </button>
                           <button
                             type="button"
                             onClick={handlePasswordReset}
-                            className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                            className="cursor-pointer rounded-lg bg-gray-600
+                              px-6 py-2.5 font-bold text-white transition
+                              hover:bg-gray-700"
                           >
                             Reset Password
                           </button>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-4">
-                          <div className="flex items-center gap-4 mb-2">
+                          <div className="mb-2 flex items-center gap-4">
                             <button
                               type="button"
                               onClick={() => setIsChangingPassword(false)}
-                              className="cursor-pointer text-gray-400 hover:text-white transition"
+                              className="cursor-pointer text-gray-400 transition
+                                hover:text-white"
                             >
                               {/* Back Arrow SVG */}
                               <svg
@@ -491,7 +524,10 @@ export default function ProfilePage() {
                           </div>
 
                           <input
-                            className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                            className="w-full rounded-lg border
+                              border-transparent bg-slate-700 p-3 text-white
+                              placeholder-slate-400 focus:ring-2
+                              focus:ring-white focus:outline-none"
                             type="password"
                             value={currentPassword}
                             onChange={e => setCurrentPassword(e.target.value)}
@@ -499,7 +535,10 @@ export default function ProfilePage() {
                             required
                           />
                           <input
-                            className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                            className="w-full rounded-lg border
+                              border-transparent bg-slate-700 p-3 text-white
+                              placeholder-slate-400 focus:ring-2
+                              focus:ring-white focus:outline-none"
                             type="password"
                             value={newPassword}
                             onChange={e => setNewPassword(e.target.value)}
@@ -507,7 +546,10 @@ export default function ProfilePage() {
                             required
                           />
                           <input
-                            className="p-3 w-full bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-white placeholder-slate-400 text-white"
+                            className="w-full rounded-lg border
+                              border-transparent bg-slate-700 p-3 text-white
+                              placeholder-slate-400 focus:ring-2
+                              focus:ring-white focus:outline-none"
                             type="password"
                             value={confirmPassword}
                             onChange={e => setConfirmPassword(e.target.value)}
@@ -515,12 +557,12 @@ export default function ProfilePage() {
                             required
                           />
                           {passwordError && (
-                            <p className="text-red-400 text-sm">
+                            <p className="text-sm text-red-400">
                               {passwordError}
                             </p>
                           )}
                           {passwordSuccess && (
-                            <p className="text-green-400 text-sm">
+                            <p className="text-sm text-green-400">
                               {passwordSuccess}
                             </p>
                           )}
@@ -528,7 +570,9 @@ export default function ProfilePage() {
                           <button
                             type="button"
                             onClick={handleChangePassword}
-                            className="cursor-pointer bg-gray-600 rounded-lg text-white py-2 mt-2 px-6 w-full hover:bg-gray-700 disabled:opacity-50 transition font-bold"
+                            className="mt-2 w-full cursor-pointer rounded-lg
+                              bg-gray-600 px-6 py-2 font-bold text-white
+                              transition hover:bg-gray-700 disabled:opacity-50"
                           >
                             Update Password
                           </button>
@@ -538,11 +582,16 @@ export default function ProfilePage() {
                   </div>
 
                   {/* Action Buttons for Profile */}
-                  <div className="flex flex-row w-full justify-between items-center pt-5 border-t border-slate-700">
+                  <div
+                    className="flex w-full flex-row items-center justify-between
+                      border-t border-slate-700 pt-5"
+                  >
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="cursor-pointer bg-blue-600 rounded-lg text-white py-2.5 px-6 hover:bg-blue-700 transition font-bold"
+                      className="cursor-pointer rounded-lg bg-blue-600 px-6
+                        py-2.5 font-bold text-white transition
+                        hover:bg-blue-700"
                     >
                       Logout
                     </button>
@@ -551,7 +600,9 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={handleCancel}
-                        className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 transition font-bold"
+                        className="cursor-pointer rounded-lg bg-gray-600 px-6
+                          py-2.5 font-bold text-white transition
+                          hover:bg-gray-700"
                       >
                         Cancel
                       </button>
@@ -563,7 +614,10 @@ export default function ProfilePage() {
                           photoError !== '' ||
                           isChangingPassword
                         }
-                        className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+                        className="cursor-pointer rounded-lg bg-gray-600 px-6
+                          py-2.5 font-bold text-white transition
+                          hover:bg-gray-700 disabled:cursor-not-allowed
+                          disabled:opacity-50"
                       >
                         Save Changes
                       </button>
@@ -574,7 +628,10 @@ export default function ProfilePage() {
 
               {/* Delete Account Content */}
               {selectedIndex === 1 && (
-                <div className="w-full flex flex-col gap-6 max-w-lg mx-auto text-center">
+                <div
+                  className="mx-auto flex w-full max-w-lg flex-col gap-6
+                    text-center"
+                >
                   <h3 className="text-xl font-bold text-red-400">
                     Delete Account
                   </h3>
@@ -583,9 +640,11 @@ export default function ProfilePage() {
                     please enter your email and password below.
                   </p>
 
-                  <div className="flex flex-col w-full gap-4 text-left">
+                  <div className="flex w-full flex-col gap-4 text-left">
                     <input
-                      className="p-3 bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-gray-400-400 text-white"
+                      className="placeholder-gray-400-400 rounded-lg border
+                        border-transparent bg-slate-700 p-3 text-white
+                        focus:ring-2 focus:ring-red-500 focus:outline-none"
                       type="email"
                       value={email}
                       onChange={e => setEmail(e.target.value)}
@@ -593,7 +652,9 @@ export default function ProfilePage() {
                       required
                     />
                     <input
-                      className="p-3 bg-slate-700 rounded-lg border border-transparent focus:outline-none focus:ring-2 focus:ring-red-500 placeholder-slate-400 text-white"
+                      className="rounded-lg border border-transparent
+                        bg-slate-700 p-3 text-white placeholder-slate-400
+                        focus:ring-2 focus:ring-red-500 focus:outline-none"
                       type="password"
                       value={password}
                       onChange={e => setPassword(e.target.value)}
@@ -602,12 +663,14 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  {error && <p className="text-red-400 text-sm">{error}</p>}
+                  {error && <p className="text-sm text-red-400">{error}</p>}
 
                   <button
                     disabled={loading}
                     onClick={handleDelete}
-                    className="cursor-pointer bg-red-600 rounded-lg text-white py-3 px-6 w-full hover:bg-red-700 disabled:opacity-50 transition font-bold"
+                    className="w-full cursor-pointer rounded-lg bg-red-600 px-6
+                      py-3 font-bold text-white transition hover:bg-red-700
+                      disabled:opacity-50"
                   >
                     I understand, delete my account
                   </button>
@@ -618,14 +681,20 @@ export default function ProfilePage() {
         </section>
       </div>
       {imgSrc && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex flex-col justify-center items-center p-4 z-50">
-          <div className="flex flex-col items-center gap-4 border-white border p-6 rounded-lg">
+        <div
+          className="bg-opacity-75 fixed inset-0 z-50 flex flex-col items-center
+            justify-center bg-black p-4"
+        >
+          <div
+            className="flex flex-col items-center gap-4 rounded-lg border
+              border-white p-6"
+          >
             <ReactCrop
               crop={crop}
               onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={c => setCompletedCrop(c)}
               aspect={1}
-              className="max-w-xs max-h-[30vh]"
+              className="max-h-[30vh] max-w-xs"
             >
               <img
                 ref={imgRef}
@@ -635,7 +704,7 @@ export default function ProfilePage() {
               />
             </ReactCrop>
             <div>
-              <p className="text-center text-sm text-gray-400 mb-2">Preview</p>
+              <p className="mb-2 text-center text-sm text-gray-400">Preview</p>
               <canvas
                 ref={previewCanvasRef}
                 className="rounded-full"
@@ -652,7 +721,9 @@ export default function ProfilePage() {
               <button
                 type="submit"
                 disabled={loading || photoError !== ''}
-                className="cursor-pointer bg-gray-600 rounded-lg text-white py-2.5 px-6 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-bold"
+                className="cursor-pointer rounded-lg bg-gray-600 px-6 py-2.5
+                  font-bold text-white transition hover:bg-gray-700
+                  disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Save Changes
               </button>
