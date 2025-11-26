@@ -262,6 +262,7 @@ export async function createSession(
     scenarioId,
     adminUid: senderUid,
     started: false,
+    ending: 0,
     serverId,
     networkId,
     networkName,
