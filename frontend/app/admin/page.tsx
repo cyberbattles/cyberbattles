@@ -22,8 +22,6 @@ import {FaRegCopy} from 'react-icons/fa';
 import QRCode from 'react-qr-code';
 import GameEndPopup from '@/components/GameEndPopup';
 
-import {BACKEND_URL} from '@/components/ApiClient';
-
 /**
  * An interface representing a result of starting a session.
  */
@@ -418,31 +416,33 @@ const Admin = () => {
 
     setGameStatus('ending');
 
-    // Populate the finished session and set the ended session value
     const finishedRef = doc(db, 'finishedSessions', sessionId);
 
     interface ScoreDictionary {
       [key: string]: [string, number, string];
     }
 
-    // Add each team and their score to scoremap
-    let scoreMap: ScoreDictionary = {};
-
+    // Map the promises to return data objects instead of modifying external variables
     const fetchTeamPromises = Array.from(teams.keys()).map(async id => {
       const teamRef = doc(db, 'teams', id);
       const teamSnap = await getDoc(teamRef);
+
       if (!teamSnap.exists()) {
-        return;
+        return null;
       }
+
       const team = teamSnap.data();
       const teamName: string = team.name;
-      const uptime: number =
-        team.downCount > 0 ? 1 - team.downCount / team.totalCount : 0;
-      const score: number = team.totalScore > 0 ? team.totalScore * uptime : 0;
+      const uptime: number = team.downCount / team.totalCount;
+      const score: number = team.totalScore * uptime;
 
-      // Lookup the Clan (if any) associated with the team leader
-      const leaderId: string = team.memberIds[0];
+      // Safe access to members
+      const members = team.memberIds || [];
+
+      // Lookup the Clan
+      const leaderId: string = members[0];
       let clanId = '';
+
       if (leaderId) {
         const q = query(
           collection(db, 'clans'),
@@ -454,13 +454,36 @@ const Admin = () => {
         }
       }
 
-      scoreMap[id] = [teamName, score, clanId];
+      return {
+        id,
+        scoreEntry: [teamName, score, clanId] as [string, number, string],
+        members: members as string[],
+      };
     });
 
-    await Promise.all(fetchTeamPromises);
+    // Wait for all data
+    const results = await Promise.all(fetchTeamPromises);
 
+    // Process results into the final structures
+    let scoreMap: ScoreDictionary = {};
+    let allParticipants: string[] = [];
+
+    results.forEach(item => {
+      if (item) {
+        scoreMap[item.id] = item.scoreEntry;
+        allParticipants.push(...item.members);
+      }
+    });
+
+    // Remove duplicates
+    const uniqueParticipants = Array.from(new Set(allParticipants));
+
+    // Write to Firestore
     await setDoc(finishedRef, {
       results: scoreMap,
+      scenarioId: currentScenario?.scenario_id || '',
+      gameParticipants: uniqueParticipants,
+      createdAt: serverTimestamp(),
     });
 
     if (sessionIds.length === 0) {
@@ -531,6 +554,9 @@ const Admin = () => {
   };
 
   const setEndingStatus = async (endingSessionId: string) => {
+    if (!endingSessionId) {
+      return;
+    }
     const sessionRef = doc(db, 'sessions', endingSessionId);
 
     await updateDoc(sessionRef, {
@@ -549,23 +575,23 @@ const Admin = () => {
     const endedTeams = teams;
     setSessionIds(sessionIds.filter(sid => sid !== endedSessionIdLocal));
 
-    if (sessionIds.length - 1 > 0) {
-      await cleanupSession(endedSessionIdLocal, endedTeams);
-      setSessionId(sessionIds[0]);
-      await getScenario();
-      await getTeams();
-      await getPlayers();
-      setEndedSessionId('');
-    } else {
-      await cleanupSession(endedSessionIdLocal, endedTeams);
-      setGameStatus('ended');
-      router.push('/dashboard?sessionId=' + endedSessionIdLocal);
-    }
+    // if (sessionIds.length - 1 > 0) {
+    //   await cleanupSession(endedSessionIdLocal, endedTeams);
+    //   setSessionId(sessionIds[0]);
+    //   await getScenario();
+    //   await getTeams();
+    //   await getPlayers();
+    //   setEndedSessionId('');
+    // } else {
+    await cleanupSession(endedSessionIdLocal, endedTeams);
+    // setGameStatus('ended');
+    router.push('/dashboard?sessionId=' + endedSessionIdLocal);
+    // }
   };
 
-  const handleCreateSession = () => {
-    router.push('/create-session');
-  };
+  // const handleCreateSession = () => {
+  //   router.push('/create-session');
+  // };
 
   // Set the teams, players, and scenario hooks
   useEffect(() => {
@@ -768,7 +794,7 @@ const Admin = () => {
                         : gameStatus === 'ending' || gameStatus === 'ended'
                           ? 'text-red-400'
                           : 'text-green-400'
-                    }`}
+                  }`}
                 >
                   {gameStatus === 'starting' ? 'Starting...' : gameStatus}
                 </div>
@@ -879,9 +905,7 @@ const Admin = () => {
               {currentScenario ? (
                 <div className="flex flex-col items-center gap-6 text-center">
                   <div className="flex flex-col items-center gap-3 text-center">
-                    <h2
-                      className="text-sm tracking-wider text-gray-400 uppercase"
-                    >
+                    <h2 className="text-sm tracking-wider text-gray-400 uppercase">
                       Current Scenario
                     </h2>
                     <h3 className="text-3xl font-bold text-white">
