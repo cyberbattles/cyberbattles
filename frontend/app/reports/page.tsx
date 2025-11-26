@@ -53,24 +53,24 @@ const SolutionRenderer: React.FC<SolutionRendererProps> = ({solution}) => {
         return (
           <h3
             key={index}
-            className="text-2xl font-bold text-blue-300 mt-8 mb-4 border-b border-gray-700 pb-2"
+            className="mt-8 mb-4 border-b border-gray-700 pb-2 text-2xl font-bold text-blue-300"
           >
             {block.content}
           </h3>
         );
       case 'paragraph':
         return (
-          <p key={index} className="text-gray-300 leading-relaxed mb-4">
+          <p key={index} className="mb-4 leading-relaxed text-gray-300">
             {block.content}
           </p>
         );
       case 'code':
         return (
-          <div key={index} className="my-4 relative group">
-            <div className="absolute top-0 right-0 px-2 py-1 text-xs text-gray-500 bg-gray-800 rounded-bl-lg border-l border-b border-gray-700">
+          <div key={index} className="group relative my-4">
+            <div className="absolute top-0 right-0 rounded-bl-lg border-b border-l border-gray-700 bg-gray-800 px-2 py-1 text-xs text-gray-500">
               {block.language || 'code'}
             </div>
-            <pre className="bg-[#151515] p-4 rounded-lg overflow-x-auto border border-gray-700 shadow-inner">
+            <pre className="overflow-x-auto rounded-lg border border-gray-700 bg-[#151515] p-4 shadow-inner">
               <code className={`font-mono text-sm text-white`}>
                 {block.content}
               </code>
@@ -84,7 +84,7 @@ const SolutionRenderer: React.FC<SolutionRendererProps> = ({solution}) => {
         return (
           <ListTag
             key={index}
-            className={`${listStyles} list-outside ml-6 mb-6 text-gray-300 space-y-2 marker:text-blue-400`}
+            className={`${listStyles} mb-6 ml-6 list-outside space-y-2 text-gray-300 marker:text-blue-400`}
           >
             {block.items?.map((item, i) => (
               <li key={i} className="pl-2">
@@ -100,7 +100,7 @@ const SolutionRenderer: React.FC<SolutionRendererProps> = ({solution}) => {
               href={block.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-blue-100 hover:text-blue-300 hover:underline transition-colors bg-blue-900 px-3 py-1.5 rounded-md border border-blue-900/50"
+              className="inline-flex items-center gap-2 rounded-md border border-blue-900/50 bg-blue-900 px-3 py-1.5 text-blue-100 transition-colors hover:text-blue-300 hover:underline"
             >
               <FaLink size={12} />
               <span>{block.text || block.url}</span>
@@ -127,13 +127,14 @@ const Reports: React.FC<DesignProps> = ({reports}) => {
   const [activeTab, setActiveTab] = useState(reports[0]?.id || '');
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      <nav className="flex md:flex-col flex-shrink-0 md:w-64">
+    <div className="flex flex-col gap-6 md:flex-row">
+      <nav className="flex flex-shrink-0 md:w-64 md:flex-col">
         {reports.map(report => (
           <button
             key={report.id}
             onClick={() => setActiveTab(report.id)}
-            className={`w-full p-4 text-left font-semibold rounded-lg transition-colors cursor-pointer ${
+            className={`w-full cursor-pointer rounded-lg p-4 text-left
+            font-semibold transition-colors ${
               activeTab === report.id
                 ? 'bg-blue-600 text-white'
                 : 'text-gray-300 hover:bg-[#2a2a2a]'
@@ -144,11 +145,14 @@ const Reports: React.FC<DesignProps> = ({reports}) => {
         ))}
       </nav>
 
-      <div className="flex-1 bg-[#1e1e1e] p-6 rounded-2xl shadow-md border border-gray-700 min-h-[300px]">
+      <div
+        className="min-h-[300px] flex-1 rounded-2xl border border-gray-700
+          bg-[#1e1e1e] p-6 shadow-md"
+      >
         {reports.map(report =>
           activeTab === report.id ? (
             <div key={report.id}>
-              <h2 className="text-3xl font-bold text-gray-100 mb-6">
+              <h2 className="mb-6 text-3xl font-bold text-gray-100">
                 {report.scenarioTitle}
               </h2>
               <SolutionRenderer solution={report.solution} />
@@ -239,7 +243,7 @@ const GameReportsPage = () => {
   //   const SCENARIO_ID_TO_UPDATE = '8429abfca004aed7'; // <--- !!! SET THIS
   //
   //   // 2. THE DATA TO ADD (as you provided)
-  //   s const solutionData = {}
+  //   const solutionData = {}
   //   // 3. THE FIRESTORE LOGIC
   //   try {
   //     console.log(`Updating scenario: ${SCENARIO_ID_TO_UPDATE}...`);
@@ -260,12 +264,19 @@ const GameReportsPage = () => {
   // };
 
   return (
-    <div className="flex flex-col min-h-screen pt-20 sm:pt-40 bg-[#2f2f2f] text-white">
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div
+      className="flex min-h-screen flex-col bg-[#2f2f2f] pt-20 text-white
+        sm:pt-40"
+    >
+      <main className="mx-auto w-full max-w-7xl flex-1 overflow-y-auto p-4 md:p-8">
+        <header
+          className="mb-8 flex flex-col items-start justify-between gap-4
+            sm:flex-row sm:items-center"
+        >
           <h1 className="text-3xl font-bold">Game Reports</h1>
           <button
-            className="cursor-pointer px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+            className="cursor-pointer rounded-xl bg-gray-700 px-5 py-2.5
+              font-bold transition hover:bg-gray-600"
             onClick={() => router.push('/dashboard')}
           >
             Back to Dashboard
@@ -291,23 +302,29 @@ const GameReportsPage = () => {
 
         <div>
           {isLoading && (
-            <div className="flex items-center justify-center gap-3 p-6 bg-[#1e1e1e] rounded-2xl">
-              <div className="animate-spin h-6 w-6 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-              <span className="text-gray-300 text-lg">
+            <div
+              className="flex items-center justify-center gap-3 rounded-2xl
+                bg-[#1e1e1e] p-6"
+            >
+              <div
+                className="h-6 w-6 animate-spin rounded-full border-2
+                  border-blue-400 border-t-transparent"
+              ></div>
+              <span className="text-lg text-gray-300">
                 Loading completed game reports...
               </span>
             </div>
           )}
 
           {!isLoading && error && (
-            <div className="p-6 bg-red-900/30 border border-red-500 rounded-2xl">
-              <p className="text-red-400 font-semibold">{error}</p>
+            <div className="rounded-2xl border border-red-500 bg-red-900/30 p-6">
+              <p className="font-semibold text-red-400">{error}</p>
             </div>
           )}
 
           {!isLoading && !error && reports.length === 0 && (
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl text-center">
-              <h2 className="text-2xl font-semibold text-gray-400 mb-2">
+            <div className="rounded-2xl bg-[#1e1e1e] p-6 text-center">
+              <h2 className="mb-2 text-2xl font-semibold text-gray-400">
                 No Reports Found
               </h2>
               <p className="text-gray-500">
