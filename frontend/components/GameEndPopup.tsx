@@ -1,6 +1,6 @@
 'use client';
 import React, {useEffect, useState} from 'react';
-import {auth, db} from '@/lib/firebase';
+import {db} from '@/lib/firebase';
 import {doc, getDoc} from 'firebase/firestore';
 import {useRouter} from 'next/navigation';
 
@@ -15,91 +15,77 @@ interface GameEndPopupProps {
 
 const GameEndPopup: React.FC<GameEndPopupProps> = ({
   isVisible,
-  isAdmin,
   isOpen,
   onClose,
   sessionId,
   continueAdministering,
 }) => {
-  if (!isOpen) {
-    return null;
-  }
-
   const router = useRouter();
   const [scores, setScores] = useState<Map<string, [string, number]>>(
     new Map(),
   );
-  const [winners, setWinners] = useState<string[]>(['']);
-
-  if (!isVisible) return null;
+  const [winners, setWinners] = useState<string[]>([]);
 
   // Populate the scores
   useEffect(() => {
     const getScores = async () => {
-      if (!sessionId) {
-        return;
-      }
-      const finishedRef = doc(db, 'finishedSessions', sessionId);
-      const finishedSnap = await getDoc(finishedRef);
-      if (!finishedSnap.exists()) {
-        return;
-      }
+      if (!sessionId) return;
 
-      const scoreMap = new Map();
+      try {
+        const finishedRef = doc(db, 'finishedSessions', sessionId);
+        const finishedSnap = await getDoc(finishedRef);
 
-      const finishedData = finishedSnap.data();
-      const results = finishedData.results;
-      Object.keys(results).forEach(id => {
-        const pair = results[id];
-        const teamName = pair[0];
-        const score = pair[1];
-        scoreMap.set(id, [teamName, score]);
-      });
-      setScores(scoreMap);
+        if (finishedSnap.exists()) {
+          const finishedData = finishedSnap.data();
+          const results = finishedData.results;
+
+          if (results && Object.keys(results).length > 0) {
+            const scoreMap = new Map<string, [string, number]>();
+            Object.keys(results).forEach(id => {
+              const pair = results[id];
+              const teamName = pair[0];
+              const score = pair[1];
+              scoreMap.set(id, [teamName, score]);
+            });
+            setScores(scoreMap);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching scores:', error);
+      }
     };
-    getScores();
-  }, [sessionId]);
+
+    if (isVisible && isOpen) {
+      getScores();
+    }
+  }, [sessionId, isVisible, isOpen]);
 
   // Get winners
   useEffect(() => {
-    // Get the high score
-    let winners: string[] = [];
+    if (scores.size === 0) return;
+
+    let currentWinners: string[] = [];
     let highScore: number | null = null;
-    scores.forEach((value, key) => {
-      let id = key;
+
+    scores.forEach((value, _) => {
       let teamName = value[0];
       let score = value[1];
       if (highScore == null || score > highScore) {
         highScore = score;
-        winners = [teamName];
+        currentWinners = [teamName];
       } else if (score == highScore) {
-        winners = winners.concat([teamName]);
+        currentWinners = currentWinners.concat([teamName]);
       }
     });
-    setWinners(winners);
+    setWinners(currentWinners);
   }, [scores]);
 
-  // Add the given team id's score to the scores map
-  const addTeamScore = async (id: string) => {
-    const teamDoc = doc(db, 'teams', id);
-    const teamSnap = await getDoc(teamDoc);
-    if (!teamSnap.exists()) {
-      return;
-    }
-    const teamData = teamSnap.data();
-    const teamName = teamData.name;
-    const score = teamData.totalScore;
-    scores.set(id, [teamName, score]);
-    setScores(new Map(scores));
-  };
+  if (!isOpen || !isVisible) {
+    return null;
+  }
 
   const handleViewLeaderboard = () => {
     router.push('/leaderboard');
-    onClose();
-  };
-
-  const handleViewTraffic = () => {
-    router.push('/network-traffic');
     onClose();
   };
 
@@ -108,23 +94,16 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
     onClose();
   };
 
-  const handleCreateNewGame = () => {
-    router.push('/create-session');
-    onClose();
-  };
-
   const handleBackToDashboard = () => {
     router.push('/dashboard');
     onClose();
   };
 
-  const handleBackToAdmin = () => {
-    router.push('/admin');
-    onClose();
-  };
+  // Logic: If we have no scores, we are still loading/calculating
+  const isLoading = scores.size === 0;
 
   return (
-    <div className="fixed inset-0 z-51 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -132,25 +111,33 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
       />
 
       {/* Popup Content */}
-      <div className="relative bg-[#2E2D2D] rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
-        {/* Header with celebration effect */}
-        <div className="relative bg-[#1e1e1e] p-6 text-center">
+      <div
+        className="relative mx-4 w-full max-w-2xl overflow-hidden rounded-2xl
+          border border-gray-700 bg-[#2E2D2D] shadow-2xl"
+      >
+        {/* Header */}
+        <div
+          className="relative border-b border-gray-700 bg-[#1e1e1e] p-6
+            text-center"
+        >
           <div className="relative">
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="mb-2 text-3xl font-bold text-white">
               Game Finished
             </h1>
-            {winners.length == 1 && (
-              <div className="text-xl text-blue-400 font-semibold">
+
+            {!isLoading && winners.length === 1 && (
+              <div className="animate-fade-in text-xl font-semibold text-blue-400">
                 Winner:
-                <br /> <span className="text-blue-400">{winners[0]}</span>
+                <br />{' '}
+                <span className="text-2xl text-blue-300">{winners[0]}</span>
               </div>
             )}
-            {winners.length > 1 && (
-              <div className="text-xl text-blue-400 font-semibold">
+            {!isLoading && winners.length > 1 && (
+              <div className="animate-fade-in text-xl font-semibold text-blue-400">
                 Tie:
                 <br />{' '}
                 {winners.map((winner, index) => (
-                  <span key={winner} className="text-blue-400">
+                  <span key={winner} className="text-blue-300">
                     {' '}
                     {winner} {index !== winners.length - 1 && ' & '}
                   </span>
@@ -160,31 +147,49 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
           </div>
         </div>
 
-        {/* Game Results */}
-        {scores.size && (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-6 py-16">
+            <div className="relative h-16 w-16">
+              <div
+                className="absolute top-0 left-0 h-full w-full rounded-full
+                  border-4 border-gray-600 opacity-20"
+              ></div>
+              <div
+                className="absolute top-0 left-0 h-full w-full animate-spin
+                  rounded-full border-4 border-blue-500 border-t-transparent"
+              ></div>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-semibold text-gray-300">
+                Calculating Results...
+              </p>
+              <p className="mt-1 text-lg text-gray-500">
+                Gathering team scores
+              </p>
+            </div>
+          </div>
+        ) : (
           <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4 text-center text-white">
+            <h3 className="mb-4 text-center text-lg font-semibold text-gray-300">
               Final Scores
             </h3>
             <div className="grid grid-cols-2 gap-4">
               {Array.from(scores.values()).map(team => (
                 <div key={team[0]}>
                   <div
-                    className={`p-4 rounded-xl text-center ${
-                      // Need to change this to check if they are the winning team
-                      winners.includes(team[0])
-                        ? 'bg-green-900/30 border border-green-500'
-                        : 'bg-red-900/30 border border-red-500'
-                    }`}
+                    className={`rounded-xl p-4 text-center transition-all
+                      duration-300 ${
+                        winners.includes(team[0])
+                          ? 'border border-green-500/50 bg-green-900/20 '
+                          : 'border border-red-500/30 bg-red-900/20'
+                      }`}
                   >
-                    {/* Team Name */}
-                    <div className="text-lg font-semibold text-white">
+                    <div className="mb-1 text-lg font-semibold text-gray-100">
                       {team[0]}
                     </div>
 
                     <div
-                      className={`text-2xl font-bold ${
-                        //Need to change
+                      className={`font-mono text-2xl font-bold ${
                         winners.includes(team[0])
                           ? 'text-green-400'
                           : 'text-red-400'
@@ -200,39 +205,53 @@ const GameEndPopup: React.FC<GameEndPopupProps> = ({
         )}
 
         {/* Action Buttons */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 gap-4 mb-6">
-            {/* View Leaderboard */}
+        <div className="bg-[#2E2D2D] p-6 pt-2">
+          <div className="mb-6 grid grid-cols-1 gap-4">
             <button
               onClick={handleViewLeaderboard}
-              className="cursor-pointer flex items-center justify-center gap-3 p-4 bg-green-600 hover:bg-green-700 rounded-xl transition font-semibold text-white sm:col-span-2"
+              disabled={isLoading}
+              className={`flex cursor-pointer items-center justify-center gap-3
+                rounded-xl p-4 font-semibold text-white transition sm:col-span-2
+                ${
+                  isLoading
+                    ? 'cursor-not-allowed bg-gray-700 opacity-50'
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
             >
-              <span className="text-xl"></span>
               View Leaderboard
             </button>
 
             <button
               onClick={handleViewMaterials}
-              className="cursor-pointer flex items-center justify-center gap-3 p-4 bg-[#3C2C9E] hover:bg-[#382A91] rounded-xl transition font-semibold text-white sm:col-span-2"
+              disabled={isLoading}
+              className={`flex cursor-pointer items-center justify-center gap-3
+                rounded-xl p-4 font-semibold text-white transition sm:col-span-2
+                ${
+                  isLoading
+                    ? 'cursor-not-allowed bg-gray-700 opacity-50'
+                    : 'bg-[#3C2C9E] hover:bg-[#382A91]'
+                }`}
             >
-              <span className="text-xl"></span>
               View Game Reports
             </button>
           </div>
 
-          {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             {continueAdministering ? (
               <button
                 onClick={onClose}
-                className="cursor-pointer flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
+                className="flex-1 cursor-pointer rounded-xl border
+                  border-gray-500 bg-gray-600 px-4 py-3 font-semibold text-white
+                  transition hover:bg-gray-500"
               >
                 Close
               </button>
             ) : (
               <button
                 onClick={handleBackToDashboard}
-                className="cursor-pointer flex-1 px-4 py-3 bg-gray-600 hover:bg-gray-700 rounded-xl transition font-semibold text-white"
+                className="flex-1 cursor-pointer rounded-xl border
+                  border-gray-500 bg-gray-600 px-4 py-3 font-semibold text-white
+                  transition hover:bg-gray-500"
               >
                 Back to Dashboard
               </button>
