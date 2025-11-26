@@ -1,5 +1,7 @@
 wg-configs/*
 
+*.db
+
 *.pcap
 captures/*
 
