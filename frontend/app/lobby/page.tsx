@@ -222,13 +222,9 @@ const Lobby = () => {
         const teamDoc = querySnapshot.docs[0];
         setGameTeamId(teamDoc.id);
         setTeam({id: teamDoc.id, ...teamDoc.data()} as TeamData);
-        console.log("User's team updated:", teamDoc.id);
       } else {
-        console.log('User is not currently in a team.');
         setGameTeamId('');
         setTeam(null);
-        // If user is not in a team, they shouldn't be in the lobby
-        router.push('/dashboard');
       }
     });
 
@@ -248,9 +244,7 @@ const Lobby = () => {
       if (!querySnapshot.empty) {
         const sessionDoc = querySnapshot.docs[0];
         setSessionId(sessionDoc.id);
-        console.log("User's session updated:", sessionDoc.id);
       } else {
-        console.log('Team is not currently in a session.');
         setSessionId('');
       }
     });
@@ -407,7 +401,6 @@ const Lobby = () => {
 
     const unsubscribe = onSnapshot(doc(db, 'sessions', team.sessionId), doc => {
       if (doc.exists() && doc.data().started) {
-        console.log('Session has started');
         handleStartGame();
       }
     });
@@ -424,7 +417,6 @@ const Lobby = () => {
       doc(db, 'finishedSessions', sessionId),
       doc => {
         if (doc.exists()) {
-          console.log('session has finished');
           handleEndGame();
         }
       },
@@ -443,7 +435,6 @@ const Lobby = () => {
         setTeam({id: doc.id, ...doc.data()} as TeamData);
         // Check if current user is still in the team
         if (!memberIds.includes(currentUser.uid)) {
-          console.log('User kicked from team.');
           handleKicked();
         }
       }
@@ -500,7 +491,6 @@ const Lobby = () => {
       await updateDoc(teamRef, {
         memberIds: arrayRemove(currentUser.uid),
       });
-      console.log('Successfully removed from team:', gameTeamId);
     } catch (error) {
       console.error('Error removing from team:', error);
     }
@@ -527,9 +517,14 @@ const Lobby = () => {
 
   const handleEndGame = async () => {
     setGameStatus('ended');
-    const sessionId = localStorage.getItem('sessionId');
+    // Delay for 3 seconds before redirecting
+    setTimeout(() => {
+      async () => {
+        await delay(3000);
+      };
+    }, 5000);
     if (router) {
-      router.push('/dashboard?sessionId=' + sessionId);
+      router.push('/dashboard?sessionId=' + gameSessionId);
     }
   };
 
@@ -570,7 +565,6 @@ const Lobby = () => {
     if (currentUser) {
       try {
         const teamRef = doc(db, 'teams', gameTeamId.trim());
-        console.log(gameTeamId);
         const docSnap = await getDoc(teamRef);
 
         if (docSnap.exists()) {
