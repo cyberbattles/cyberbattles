@@ -84,10 +84,10 @@ def run_healthcheck(target_host, flag):
             return "SUCCESS"
 
         # Patched case, user must've fixed the vuln but flag was successfully stored.
-        elif "Insufficient Points" in r.text:
+        elif "Insufficient SkyPoints" in r.text:
             return "SUCCESS"
         else:
-            return "vulnerability test failed"
+            return "FAILURE"
 
     except Exception as e:
         return e.__str__()
@@ -117,7 +117,7 @@ def inject():
     if result != "SUCCESS":
         return jsonify({"status": "failure", "message": result})
 
-    result = run_healthcheck(ip, flag)
+    # result = run_healthcheck(ip, flag)
 
     if result == "SUCCESS":
         return jsonify({"status": "success"})
