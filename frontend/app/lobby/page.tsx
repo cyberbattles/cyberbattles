@@ -49,8 +49,11 @@ const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
     // Show a placeholder if data is missing
     if (!port || teams.length === 0) {
       return (
-        <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 lg:col-span-3">
-          <h2 className="text-xl font-semibold mb-4 text-gray-400">
+        <div
+          className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md
+            lg:col-span-3"
+        >
+          <h2 className="mb-4 text-xl font-semibold text-gray-400">
             Network Locations
           </h2>
           <p className="text-gray-500">
@@ -61,8 +64,11 @@ const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
     }
 
     return (
-      <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md col-span-1 lg:col-span-3">
-        <h2 className="text-xl font-semibold mb-6 text-gray-100">
+      <div
+        className="col-span-1 rounded-2xl bg-[#1e1e1e] p-6 shadow-md
+          lg:col-span-3"
+      >
+        <h2 className="mb-6 text-xl font-semibold text-gray-100">
           Network Locations
         </h2>
         <div className="flex flex-wrap gap-4">
@@ -71,17 +77,19 @@ const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
             return (
               <div
                 key={team.id}
-                className="flex-grow p-4 bg-[#2a2a2a] rounded-xl border border-gray-700 min-w-[240px]"
+                className="min-w-[240px] flex-grow rounded-xl border
+                  border-gray-700 bg-[#2a2a2a] p-4"
               >
                 {/* Team Name */}
-                <p className="text-sm text-gray-400 mb-1">{team.name}</p>
+                <p className="mb-1 text-sm text-gray-400">{team.name}</p>
                 <div className="flex items-center justify-between gap-4">
                   {/* Hyperlink */}
                   <a
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-lg font-mono font-bold text-blue-400 truncate hover:text-blue-300 hover:underline"
+                    className="truncate font-mono text-lg font-bold
+                      text-blue-400 hover:text-blue-300 hover:underline"
                     title={`Open ${url} in new tab`}
                   >
                     {url}
@@ -89,10 +97,12 @@ const NetworkLocations: React.FC<NetworkLocationsProps> = React.memo(
                   {/* Copy Button */}
                   <button
                     onClick={() => handleCopy(url)}
-                    className="cursor-pointer flex-shrink-0 h-9 w-9 p-2.5 rounded-lg bg-gray-800 text-gray-400 hover:bg-gray-700 transition-colors duration-200"
+                    className="h-9 w-9 flex-shrink-0 cursor-pointer rounded-lg
+                      bg-gray-800 p-2.5 text-gray-400 transition-colors
+                      duration-200 hover:bg-gray-700"
                     title="Copy URL"
                   >
-                    <FaRegCopy className="w-4 h-4" />
+                    <FaRegCopy className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -621,22 +631,28 @@ const Lobby = () => {
 
       {/* End of game popup */}
       {/* Lobby Layout */}
-      <div className="flex flex-col md:flex-row min-h-screen pt-20 sm:pt-40 bg-[#2f2f2f] text-white">
+      <div
+        className="flex min-h-screen flex-col bg-[#2f2f2f] pt-20 text-white
+          sm:pt-40 md:flex-row"
+      >
         {/* Sidebar */}
-        <aside className="w-full md:w-72 bg-[#1e1e1e] shadow-2xl flex-shrink-0 border-r border-gray-800">
-          <nav className="p-6 sticky top-40">
+        <aside
+          className="w-full flex-shrink-0 border-r border-gray-800 bg-[#1e1e1e]
+            shadow-2xl md:w-72"
+        >
+          <nav className="sticky top-40 p-6">
             <ul className="space-y-4">
               {/* Team Name */}
               <li>
                 <div className="text-sm text-gray-400">Team Name:</div>
-                <div className="font-semibold text-blue-400 text-lg break-words">
+                <div className="text-lg font-semibold break-words text-blue-400">
                   {team?.name || '—'}
                 </div>
               </li>
               {/* Team ID */}
               <li>
                 <div className="text-sm text-gray-400">Team ID:</div>
-                <div className="font-mono text-gray-300 break-all">
+                <div className="font-mono break-all text-gray-300">
                   {gameTeamId || '—'}
                 </div>
               </li>
@@ -657,7 +673,7 @@ const Lobby = () => {
                         : gameStatus === 'ended'
                           ? 'text-red-400'
                           : 'text-green-400'
-                  }`}
+                    }`}
                 >
                   {gameStatus === 'starting' ? 'Starting...' : gameStatus}
                 </div>
@@ -665,7 +681,7 @@ const Lobby = () => {
               {/* Team IP */}
               <li>
                 <div className="text-sm text-gray-400">Your IP:</div>
-                <div className="font-mono text-blue-400 break-all">
+                <div className="font-mono break-all text-blue-400">
                   {gameteamIp || 'N/A'}
                 </div>
               </li>
@@ -674,19 +690,24 @@ const Lobby = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           {/* Header */}
-          <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+          <header
+            className="mb-8 flex flex-col items-start justify-between gap-4
+              sm:flex-row sm:items-center"
+          >
             <h1 className="text-3xl font-bold">Session Lobby</h1>
             <div className="flex gap-4">
               <button
-                className="cursor-pointer px-5 py-2.5 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold "
+                className="cursor-pointer rounded-xl bg-gray-700 px-5 py-2.5
+                  font-bold transition hover:bg-gray-600"
                 onClick={handleLeaveLobby}
               >
                 Leave Lobby
               </button>
               <button
-                className="cursor-pointer px-5 py-2.5 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
+                className="cursor-pointer rounded-xl bg-blue-600 px-5 py-2.5
+                  font-bold transition hover:bg-blue-500"
                 onClick={handleLogout}
               >
                 Logout
@@ -696,10 +717,16 @@ const Lobby = () => {
 
           {/* Kicked Message */}
           {isKicked && (
-            <div className="my-4 p-4 bg-red-900/30 border border-red-500 rounded-lg">
+            <div
+              className="my-4 rounded-lg border border-red-500 bg-red-900/30
+                p-4"
+            >
               <div className="flex items-center gap-3">
-                <div className="animate-spin h-5 w-5 border-2 border-red-400 border-t-transparent rounded-full"></div>
-                <span className="text-red-400 font-semibold">
+                <div
+                  className="h-5 w-5 animate-spin rounded-full border-2
+                    border-red-400 border-t-transparent"
+                ></div>
+                <span className="font-semibold text-red-400">
                   You have been kicked... Redirecting to dashboard.
                 </span>
               </div>
@@ -707,10 +734,13 @@ const Lobby = () => {
           )}
 
           {/* Stats Cards */}
-          <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <section className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Total Score Card */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">
+            <div className="rounded-2xl bg-[#1e1e1e] p-6 shadow-md">
+              <h3
+                className="mb-2 text-sm font-medium tracking-wider text-gray-400
+                  uppercase"
+              >
                 Total Score
               </h3>
               <div className="flex items-baseline gap-2">
@@ -721,8 +751,11 @@ const Lobby = () => {
               </div>
             </div>
             {/* Uptime Card */}
-            <div className="p-6 bg-[#1e1e1e] rounded-2xl shadow-md">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">
+            <div className="rounded-2xl bg-[#1e1e1e] p-6 shadow-md">
+              <h3
+                className="mb-2 text-sm font-medium tracking-wider text-gray-400
+                  uppercase"
+              >
                 Service Uptime
               </h3>
               <div className="flex items-baseline gap-2">
@@ -734,30 +767,45 @@ const Lobby = () => {
           </section>
 
           {/* Main Grid Content */}
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Current Scenario */}
-            <div className="flex flex-col p-6 gap-5 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-3">
+            <div
+              className="flex flex-col gap-5 rounded-2xl bg-[#1e1e1e] p-6
+                shadow-md lg:col-span-3"
+            >
               {currentScenario ? (
-                <div className="flex flex-col items-center text-center gap-6">
-                  <div className="flex flex-col items-center text-center gap-3">
-                    <h2 className="text-gray-400 text-sm uppercase tracking-wider">
+                <div className="flex flex-col items-center gap-6 text-center">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <h2
+                      className="text-sm tracking-wider text-gray-400 uppercase"
+                    >
                       Current Scenario
                     </h2>
                     <h3 className="text-3xl font-bold text-white">
                       {currentScenario.scenario_title}
                     </h3>
-                    <p className="text-gray-300 text-sm max-w-md">
+                    <p className="max-w-md text-sm text-gray-300">
                       {currentScenario.scenario_description}
                     </p>
-                    <span className="mt-2 px-4 py-1.5 bg-[#2f2f2f] text-gray-100 text-sm font-semibold rounded-full border border-gray-600">
+                    <span
+                      className="mt-2 rounded-full border border-gray-600
+                        bg-[#2f2f2f] px-4 py-1.5 text-sm font-semibold
+                        text-gray-100"
+                    >
                       {currentScenario.scenario_difficulty}
                     </span>
                   </div>
                   {gameStatus === 'starting' && (
-                    <div className="p-3 bg-blue-900/30 border border-blue-500 rounded-lg w-full max-w-md">
+                    <div
+                      className="w-full max-w-md rounded-lg border
+                        border-blue-500 bg-blue-900/30 p-3"
+                    >
                       <div className="flex items-center justify-center gap-2">
-                        <div className="animate-spin h-4 w-4 border-2 border-blue-400 border-t-transparent rounded-full"></div>
-                        <span className="text-blue-400 font-semibold">
+                        <div
+                          className="h-4 w-4 animate-spin rounded-full border-2
+                            border-blue-400 border-t-transparent"
+                        ></div>
+                        <span className="font-semibold text-blue-400">
                           Game starting...
                         </span>
                       </div>
@@ -772,7 +820,10 @@ const Lobby = () => {
             </div>
 
             {/* Team Members List */}
-            <div className="flex flex-col p-6 gap-4 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-2">
+            <div
+              className="flex flex-col gap-4 rounded-2xl bg-[#1e1e1e] p-6
+                shadow-md lg:col-span-2"
+            >
               <h2 className="text-2xl font-semibold text-green-400">
                 {team?.name || 'Team'} Members
               </h2>
@@ -780,7 +831,8 @@ const Lobby = () => {
                 {players.size > 0 ? (
                   Array.from(players.values()).map(player => (
                     <div
-                      className="flex items-center justify-between p-3 bg-[#2f2f2f] rounded-lg"
+                      className="flex items-center justify-between rounded-lg
+                        bg-[#2f2f2f] p-3"
                       key={player.UID}
                     >
                       <div className="font-medium">{player.userName}</div>
@@ -793,37 +845,44 @@ const Lobby = () => {
             </div>
 
             {/* Actions Card */}
-            <div className="flex flex-col p-6 gap-4 bg-[#1e1e1e] rounded-2xl shadow-md lg:col-span-1">
-              <h2 className="text-xl font-semibold text-gray-100 mb-2">
+            <div
+              className="flex flex-col gap-4 rounded-2xl bg-[#1e1e1e] p-6
+                shadow-md lg:col-span-1"
+            >
+              <h2 className="mb-2 text-xl font-semibold text-gray-100">
                 Actions
               </h2>
               {/* Shell Button */}
               <button
-                className="cursor-pointer w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+                className="w-full cursor-pointer rounded-xl bg-gray-700 px-4
+                  py-3 font-bold transition hover:bg-gray-600"
                 onClick={handlePushShell}
               >
                 Go to Shell
               </button>
               {/* Traffic Button */}
               <button
-                className="cursor-pointer w-full px-4 py-3 bg-gray-700 rounded-xl hover:bg-gray-600 transition font-bold"
+                className="w-full cursor-pointer rounded-xl bg-gray-700 px-4
+                  py-3 font-bold transition hover:bg-gray-600"
                 onClick={handlePushTraffic}
               >
                 View Network Traffic
               </button>
 
-              <div className="border-t border-gray-700 my-2"></div>
+              <div className="my-2 border-t border-gray-700"></div>
 
               {/* Show VPN Button */}
               <button
-                className="cursor-pointer w-full px-4 py-3 bg-blue-600 rounded-xl hover:bg-blue-500 transition font-bold "
+                className="w-full cursor-pointer rounded-xl bg-blue-600 px-4
+                  py-3 font-bold transition hover:bg-blue-500"
                 onClick={() => setShowVpn(true)}
               >
                 VPN Setup Guide
               </button>
               {/* Download VPN Button */}
               <button
-                className="cursor-pointer w-full px-4 py-3 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold "
+                className="w-full cursor-pointer rounded-xl bg-green-600 px-4
+                  py-3 font-bold transition hover:bg-green-500"
                 onClick={handleDownloadConfig}
               >
                 Download VPN Config
@@ -841,32 +900,43 @@ const Lobby = () => {
 
       {/* VPN Modal */}
       {showVpn && vpnConfig && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1e1e1e] text-white p-6 rounded-2xl w-full max-w-4xl relative flex flex-col gap-6 max-h-[90vh] shadow-2xl border border-gray-700">
-            <h2 className="text-2xl font-bold text-center">
+        <div
+          className="bg-opacity-80 fixed inset-0 z-50 flex items-center
+            justify-center bg-black p-4"
+        >
+          <div
+            className="relative flex max-h-[90vh] w-full max-w-4xl flex-col
+              gap-6 rounded-2xl border border-gray-700 bg-[#1e1e1e] p-6
+              text-white shadow-2xl"
+          >
+            <h2 className="text-center text-2xl font-bold">
               VPN Configuration
             </h2>
 
             {/* Top section: textarea + QR code */}
-            <div className="flex flex-col md:flex-row gap-6 overflow-y-auto">
+            <div className="flex flex-col gap-6 overflow-y-auto md:flex-row">
               <textarea
                 readOnly
                 value={vpnConfig}
-                className="flex-1 p-2 bg-[#2f2f2f] border border-gray-700 rounded-md font-mono text-sm text-gray-300 focus:outline-none"
+                className="flex-1 rounded-md border border-gray-700 bg-[#2f2f2f]
+                  p-2 font-mono text-sm text-gray-300 focus:outline-none"
                 rows={16}
               />
 
               <div className="flex flex-col items-center gap-4">
-                <div className="bg-white p-4 rounded-md">
+                <div className="rounded-md bg-white p-4">
                   <QRCode value={vpnConfig} size={200} />
                 </div>
-                <div className="font-mono text-xs text-green-300 bg-[#2f2f2f] p-3 rounded-md w-3/4">
+                <div
+                  className="w-3/4 rounded-md bg-[#2f2f2f] p-3 font-mono text-xs
+                    text-green-300"
+                >
                   <p># Install wireguard if you haven&apos;t already.</p>
-                  <p className="text-yellow-400 break-all">
+                  <p className="break-all text-yellow-400">
                     sudo wg-quick up ./{currentUsername || 'vpn-config'}
                     .conf
                   </p>
-                  <p className="text-yellow-400 wrap-anywhere mt-2">
+                  <p className="mt-2 wrap-anywhere text-yellow-400">
                     ssh -o StrictHostKeyChecking=no -o
                     UserKnownHostsFile=/dev/null
                     {' ' + currentUsername || 'null'}@{team?.ipAddress}
@@ -877,15 +947,17 @@ const Lobby = () => {
             </div>
 
             {/* Download/Close Buttons */}
-            <div className="flex justify-center gap-x-6 flex-shrink-0">
+            <div className="flex flex-shrink-0 justify-center gap-x-6">
               <button
-                className="cursor-pointer px-6 py-2.5 bg-green-600 rounded-xl hover:bg-green-500 transition font-bold "
+                className="cursor-pointer rounded-xl bg-green-600 px-6 py-2.5
+                  font-bold transition hover:bg-green-500"
                 onClick={handleDownloadConfig}
               >
                 Download Config
               </button>
               <button
-                className="cursor-pointer px-6 py-2.5 bg-red-600 rounded-xl hover:bg-red-500 transition font-bold "
+                className="cursor-pointer rounded-xl bg-red-600 px-6 py-2.5
+                  font-bold transition hover:bg-red-500"
                 onClick={() => setShowVpn(false)}
               >
                 Close

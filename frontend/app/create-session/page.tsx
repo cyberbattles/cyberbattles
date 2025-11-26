@@ -33,7 +33,6 @@ const CreateSession = () => {
     const value = e.target.value;
     if (value) {
       setSelectedScenario(value);
-      console.log('Selected scenario id:', value);
     } else {
       setSelectedScenario(null);
     }
@@ -70,7 +69,6 @@ const CreateSession = () => {
       numMembersPerTeam: numMembersPerTeam,
       token: currentUser ? await currentUser.getIdToken() : null,
     });
-    console.log(response.data);
     return response.data;
   }
 
@@ -106,12 +104,12 @@ const CreateSession = () => {
   return (
     <>
       {/* Create Team Layout */}
-      <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+      <div className="flex h-screen bg-[#2f2f2f] pt-40 text-white">
         {/* Main Content */}
-        <main className="flex-1 flex flex-col items-center justify-center p-8">
+        <main className="flex flex-1 flex-col items-center justify-center p-8">
           {/* Header */}
-          <header className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Create Session</h1>
+          <header className="mb-12 text-center">
+            <h1 className="mb-4 text-4xl font-bold">Create Session</h1>
           </header>
 
           {/* Create Team Form */}
@@ -119,7 +117,7 @@ const CreateSession = () => {
             <div className="w-80">
               <label
                 htmlFor="teamCount"
-                className="block text-sm font-medium text-gray-300 mb-4"
+                className="mb-4 block text-sm font-medium text-gray-300"
               >
                 Number of teams: {numTeams}
               </label>
@@ -131,9 +129,9 @@ const CreateSession = () => {
                   max="5"
                   value={numTeams}
                   onChange={e => setNumberTeams(parseInt(e.target.value))}
-                  className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider"
+                  className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#1e1e1e]"
                 />
-                <div className="flex justify-between text-sm text-gray-400 mt-2">
+                <div className="mt-2 flex justify-between text-sm text-gray-400">
                   <span>2</span>
                   <span>3</span>
                   <span>4</span>
@@ -145,7 +143,7 @@ const CreateSession = () => {
             <div className="w-80">
               <label
                 htmlFor="playerCount"
-                className="block text-sm font-medium text-gray-300 mb-4"
+                className="mb-4 block text-sm font-medium text-gray-300"
               >
                 Number of Players Per Team: {numMembersPerTeam}
               </label>
@@ -157,9 +155,9 @@ const CreateSession = () => {
                   max="5"
                   value={numMembersPerTeam}
                   onChange={e => setPlayersPerTeam(parseInt(e.target.value))}
-                  className="w-full h-2 bg-[#1e1e1e] rounded-lg appearance-none cursor-pointer slider"
+                  className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#1e1e1e]"
                 />
-                <div className="flex justify-between text-sm text-gray-400 mt-2">
+                <div className="mt-2 flex justify-between text-sm text-gray-400">
                   <span>1</span>
                   <span>2</span>
                   <span>3</span>
@@ -174,7 +172,7 @@ const CreateSession = () => {
                 id="scenario"
                 value={selectedScenario || ''}
                 onChange={handleChange}
-                className="w-full p-4 bg-white text-l text-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-400"
+                className="text-l w-full rounded-lg border border-gray-600 bg-white p-4 text-gray-700 focus:border-blue-400 focus:outline-none"
               >
                 <option value="" disabled className="text-gray-500">
                   Select scenario name
@@ -184,7 +182,7 @@ const CreateSession = () => {
                   <option
                     key={option.value}
                     value={option.value}
-                    className="p-4 text-l"
+                    className="text-l p-4"
                   >
                     {option.label}
                   </option>
@@ -194,17 +192,17 @@ const CreateSession = () => {
 
             <div className="flex flex-col items-center space-y-4">
               <button
-                className={`cursor-pointer w-80 h-[60px] flex items-center justify-center py-4 px-8 bg-[#2f2f2f] border rounded-2xl transition font-bold shadow-md ${
+                className={`flex h-[60px] w-80 cursor-pointer items-center justify-center rounded-2xl border bg-[#2f2f2f] px-8 py-4 font-bold shadow-md transition ${
                   errorMessage
                     ? 'border-red-500 text-red-400'
-                    : 'border-gray-600 hover:border-blue-400 hover:bg-[#3a3a3a]'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    : `border-gray-600 hover:border-blue-400 hover:bg-[#3a3a3a]`
+                } disabled:cursor-not-allowed disabled:opacity-50`}
                 onClick={handleCreateSession}
                 disabled={isCreating}
               >
                 {isCreating ? (
                   <svg
-                    className="animate-spin h-6 w-6 text-white"
+                    className="h-6 w-6 animate-spin text-white"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
@@ -224,13 +222,13 @@ const CreateSession = () => {
                     ></path>
                   </svg>
                 ) : errorMessage ? (
-                  <span className="text-sm text-center">{errorMessage}</span>
+                  <span className="text-center text-sm">{errorMessage}</span>
                 ) : (
                   <span className="text-xl">Create</span>
                 )}
               </button>
               <button
-                className="cursor-pointer w-80 py-3 px-8 bg-gray-600 rounded-2xl hover:opacity-90 transition font-semibold text-lg shadow-md"
+                className="w-80 cursor-pointer rounded-2xl bg-gray-600 px-8 py-3 text-lg font-semibold shadow-md transition hover:opacity-90"
                 onClick={handleBackToSelection}
               >
                 Back to Selection

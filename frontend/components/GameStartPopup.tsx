@@ -32,11 +32,14 @@ const GameStartPopup: React.FC<GameStartPopupProps> = ({
       />
 
       {/* Popup Content */}
-      <div className="relative bg-[#2E2D2D] rounded-2xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden">
+      <div
+        className="relative mx-4 w-full max-w-2xl overflow-hidden rounded-2xl
+          bg-[#2E2D2D] shadow-2xl"
+      >
         {/* Header with celebration effect */}
         <div className="relative bg-[#1e1e1e] p-6 text-center">
           <div className="relative">
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="mb-2 text-3xl font-bold text-white">
               {teamName}, your game has started!
             </h1>
           </div>
@@ -47,10 +50,11 @@ const GameStartPopup: React.FC<GameStartPopupProps> = ({
           </div>
         </div>
         {/* Footer Actions */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           <button
             onClick={onClose}
-            className="cursor-pointer flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-b-xl transition font-semibold text-white"
+            className="flex-1 cursor-pointer rounded-b-xl bg-green-600 px-4 py-3
+              font-semibold text-white transition hover:bg-green-700"
           >
             Close
           </button>

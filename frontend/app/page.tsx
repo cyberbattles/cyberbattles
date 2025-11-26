@@ -72,7 +72,7 @@ const MatrixBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"
+      className="pointer-events-none fixed top-0 left-0 -z-10 h-full w-full"
       style={{background: 'black', filter: 'blur(5px)'}}
     />
   );
@@ -85,8 +85,11 @@ export default function HomePage() {
 
       <div className="relative z-10">
         <div className="">
-          <section className="h-screen flex flex-col items-center justify-center text-center">
-            <div className="p-5 pb-0 w-sm md:w-2xl select-none">
+          <section
+            className="flex h-screen flex-col items-center justify-center
+              text-center"
+          >
+            <div className="w-sm p-5 pb-0 select-none md:w-2xl">
               <Image
                 src={logo}
                 alt="website logo"
@@ -96,7 +99,10 @@ export default function HomePage() {
                 draggable={false}
               />
             </div>
-            <p className="text-md sm:text-lg md:text-xl text-white-500 drop-shadow-lg font-bold p-4">
+            <p
+              className="text-md text-white-500 p-4 font-bold drop-shadow-lg
+                sm:text-lg md:text-xl"
+            >
               An educational attack and defence CTF platform.
             </p>
           </section>

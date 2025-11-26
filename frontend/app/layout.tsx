@@ -33,13 +33,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="CyberBattl.es" />
         <link rel="manifest" href="/favicon/site.webmanifest" />
       </head>
-      <body className={`antialiased overflow-x-hidden`}>
+      <body className={'overflow-x-hidden antialiased'}>
         <AuthProvider>
           <Navbar />
           <Suspense
             fallback={
               <canvas
-                className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"
+                className="pointer-events-none fixed top-0 left-0 -z-10 h-full
+                  w-full"
                 style={{background: 'black', filter: 'blur(5px)'}}
               />
             }

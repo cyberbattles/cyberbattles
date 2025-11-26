@@ -211,30 +211,40 @@ const NetworkTraffic = () => {
   };
 
   return (
-    <div className="flex h-screen pt-40 bg-[#2f2f2f] text-white">
+    <div className="flex h-screen bg-[#2f2f2f] pt-40 text-white">
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex justify-between items-center p-6 border-b border-gray-700">
+        <header
+          className="flex items-center justify-between border-b border-gray-700
+            p-6"
+        >
           <div>
             <h1 className="text-2xl font-bold">Network Traffic Analysis</h1>
           </div>
 
           {gameOver && (
-            <div className="my-4 p-3 bg-red-900/30 border border-red-500 rounded-lg">
+            <div
+              className="my-4 rounded-lg border border-red-500 bg-red-900/30
+                p-3"
+            >
               <div className="flex items-center gap-2">
-                <div className="animate-spin h-4 w-4 border-2 border-red-400 border-t-transparent rounded-full"></div>
-                <span className="text-red-400 font-semibold">
+                <div
+                  className="h-4 w-4 animate-spin rounded-full border-2
+                    border-red-400 border-t-transparent"
+                ></div>
+                <span className="font-semibold text-red-400">
                   The game has ended ...
                 </span>
               </div>
             </div>
           )}
 
-          <div className="flex gap-8 items-center">
+          <div className="flex items-center gap-8">
             <button
               onClick={handlePcapDownload}
-              className="cursor-pointer px-4 py-2 bg-blue-600 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
+              className="flex cursor-pointer items-center gap-2 rounded-xl
+                bg-blue-600 px-4 py-2 font-bold transition hover:opacity-90"
             >
               Download
               <Image
@@ -247,7 +257,8 @@ const NetworkTraffic = () => {
 
             <button
               onClick={handleRefresh}
-              className="cursor-pointer px-4 py-2 bg-blue-400 rounded-xl hover:opacity-90 transition font-bold flex items-center gap-2"
+              className="flex cursor-pointer items-center gap-2 rounded-xl
+                bg-blue-400 px-4 py-2 font-bold transition hover:opacity-90"
             >
               Refresh
               <Image src={SyncIcon} alt="refresh icon" width={20} height={20} />
@@ -269,10 +280,10 @@ const NetworkTraffic = () => {
               />
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center text-gray-400 p-8 w-100">
+            <div className="flex h-full items-center justify-center">
+              <div className="w-100 p-8 text-center text-gray-400">
                 <Image src={WarningIcon} alt="Triangular warning icon" />
-                <div className="text-xl font-semibold mb-2 text-[#c12f2f]">
+                <div className="mb-2 text-xl font-semibold text-[#c12f2f]">
                   Unable to get network traffic. Ensure you are in an active
                   game.
                 </div>

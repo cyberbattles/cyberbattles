@@ -106,45 +106,55 @@ function Navbar() {
   }, [currentUser, isAdmin, isInTeam]);
 
   return (
-    <nav className="fixed w-full h-25 sm:h-40 shadow-xl bg-black z-50">
-      <div className="flex justify-between flex-basis items-center h-full w-full ">
+    <nav className="fixed z-50 h-25 w-full bg-black shadow-xl sm:h-40">
+      <div
+        className="flex-basis flex h-full w-full items-center justify-between"
+      >
         <div className="flex items-center pl-5">
           {/* Logo */}
           <Link href="/">
             <div
-              className={`flex-shrink-0 flex items-center ${isOpen ? 'hidden' : ''}`}
+              className={`flex flex-shrink-0 items-center
+                ${isOpen ? 'hidden' : ''}`}
             >
               <Image
                 src={logo}
                 alt="logo"
-                className="md:flex hidden max-w-[150px] flex-shrink-0 p-8"
+                className="hidden max-w-[150px] flex-shrink-0 p-8 md:flex"
                 draggable={false}
               />
             </div>
           </Link>
           {/* Mobile Navbar Dropdown */}
-          <div className="flex md:hidden relative">
+          <div className="relative flex md:hidden">
             {/* Hamburger icon */}
             <IoMenu
-              className="ml-5 cursor-pointer w-15 h-15"
+              className="ml-5 h-15 w-15 cursor-pointer"
               onClick={handleClick}
             />
 
             {/* Dropdown menu */}
             <div
-              className={`absolute w-50 h-80 pt-2 top-16 left-0 bg-black rounded-xl transition-opacity duration-700 ease-in-out ${
-                isOpen ? 'opacity-100 flex flex-col' : 'opacity-0 hidden'
-              }`}
+              className={`absolute top-16 left-0 h-80 w-50 rounded-xl bg-black
+                pt-2 transition-opacity duration-700 ease-in-out ${
+                  isOpen ? 'flex flex-col opacity-100' : 'hidden opacity-0'
+                }`}
             >
               {/* Menu items */}
-              <ul className="flex flex-col justify-between w-full h-full py-10 pl-4">
+              <ul
+                className="flex h-full w-full flex-col justify-between py-10
+                  pl-4"
+              >
                 {['Home', ...items].map((item, index) => (
                   <Link
                     key={index}
                     href={index === 0 ? '/' : links[index - 1]}
                     onClick={handleClick}
                   >
-                    <li className="capitalize text-xl hover:scale-110 duration-300 font-bold cursor-pointer">
+                    <li
+                      className="cursor-pointer text-xl font-bold capitalize
+                        duration-300 hover:scale-110"
+                    >
                       {item}
                     </li>
                   </Link>
@@ -153,17 +163,20 @@ function Navbar() {
             </div>
           </div>
 
-          <ul className="ml-5 gap-5 hidden md:flex">
+          <ul className="ml-5 hidden gap-5 md:flex">
             {items.map((item, index) => (
               <Link key={item} href={links[index]}>
-                <li className="capitalize text-2xl hover:scale-110 duration-300 font-bold cursor-pointer">
+                <li
+                  className="cursor-pointer text-2xl font-bold capitalize
+                    duration-300 hover:scale-110"
+                >
                   {item}
                 </li>
               </Link>
             ))}
           </ul>
         </div>
-        <div className="flex items-center pr-10 gap-5">
+        <div className="flex items-center gap-5 pr-10">
           <div className="">
             {currentUser && (
               <Link href="/account">
@@ -172,14 +185,14 @@ function Navbar() {
             )}
             {!currentUser && (
               <Link href="/login">
-                <p className="capitalize text-2xl hover:scale-110 duration-300">
+                <p className="text-2xl capitalize duration-300 hover:scale-110">
                   Login
                 </p>
               </Link>
             )}
           </div>
           {currentUser && (
-            <Link href="/account" className="w-16 h-16 sm:w-24 sm:h-24">
+            <Link href="/account" className="h-16 w-16 sm:h-24 sm:w-24">
               <Image
                 src={photoURL}
                 draggable={false}
