@@ -215,8 +215,7 @@ def buy(product_id):
             flash(f"You purchased {product.name}!")
             return redirect(url_for("success", product_name=product.name))
     else:
-        flash("Insufficient Points! You need more SkyPoints.")
-        return redirect(url_for("store"))
+        return "Insufficient SkyPoints", 403
 
 
 @app.route("/admin/update_flag", methods=["POST"])
@@ -278,9 +277,6 @@ def init_db():
                 User(username="root", password=generate_password_hash("root"), points=1)
             )
             db.session.commit()
-
-
-from flask import render_template, request, redirect, url_for
 
 
 @app.route("/success/<path:product_name>")
