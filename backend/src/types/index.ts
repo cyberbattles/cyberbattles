@@ -60,6 +60,8 @@ export interface Session {
   adminUid: string;
   /** Indicates whether the session has started. */
   started: boolean;
+  /** Indicates the ending state of the session. 0: not ending, 1: ending */
+  ending: number;
   /** The ID of the server that created the session. */
   serverId: string;
   /** The ID of the Docker network associated with the team. */
