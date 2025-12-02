@@ -42,8 +42,8 @@ build
 node/docs/assets/
 docs/assets/
 
-#cyberbattles-*.json
-# cyberbattles-dd31f-18566f4ef322.json
+# Firebase credentials
+cyberbattles-*.json
 
 # Dependency directories
 node_modules/
