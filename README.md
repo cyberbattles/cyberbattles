@@ -12,15 +12,12 @@
 <div align="center">
   <a href="https://github.com/cyberbattles/cyberbattles">
     <img src="https://github.com/user-attachments/assets/af2b074d-5cef-46a4-8c4f-64c61771bcf3" alt="Title_Logo" height="160">
-    
   </a>
 
   <p align="center">
 An educational attack and defence CTF platform.
     <br />
-    <a href="https://github.com/cyberbattles/cyberbattles">
-    <br />
-    <br />
+    <p >🏆 Winner of Best Cyber Security and Data Privacy Project at the University of Queensland's Graduate Showcase 🏆</p>
     <a href="https://cyberbattl.es">View Demo</a>
     &middot;
     <a href="https://github.com/cyberbattles/cyberbattles/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
@@ -39,7 +36,7 @@ Currently there are no educational platforms to help students and aspiring cyber
 
 Users can create games using our existing challenge or submit their own challenges to our code repository to be added to the platform. From there each teams face off receiving identical virtual machines where they try to attack other teams and defend against them. They do this using either our online interface or a remote connection from their own computer to try and patch vulnerabilities, view other teams services and execute attacks. 
 
-Most platforms operate in one direction, with teams practicing their skills by attacking static machines. Cyberbattles provides a unique value proposition for aspiring cyber security professionals and those looking to learn.
+Most platforms operate in one direction, with teams practicing their skills by attacking static machines. CyberBattles provides a unique value proposition for aspiring cyber security professionals and those looking to learn.
 
 ### Built With
 
