@@ -1,4 +1,4 @@
-
+<div align="center">
 
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
@@ -9,7 +9,7 @@
 
 
 <br />
-<div align="center">
+
   <a href="https://github.com/cyberbattles/cyberbattles">
     <img src="https://github.com/user-attachments/assets/af2b074d-5cef-46a4-8c4f-64c61771bcf3" alt="Title_Logo" height="160">
   </a>
@@ -154,7 +154,7 @@ Project Link: [https://github.com/cyberbattles/cyberbattles](https://github.com/
 [stars-url]: https://github.com/cyberbattles/cyberbattles/stargazers
 [issues-shield]: https://img.shields.io/github/issues/cyberbattles/cyberbattles.svg?style=for-the-badge
 [issues-url]: https://github.com/cyberbattles/cyberbattles/issues
-[license-shield]: https://img.shields.io/github/license/cyberbattles/cyberbattles.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge
 [license-url]: https://github.com/cyberbattles/cyberbattles/blob/main/LICENSE
 [product-screenshot]: https://github.com/user-attachments/assets/13279707-5bbe-4054-b3ff-f1bd2434ee5a
 [Next.js]: https://img.shields.io/badge/next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
