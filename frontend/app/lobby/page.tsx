@@ -462,7 +462,7 @@ const Lobby = () => {
           const newUptimePercentage =
             newTotalCount > 0 ? (1 - newDownCount / newTotalCount) * 100 : 100;
           const calculatedTotalScore =
-            newTotalScore * (newUptimePercentage / 100);
+            Math.round(newTotalScore * (newUptimePercentage / 100));
           setTotalScore(calculatedTotalScore);
           setUptimePercentage(newUptimePercentage);
         }

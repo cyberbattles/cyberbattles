@@ -455,7 +455,7 @@ const Admin = () => {
       const uptime: number =
         (team.downCount === 0 ? 1 : team.downCount) /
         (team.totalCount === 0 ? 1 : team.totalCount); // Don't devise by zero
-      const score: number = team.totalScore * uptime;
+      const score: number = Math.round(team.totalScore * uptime);
 
       // Safe access to members
       const members = team.memberIds || [];
