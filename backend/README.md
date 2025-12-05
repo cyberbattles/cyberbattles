@@ -254,8 +254,8 @@ This code is only designed and tested on Linux, please use either a Linux comput
 Then, get the Node.js server running (ensuring you're using sudo or have edited your sudoers file).
 
 1. ```
-   cd node
    npm i
+   ./build-images.sh
    npx tsc
    node build/src/index.js
    ```
