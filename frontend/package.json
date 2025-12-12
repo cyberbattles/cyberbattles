@@ -22,7 +22,7 @@
     "axios": "^1.11.0",
     "firebase": "^12.1.0",
     "lucide-react": "^0.544.0",
-    "next": "^15.5.3",
+    "next": "15.5.9",
     "pcap-element": "^3.0.2",
     "postcss": "^8.5.6",
     "react": "19.1.0",
