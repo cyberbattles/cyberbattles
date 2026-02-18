@@ -1,5 +1,5 @@
 import {MDXRemote} from 'next-mdx-remote/rsc';
-import {getLearnModules} from '@/lib/learn';
+import {getLearnModules} from '@/app/learn/learn';
 import LearnShell from './LearnShell';
 
 const CodeBlock = ({content}: {content: string}) => {

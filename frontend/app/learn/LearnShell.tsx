@@ -5,7 +5,7 @@ import {
   FaChevronRight,
   FaClock,
 } from 'react-icons/fa';
-import type {LearnModuleMeta} from '@/lib/learn';
+import type {LearnModuleMeta} from '@/app/learn/learn';
 
 const iconMap: Record<string, ReactNode> = {};
 
