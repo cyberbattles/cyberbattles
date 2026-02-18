@@ -1,0 +1,138 @@
+---
+title: "Defence: Patching & Monitoring"
+icon: shield
+difficulty: Intermediate
+estimatedTime: 10 min
+resources:
+  - https://www.ibm.com/think/topics/blue-team
+---
+
+Defence is half the game. Your uptime percentage directly multiplies your score, so a team with great attacks but a broken service will lose to a team that balances both. This module covers how to defend effectively.
+
+## Why Defence Matters
+
+Remember the scoring formula:
+
+```
+final score = total points x (uptime% / 100)
+```
+
+If your service goes down and your uptime drops to 50%, your score is cut in half — no matter how many flags you have captured. Keeping your service running and patched is not optional.
+
+## Step 1: Understand Your Service
+
+As soon as the game starts, spend the first few minutes examining your own service before doing anything else:
+
+```bash
+ps aux
+```
+
+See what processes are running. Identify the main service and any supporting processes.
+
+```bash
+netstat -tlnp
+```
+
+Check which ports are open. Know exactly what is exposed to other teams.
+
+```bash
+ls -la /var/www/
+```
+
+Read through the source code. Since every team has the same service, the vulnerabilities you find in your own code are the same ones other teams will try to exploit against you.
+
+## Step 2: Patch Vulnerabilities
+
+Once you identify a vulnerability, fix it on your own service. Here are common patches for the vulnerability types covered in the previous module:
+
+**Fixing IDOR** — Add authorisation checks so users can only access their own data:
+
+```python
+# Before (vulnerable):
+user = get_user(request.args['id'])
+
+# After (patched):
+user = get_user(request.args['id'])
+if user.id != current_user.id:
+    return "Forbidden", 403
+```
+
+**Fixing path traversal** — Sanitise file paths to prevent directory escape:
+
+```python
+# Before (vulnerable):
+filename = request.args['file']
+return open(filename).read()
+
+# After (patched):
+filename = os.path.basename(request.args['file'])
+safe_path = os.path.join('/var/www/data', filename)
+return open(safe_path).read()
+```
+
+**Fixing SQL injection** — Use parameterised queries instead of string concatenation:
+
+```python
+# Before (vulnerable):
+query = f"SELECT * FROM users WHERE name = '{username}'"
+
+# After (patched):
+query = "SELECT * FROM users WHERE name = ?"
+cursor.execute(query, (username,))
+```
+
+**Fixing command injection** — Never pass raw user input to shell commands:
+
+```python
+# Before (vulnerable):
+os.system(f"ping {user_input}")
+
+# After (patched):
+import subprocess
+subprocess.run(["ping", user_input], shell=False)
+```
+
+**Fixing buffer overflows** — Replace unsafe C functions with bounded alternatives:
+
+```c
+// Before (vulnerable):
+gets(buf);
+
+// After (patched):
+fgets(buf, sizeof(buf), stdin);
+```
+
+## Step 3: Restart and Verify
+
+After patching, make sure your service still works. The flag bot needs to be able to interact with it normally, or your uptime will drop:
+
+```bash
+# Restart the service (method varies by scenario)
+systemctl restart myservice
+# or
+kill -HUP $(pgrep myservice)
+```
+
+Test that the service responds correctly after your changes. A patch that breaks the service is worse than no patch at all.
+
+## Step 4: Monitor for Attacks
+
+CyberBattles provides a network traffic viewer that captures packets on your container's network interface. Use it to:
+
+- **Detect attacks** — Look for unusual requests or exploit attempts from other teams' IP addresses
+- **Learn from attackers** — If someone is exploiting a vulnerability you have not patched yet, you can see exactly how they are doing it and prioritise that fix
+- **Verify your patches** — After patching, check if exploit attempts are still succeeding or now failing
+
+You can also download the PCAP files and analyse them with tools like Wireshark for more detailed inspection.
+
+## Balancing Attack and Defence
+
+The hardest part of an Attack/Defence CTF is time management. A common mistake is spending all your time on attack and letting your service fall apart, or spending all your time on defence and never capturing any flags.
+
+A practical approach:
+
+1. **First 5 minutes** — Read the source code, identify the most obvious vulnerabilities, patch them
+2. **Next phase** — Start attacking other teams using the vulnerabilities you found in your own code
+3. **Ongoing** — Periodically check your uptime and network traffic for new attacks, patch as needed
+
+Your team should split responsibilities if you have multiple members. Having one person focused on defence while others attack is a common and effective strategy.

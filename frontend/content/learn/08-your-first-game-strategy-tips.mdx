@@ -1,0 +1,78 @@
+---
+title: "Your First Game: Strategy Tips"
+icon: play
+difficulty: Advanced
+estimatedTime: 5 min
+---
+
+You now understand the platform, the tools, and the techniques. This module covers practical strategy for putting it all together in a live game.
+
+## Before the Game Starts
+
+- **Read these modules** — especially the attack and defence ones. Knowing what vulnerability types to look for saves time during the game
+- **Have your terminal ready** — whether you plan to use the web shell or SSH from your own machine
+- **Coordinate with your team** — if you have teammates, decide who will focus on what before the game starts
+
+## The First Five Minutes
+
+The opening minutes set the tone for the rest of the game. Here is a recommended sequence:
+
+1. **Open the web shell** and explore the service source code immediately
+2. **Identify the obvious vulnerabilities** — look for unsanitised user input, SQL queries built with string concatenation, use of unsafe functions like `gets()`
+3. **Patch the easiest vulnerabilities first** — fix what you can quickly to protect yourself while other teams are still getting oriented
+4. **Verify your service still works** after patching — a broken service hurts your uptime
+
+Do not start attacking in the first few minutes. Everyone else is reading the same source code you are. The teams that patch first have a defensive advantage for the rest of the game.
+
+## Splitting Roles
+
+If you have multiple team members, divide responsibilities:
+
+- **One person on defence** — patching vulnerabilities, monitoring network traffic, keeping the service running
+- **One or more on attack** — exploiting vulnerabilities on other teams, submitting flags
+- **Rotate periodically** — the defender can share new vulnerability findings with the attackers, and attackers can flag which exploits other teams are using against you
+
+If you are solo, alternate between attack and defence in blocks. Spend 5 minutes patching, then 5 minutes attacking, and check your uptime regularly.
+
+## Attack Strategy
+
+- **Start with the simplest exploits** — IDOR and path traversal are often quicker to exploit than buffer overflows
+- **Script your exploits** — if you find a working attack, write a small script to repeat it across all other teams automatically:
+
+```bash
+for team_ip in 10.0.1.1 10.0.2.1 10.0.3.1; do
+  curl -s "http://$team_ip:9999/read?file=../../../flag.txt"
+done
+```
+
+- **Re-run exploits periodically** — the flag bot plants new flags every 2-3 minutes, so an exploit that worked once will yield new flags later
+- **Check all teams** — do not just target one team. Cast a wide net to maximise your flag captures
+
+## Defence Strategy
+
+- **Patch, do not just block** — disabling the service or blocking all traffic will tank your uptime. Fix the actual vulnerability so the service keeps working normally
+- **Monitor the network traffic page** — if you see exploit attempts coming in, prioritise patching that specific vulnerability
+- **Test after every change** — make a request to your own service after patching to confirm it still responds correctly
+- **Keep backups** — before editing a file, copy the original so you can restore it if your patch breaks something:
+
+```bash
+cp service.py service.py.bak
+```
+
+## Common Mistakes
+
+**Spending too long on one exploit** — if an attack is not working after a few minutes, move on to another vulnerability or another team. Come back to it later.
+
+**Ignoring uptime** — even if you are leading in flag captures, a low uptime percentage can destroy your score. Check it regularly in the lobby.
+
+**Not reading the source code** — random exploit attempts are far less effective than reading the code, understanding the vulnerability, and crafting a targeted exploit.
+
+**Patching without testing** — a syntax error in your patch can crash the service. Always verify after making changes.
+
+**Not communicating with your team** — if you find a vulnerability, tell your teammates. If you patch one, let them know so they do not waste time on it.
+
+## You Are Ready
+
+You have completed all the learning modules. You understand what CyberBattles is, how scoring works, how to use the platform, how to navigate a terminal, how to attack and defend, and how to approach your first game strategically.
+
+The best way to learn from here is to play. Jump into a game, apply what you have learned, and learn from each round. Good luck.

@@ -1,0 +1,121 @@
+---
+title: Terminal & SSH Essentials
+icon: terminal
+difficulty: Intermediate
+estimatedTime: 10 min
+resources:
+  - https://www.ssh.com/academy/ssh/command#ssh-command-in-linux
+  - https://overthewire.org/wargames/bandit/
+---
+
+During a CyberBattles game, you will spend most of your time in a terminal — either the in-browser web shell or an SSH session to your team's container. This module covers the essential commands you need.
+
+## Connecting via SSH
+
+If you prefer using your own terminal instead of the web shell, you can connect to your container with SSH. The credentials are shown in the lobby — the username and password are the same:
+
+```bash
+ssh user@your-container-ip
+```
+
+You will be prompted for the password. Once connected, you have a full shell inside your team's Docker container.
+
+## Navigating the Filesystem
+
+These commands let you move around and understand what is on the system:
+
+```bash
+pwd
+```
+
+Print the current working directory — shows you where you are.
+
+```bash
+ls -la
+```
+
+List all files in the current directory, including hidden files (those starting with a dot), with permissions, ownership, and file sizes.
+
+```bash
+cd /path/to/directory
+```
+
+Change directory. Use `cd ..` to go up one level, `cd /` to go to the root, or `cd ~` to go to your home directory.
+
+## Reading Files
+
+```bash
+cat filename.txt
+```
+
+Print the entire contents of a file to the terminal. For large files, you can use `less filename.txt` to scroll through it page by page (press `q` to exit).
+
+```bash
+head -n 20 filename.txt
+```
+
+Show just the first 20 lines of a file. Replace `head` with `tail` to see the last lines instead.
+
+## Finding Things
+
+```bash
+find / -name "*.py" 2>/dev/null
+```
+
+Search the entire filesystem for files ending in `.py`. The `2>/dev/null` part hides permission-denied errors so the output stays clean.
+
+```bash
+grep -r "password" /var/www/
+```
+
+Search for the word "password" inside all files under `/var/www/`. The `-r` flag means recursive — it searches subdirectories too. This is extremely useful for finding hardcoded credentials or understanding how a service handles authentication.
+
+## Understanding Running Services
+
+```bash
+ps aux
+```
+
+List all running processes. This shows you what services are active on the container, which user runs them, and their process IDs.
+
+```bash
+netstat -tlnp
+```
+
+Show all listening network ports. This tells you which services are exposed and on which ports — essential for knowing what you are defending and what you can target on other teams.
+
+## Editing Files
+
+When you need to patch a vulnerability, you will need to edit files directly on the container:
+
+```bash
+nano filename.py
+```
+
+Opens the file in the nano text editor. Use the arrow keys to navigate, make your changes, then press `Ctrl+O` to save and `Ctrl+X` to exit. If nano is not available, try `vi` instead.
+
+## File Permissions
+
+```bash
+chmod +x script.sh
+```
+
+Make a file executable. Understanding permissions matters because vulnerabilities sometimes involve files that are readable or writable by the wrong users.
+
+```bash
+ls -la /etc/shadow
+```
+
+Check who can read sensitive files. If a file like `/etc/shadow` is world-readable, that is a vulnerability worth patching.
+
+## Transferring Files
+
+```bash
+scp user@other-team-ip:/path/to/file ./local-copy
+```
+
+Copy a file from a remote server to your local machine using SSH. This works in reverse too — you can push files to a remote server by swapping the arguments.
+
+## Practice
+
+The best way to get comfortable with these commands is to use them. Once you are in a game, open the web shell and start exploring your container. List the files, read the source code of the service, check what ports are open. Familiarity with the terminal will make everything else in these modules much easier.
