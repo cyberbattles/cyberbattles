@@ -1,10 +1,6 @@
 'use client';
 import React, {useEffect, useState, type ReactNode} from 'react';
-import {
-  FaBook,
-  FaChevronRight,
-  FaClock,
-} from 'react-icons/fa';
+import {FaBook, FaChevronRight, FaClock} from 'react-icons/fa';
 import type {LearnModuleMeta} from '@/app/learn/learn';
 
 const iconMap: Record<string, ReactNode> = {};
@@ -195,6 +191,10 @@ export default function LearnShell({modules}: {modules: ModuleEntry[]}) {
                           {modules.length === selectedIndex + 1 ? null : (
                             <button
                               onClick={() => {
+                                window.scrollTo({
+                                  top: 0,
+                                  behavior: 'smooth',
+                                });
                                 const newIndex = Math.min(
                                   modules.length - 1,
                                   selectedIndex + 1,
