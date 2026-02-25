@@ -1,9 +1,12 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type {Metadata} from 'next';
+import React, {Suspense} from 'react';
+import './globals.css';
+import Navbar from '@/components/Navbar';
+import {AuthProvider} from '@/components/Auth';
 
 export const metadata: Metadata = {
-  title: "CyberBattles",
-  description: "An educational attack and defence CTF platform.",
+  title: 'CyberBattles',
+  description: 'An educational attack and defence CTF platform.',
 };
 
 export default function RootLayout({
@@ -30,7 +33,22 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="CyberBattl.es" />
         <link rel="manifest" href="/favicon/site.webmanifest" />
       </head>
-      <body className={"antialiased"}>{children}</body>
+      <body className={'overflow-x-hidden antialiased'}>
+        <AuthProvider>
+          <Navbar />
+          <Suspense
+            fallback={
+              <canvas
+                className="pointer-events-none fixed top-0 left-0 -z-10 h-full
+                  w-full"
+                style={{background: 'black', filter: 'blur(5px)'}}
+              />
+            }
+          >
+            {children}
+          </Suspense>
+        </AuthProvider>
+      </body>
     </html>
   );
 }
