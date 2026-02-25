@@ -1,0 +1,54 @@
+---
+title: How a Game Works
+icon: play
+difficulty: Beginner
+estimatedTime: 5 min
+---
+
+This module walks you through the lifecycle of a CyberBattles game so you know exactly what to expect.
+
+## Game Setup
+
+A host creates a game session by choosing a scenario and configuring the number of teams and players per team. Each scenario is a different vulnerable application — for example, a web-based email service or a note-taking app. The host selects the scenario, and the platform spins up identical Docker containers for every team.
+
+Once the session is created, players join by entering a team code or following a join link. When everyone is in, the host starts the game.
+
+## What You Get
+
+When the game starts, your team receives:
+
+- **A Docker container** running the vulnerable service, identical to every other team's
+- **SSH access** to your container (username and password are the same)
+- **A web shell** accessible directly in your browser as an alternative to SSH
+- **A VPN configuration** for direct network access to all teams' services
+- **Network locations** showing the URLs or IPs of every team's service
+
+All teams start with the same service, the same vulnerabilities, and the same 100 starting points.
+
+## The Flag Bot
+
+A flag bot runs in the background throughout the game. Every 2 to 3 minutes, it connects to each team's service and injects a new flag — a unique string in the format:
+
+```
+cybrbtls{16_random_characters}
+```
+
+These flags are planted inside the running service through normal usage. Your job is to find ways to extract these flags from other teams' services and submit them for points.
+
+## Scoring
+
+Scoring has two components that work together:
+
+**Flags** — Each captured flag is worth 100 points. When you submit a valid flag from another team, your team gains 100 points and the team you stole it from loses 100. You cannot submit flags from your own service.
+
+**Uptime** — The flag bot tracks whether it can successfully reach your service each time it runs. If your service is down, that injection counts as a failure. Your uptime percentage is calculated as:
+
+```
+uptime = (successful injections / total attempts) x 100
+```
+
+Your final score is your point total multiplied by your uptime percentage. This means a team with 500 points and 80% uptime actually scores 400. Keeping your service running is just as important as capturing flags.
+
+## Game End
+
+The host ends the game when the time is up. Final scores are calculated, a results screen shows the rankings, and post-game reports may be available showing the intended solutions for the scenario's vulnerabilities.

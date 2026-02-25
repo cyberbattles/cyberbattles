@@ -1,0 +1,53 @@
+---
+title: Using the Platform
+icon: book
+difficulty: Beginner
+estimatedTime: 5 min
+---
+
+This module is a practical walkthrough of the CyberBattles interface so you know where everything is before your first game.
+
+## Dashboard
+
+After logging in, the Dashboard is your home base. From here you can:
+
+- **Create a game** if you are hosting a session
+- **Join a game** by entering a team code or following a link
+- **Manage your clan** — clans are persistent groups that track cumulative scores across games
+
+If you are already in an active game, the dashboard will redirect you to either the admin panel (if you are the host) or the game lobby.
+
+## Joining a Game
+
+When a host shares a team code or join link, you will be taken to the join screen. The first player to join a team gets to name it. Once you have joined, you will land in the lobby.
+
+## The Lobby
+
+The lobby is your command centre during a game. Here you will find:
+
+- **Scenario information** — a description of the vulnerable service you are working with
+- **Team members** — who is on your team
+- **Score and uptime** — your current points and uptime percentage, updated live
+- **VPN configuration** — a WireGuard config file and QR code for connecting your device directly to the game network
+- **Network locations** — URLs or IP addresses for every team's service, so you know where to direct your attacks
+- **Shell access** — a button to open the web-based terminal to your team's container
+- **Network traffic** — access to captured network packets (PCAP files) from your container's network interface
+- **Flag submission** — a persistent drawer at the bottom of the screen where you paste captured flags
+
+## Web Shell
+
+The shell page gives you a full terminal in your browser, connected directly to your team's Docker container via WebSocket. This is where you will do most of your work — reading source code, patching vulnerabilities, and running commands. No local setup is required.
+
+If you prefer to use your own terminal, you can SSH into your container using the credentials shown in the lobby. The username and password are the same.
+
+## Flag Submission
+
+The flag submission drawer is accessible from the lobby. When you find a flag on another team's service, paste it in and submit. The system validates it immediately — correct flags award your team 100 points and deduct 100 from the victim. You cannot submit your own team's flags, and each team can have a maximum of 3 active flags at any time.
+
+## Network Traffic
+
+The network traffic page shows captured packets from your container's WireGuard interface. You can download PCAP files and analyse them to see what traffic is hitting your service — useful for detecting attacks or understanding what other teams are doing.
+
+## Leaderboard
+
+The leaderboard has two modes: game leaderboard (live rankings for the current session) and clan leaderboard (cumulative scores across all games for persistent groups).
