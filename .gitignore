@@ -147,3 +147,10 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 wg-configs/*
+
+# PocketBase data and downloads
+db/pb_data/
+db/CHANGELOG.md
+db/LICENSE.md
+db/pocketbase
+db/*.zip
