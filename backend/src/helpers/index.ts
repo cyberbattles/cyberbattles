@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as crypto from 'crypto';
 import {exec} from 'child_process';
 import IPCIDR from 'ip-cidr';
+import { pb } from '../services/pocketbase';
 
 const availableWGPorts: number[] = [];
 const potentialSubnets: IPCIDR[] = [];
@@ -146,7 +147,40 @@ async function filterAvailableSubnets(
  * @returns A string representing a unique ID.
  */
 export function generateId(): string {
-  return crypto.randomBytes(8).toString('hex');
+  // Avoid uppercase as IDs are used as directory names.
+  const alphabet: String = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let id: String = '';
+
+  const randomBytes = crypto.randomBytes(16);
+  for (let i = 0; i < 16; i++) {
+    id += alphabet[randomBytes[i] % alphabet.length];
+  }
+  return id;
+}
+
+/**
+ * Generates a 15 character ID and verifies it is unique against
+ * the specified PocketBase collection.
+ * @param collectionName The PocketBase collection to verify against.
+ * @returns A unique 15 character string.
+ */
+export async function generateUniqueId(collectionName: string): Promise<string> {
+  let unique: Bool = false;
+  let id: String = '';
+
+  while (!unique) {
+    id = generateId();
+
+    try {
+      // Check in the collection for id, if it can't be found (unique)
+      // an error will be returned.
+      await pb.collection(collectionName).getOne(id);
+    } catch (error) {
+      unique = true;
+    }
+  }
+
+  return id;
 }
 
 /**
