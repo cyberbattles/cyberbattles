@@ -1,5 +1,3 @@
-import * as admin from 'firebase-admin';
-
 /**
  * An interface representing a user in the session.
  */
@@ -79,11 +77,11 @@ export interface Session {
   /** A unique identifier for the session. */
   id: string;
   /** The timestamp when the session was created. */
-  createdAt: admin.firestore.Timestamp;
+  createdAt: string;
 }
 
 /**
- * An interface representing a Scenario document in Firestore.
+ * An interface representing a Scenario document.
  */
 export interface Scenario {
   /** The unique ID of the scenario. */
@@ -95,7 +93,7 @@ export interface Scenario {
   /** The difficulty level (e.g., "Easy", "Hard"). */
   scenario_difficulty: string;
   /** The timestamp when the scenario was uploaded. */
-  timestamp: admin.firestore.Timestamp;
+  timestamp: string;
   /** The ID (and Docker image tag) of the scoring bot. If present, a bot container is created. */
   scoring_bot_id?: string;
   /** A comma-separated list of the flag services for this scenario. ("8081:email,8082:skyrewards") */

@@ -1,8 +1,7 @@
-import {db} from './firebase';
 import {Team, FlagResponse, Scenario} from '../types';
 import {isSessionActive} from './sessions';
-import {FieldValue} from 'firebase-admin/firestore';
 import * as axios from 'axios';
+import { pb } from './pocketbase';
 
 /**
  * Generates a random flag string with an optional prefix and base64 encoding.
@@ -85,21 +84,11 @@ async function sleep(ms: number): Promise<void> {
  */
 async function updateFlag(teamId: string, flag: string): Promise<void> {
   try {
-    const teamRef = db.doc(`teams/${teamId}`);
+    const team = await pb.collection('teams').getOne(teamId);
+    const activeFlags = team.activeFlags || [];
+    activeFlags.push(flag);
+    await pb.collection('teams').update(teamId, { activeFlags: activeFlags.slice(-3) });
 
-    await db.runTransaction(async transaction => {
-      const doc = await transaction.get(teamRef);
-      if (!doc.exists) {
-        return;
-      }
-
-      const activeFlags = doc.data()?.activeFlags || [];
-
-      activeFlags.push(flag);
-      const updatedFlags = activeFlags.slice(-3); // Keeps the 3 newest flags
-
-      transaction.update(teamRef, {activeFlags: updatedFlags});
-    });
   } catch (_) {}
 }
 
@@ -110,10 +99,7 @@ async function updateFlag(teamId: string, flag: string): Promise<void> {
  */
 async function updateTotal(teamId: string): Promise<void> {
   try {
-    const teamRef = db.doc(`teams/${teamId}`);
-    await teamRef.update({
-      totalCount: FieldValue.increment(1),
-    });
+    await pb.collection('teams').update(teamId, { "totalCount+": 1 });
   } catch (_) {}
 }
 
@@ -124,11 +110,7 @@ async function updateTotal(teamId: string): Promise<void> {
  */
 async function updateDown(teamId: string): Promise<void> {
   try {
-    const teamRef = db.doc(`teams/${teamId}`);
-
-    await teamRef.update({
-      downCount: FieldValue.increment(1),
-    });
+    await pb.collection('teams').update(teamId, { "downCount+": 1 });
   } catch (_) {}
 }
 

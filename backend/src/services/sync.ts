@@ -1,15 +1,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as admin from 'firebase-admin';
-
 import JSZip = require('jszip');
-
-import {scenariosCollection} from './firebase';
 import {generateId} from '../helpers';
-
-// This file was vibe coded, courtesy of Gemini 2.5 Pro.
-// I don't like trying to read Firebase docs.
-// It has been edited, reviewed and tested by @smp46.
+import { pb } from './pocketbase';
 
 /**
  * Parses a metadata.csv file from a given folder path.
@@ -104,10 +97,13 @@ async function uploadScenarioToFirestore(
   const docData = {
     ...metadata, // Insert metadata fields into the document
     zipData: base64Data,
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
   };
 
-  await scenariosCollection.doc(metadata.scenario_id).set(docData);
+  try {
+    await pb.collection('scenarios').update(metadata.scenario_id, docData);
+  } catch {
+    await pb.collection('scenarios').create({ id: metadata.scenario_id, ...docData });
+  }
   console.log(
     `Sent ${metadata.folderName} (ID: ${metadata.scenario_id}) to Firestore.`,
   );
@@ -121,7 +117,7 @@ async function uploadScenarioToFirestore(
 async function receiveZipFromFirestore(
   folderId: string,
 ): Promise<Buffer | null> {
-  const doc = await scenariosCollection.doc(folderId).get();
+  const doc = await pb.collection('scenarios').getOne(folderId);
 
   if (!doc.exists) {
     console.log(`No document found for folder ID: ${folderId}`);
@@ -209,7 +205,7 @@ export async function syncFolders(localFoldersPath: string) {
   // Get list of scenario IDs from Firestore
   const localScenarioIds = Array.from(localScenarios.keys());
 
-  const snapshot = await scenariosCollection.get();
+  const snapshot = await pb.collection('scenarios').getFullList();
   const firestoreScenarioIds = snapshot.docs.map(doc => doc.id);
 
   // Find scenarios to upload (exist locally, but not in Firestore)

@@ -1,8 +1,8 @@
 import {Router, Request, Response} from 'express';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { pb } from '../services/pocketbase';
 
-import {db} from '../services/firebase';
 import {
   createSession,
   startSession,
@@ -157,15 +157,9 @@ router.get(
       }
 
       // Look up the team and user based on the URL parameters
-      const userNameRef = db.collection('login').doc(userUid);
-      const userDoc = await userNameRef.get();
-      const user = userDoc.data() as User | undefined;
-      const teamRef = db.collection('teams').doc(teamId);
-      const teamDoc = await teamRef.get();
-      const team = teamDoc.data() as Team | undefined;
-      const sessionRef = db.collection('sessions').doc(sessionId);
-      const sessionDoc = await sessionRef.get();
-      const session = sessionDoc.data() as Session | undefined;
+      const user = await pb.collection('users').getOne(userUid);
+      const team = await pb.collection('teams').getOne(teamId);
+      const session = await pb.collection('sessions').getOne(sessionId);
 
       if (!user || !team || !session) {
         return res.status(404).send('User, team or session not found');
@@ -251,10 +245,8 @@ router.get('/captures/:teamId/:token', async (req: Request, res: Response) => {
       return res.status(400).send('Invalid parameters');
     }
 
-    // Look up the team based on the URL parameters
-    const teamRef = db.collection('teams').doc(teamId);
-    const teamDoc = await teamRef.get();
-    const team = teamDoc.data() as Team | undefined;
+    const team = await pb.collection('teams').getOne(teamId);
+
     if (!team) {
       return res.status(404).send('Team not found');
     }
@@ -317,9 +309,7 @@ router.get(
       }
 
       // Get the session from Firestore
-      const sessionRef = db.collection('sessions').doc(sessionId.trim());
-      const sessionDoc = await sessionRef.get();
-      const sessionData = sessionDoc.data() as Session | undefined;
+      const sessionData = await pb.collection('sessions').getOne(sessionId.trim());
 
       // Check that the sender is the session creator
       if (!sessionDoc.exists) {
@@ -335,7 +325,7 @@ router.get(
       await cleanupSession(sessionData);
 
       // Delete the session document from Firestore
-      await sessionRef.delete();
+      await pb.collection('sessions').delete(sessionId.trim());
 
       return res.status(200).send('Session cleaned up successfully');
     } catch (error) {

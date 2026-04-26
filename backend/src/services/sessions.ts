@@ -1,7 +1,7 @@
 import {machineIdSync} from 'node-machine-id';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import * as admin from 'firebase-admin';
+import { pb } from './pocketbase';
 import {
   CreateSessionResult,
   Session,
@@ -10,7 +10,6 @@ import {
   User,
   Scenario,
 } from '../types';
-import {db, scenariosCollection} from './firebase';
 import {
   getScenarios,
   createNetwork,
@@ -94,7 +93,7 @@ export async function createTeam(
 
 /**
  * Starts a new session with the specified scenario, number of teams, and number of members per team.
- * Once finished, it uploads the session data to Firestore.
+ * Once finished, it uploads the session data to the DB.
  * @param scenarioId The ID of the scenario to use for the session.
  * @param numTeams The number of teams to create.
  * @param numMembersPerTeam The number of members in each team.
@@ -119,13 +118,7 @@ export async function createSession(
     );
   }
 
-  const scenarioDoc = await scenariosCollection.doc(scenarioId).get();
-  if (!scenarioDoc.exists) {
-    throw new Error(
-      'Invalid scenario selected. Configuration not found in Firestore.',
-    );
-  }
-  const scenario = scenarioDoc.data() as Scenario;
+  const scenario = await pb.collection('senarios').getONE(scenarioId);
 
   // Generate a unique ID for the session
   const sessionId: string = generateId();
@@ -161,7 +154,7 @@ export async function createSession(
     teamIds.push(generateId());
   }
 
-  // Logic to determine if we need a scoring bot based on Firestore data
+  // Logic to determine if we need a scoring bot based on DB data
   let numTeamsWithScoringBot = numTeams;
   let scoringBotTeamId = 'NOT_IMPLEMENTED';
   let teamIdsWithScorer = teamIds;
@@ -217,9 +210,8 @@ export async function createSession(
       );
     }
 
-    // Store the team in Firestore
-    const teamRef = db.collection('teams').doc(team.id);
-    await teamRef.set(team);
+    // Store the team in database
+    await pb.collection('teams').create(team);
     console.log(`Created team: ${team.name} with ID: ${team.id}`);
   }
 
@@ -271,19 +263,17 @@ export async function createSession(
     subnet: allocatedSubnet,
     scoringContainerId: scoringBotContainerId,
     id: sessionId,
-    createdAt: admin.firestore.Timestamp.now(),
   };
 
-  // Upload session data to Firestore
-  const taskRef = db.collection('sessions').doc(session.id);
-  await taskRef.set(session);
-  console.log('Uploaded session data to Firestore:', session.id);
+  // Upload session data to db
+  await pb.collection('sessions').create(session);
+  console.log('Uploaded session data to DB:', session.id);
 
   return {sessionId, teamIds};
 }
 
 /**
- * Starts a session by retrieving the session data from Firestore,
+ * Starts a session by retrieving the session data from the database,
  * obtaining the teams, and creating users in the Docker containers.
  * @param sessionId The ID of the session to start.
  * @param senderUid The UID of the user starting the session.
@@ -293,9 +283,7 @@ export async function startSession(
   sessionId: string,
   senderUid: string,
 ): Promise<StartSessionResult> {
-  const sessionRef = db.collection('sessions').doc(sessionId);
-  const sessionDoc = await sessionRef.get();
-  const sessionData = sessionDoc.data() as Session;
+  const sessionData = await pb.collection('sessions').getOne(sessionId);
 
   console.log(`Starting session with ID: ${sessionId}`);
   if (sessionData === undefined) {
@@ -329,10 +317,8 @@ export async function startSession(
   const outputPath = path.resolve(__dirname, `../../../captures/${sessionId}`);
   await fs.mkdir(outputPath, {recursive: true});
   for (const teamId of teamIds) {
-    // Get the team members from Firestore and create users in the container for each
-    const teamRef = db.collection('teams').doc(teamId);
-    const teamDoc = await teamRef.get();
-    const team = teamDoc.data() as Team;
+    // Get the team members from DB and create users in the container for each
+    const team = pb.collection('teams').getOne(teamId);
     teams.push(team);
 
     if (!team) {
@@ -342,9 +328,7 @@ export async function startSession(
     }
 
     for (const userId of team.memberIds) {
-      const userRef = db.collection('login').doc(userId);
-      const userDoc = await userRef.get();
-      const userData = userDoc.data() as User;
+      const userData = await pb.collection('users').getOne(userId);
 
       console.log(`Creating user ${userData.userName} with ID ${userData.UID}`);
 
@@ -357,9 +341,7 @@ export async function startSession(
     }
 
     // Create a user account for the admin in every container
-    const userRef = db.collection('login').doc(sessionData.adminUid);
-    const userDoc = await userRef.get();
-    const userData = userDoc.data() as User;
+    const userData = await pb.collection('users').getOne(sessionData.adminUid);
     await createUser(team.containerId, userData.userName);
 
     // Start capturing traffic inside the team container
@@ -389,7 +371,7 @@ export async function startSession(
 
   // Update the session to mark it as started
   sessionData.started = true;
-  await sessionRef.set(sessionData);
+  await pb.collection('sessions').update(sessionId, sessionData);
 
   const teamsAndMembers: {[key: string]: string[]} = {};
   teams.forEach(team => {
@@ -402,7 +384,7 @@ export async function startSession(
 }
 
 /**
- * Fetches all sessions from Firestore and removes them from the local machine.
+ * Fetches all sessions from the DB and removes them from the local machine.
  * Only tries to clean up sessions that were created by this server instance.
  * @returns A Promise that resolves when all sessions have been cleaned up.
  */
@@ -434,7 +416,7 @@ export async function cleanupAllSessions(): Promise<void> {
 
 /**
  * Cleans up a single session by stopping and removing its containers and networks.
- * Deletes the session document from Firestore upon completion.
+ * Deletes the session document from the DB upon completion.
  * @param session The session object to clean up.
  * @returns A Promise that resolves when the cleanup is complete.
  */
@@ -457,9 +439,7 @@ export async function cleanupSession(session: Session): Promise<void> {
   }
 
   for (const teamId of session.teamIds) {
-    const teamRef = db.collection('teams').doc(teamId);
-    const teamDoc = await teamRef.get();
-    const team = teamDoc.data() as Team;
+    const team = pb.collection('teams').getOne(teamId);
 
     if (!team) continue;
 
@@ -475,8 +455,7 @@ export async function cleanupSession(session: Session): Promise<void> {
       );
     }
 
-    // Delete the team document
-    await teamRef.delete();
+    await pb.collection('teams').delete(teamId);
   }
 
   // Delete the WireGuard config files
@@ -528,12 +507,12 @@ export async function cleanupSession(session: Session): Promise<void> {
 
 /**
  * Deletes WireGuard configuration and Pcap directories that don't have an active session.
- * Active is any session that exists in Firestore.
+ * Active is any session that exists in the DB.
  */
 async function cleanupOldConfigs(): Promise<void> {
-  // Fetch all active session IDs from Firestore
+  // Fetch all active session IDs from DB
   const activeSessionIds = new Set<string>();
-  const sessionsSnapshot = await db.collection('sessions').get();
+  const sessionsSnapshot = await pb.collection('sessions').getFullList();
   sessionsSnapshot.forEach(doc => {
     activeSessionIds.add(doc.id);
   });
@@ -577,8 +556,12 @@ async function cleanupOldConfigs(): Promise<void> {
 }
 
 export async function isSessionActive(sessionId: string): Promise<boolean> {
-  const sessionRef = db.collection('sessions').doc(sessionId);
-  const sessionDoc = await sessionRef.get();
+  try {
+    await pb.collection('sessions').getOne(sessionId);
+    return true;
+  } catch {
+    return false;
+  }
 
   if (sessionDoc.exists) {
     return true;

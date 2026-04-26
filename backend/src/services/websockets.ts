@@ -2,9 +2,9 @@ import * as http from 'http';
 import {Duplex, PassThrough} from 'stream';
 import {WebSocket, WebSocketServer} from 'ws';
 import {docker} from './docker';
-import {db} from './firebase';
 import {Session, Team} from '../types';
 import {verifyToken} from '../helpers';
+import { pb } from './pocketbase';
 
 /**
  * Handles incoming WebSocket connections, creating and managing
@@ -45,12 +45,9 @@ export async function handleWSConnection(wss: WebSocketServer): Promise<void> {
     }
 
     // Look up the team and user based on the URL parameters
-    const userNameRef = db.collection('login').doc(urlParts[3]);
-    const userDoc = await userNameRef.get();
-    const userName = userDoc.data()?.userName;
-    const teamRef = db.collection('teams').doc(urlParts[2]);
-    const teamDoc = await teamRef.get();
-    const team = teamDoc.data() as Team | undefined;
+    const user = await pb.collection('users').getOne(urlParts[3]);
+    const team = await pb.collection('teams').getOne(urlParts[2]);
+    //const team = teamDoc.data() as Team | undefined;
 
     // Check that the team exists
     if (team === undefined) {
@@ -59,9 +56,8 @@ export async function handleWSConnection(wss: WebSocketServer): Promise<void> {
       return;
     }
 
-    const sessionRef = db.collection('sessions').doc(team.sessionId);
-    const sessionDoc = await sessionRef.get();
-    const session = sessionDoc.data() as Session | undefined;
+    //const session = sessionDoc.data() as Session | undefined;
+    const session = await pb.collection('sessions').getOne(team.sessionId);
 
     // Check that the session exists and is active
     if (team.sessionId && session !== undefined) {
